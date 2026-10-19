@@ -9,7 +9,15 @@ Every lesson starts on the shop floor of **Bolt & Beam**, a fictional Indian hom
 chain. You work the idea by hand with real numbers, play with an interactive visual, simulate it,
 and only then write the formula: **Concrete → Pictorial → Simulation → Formula**.
 
-## What's in this milestone (M1)
+## What's built so far
+
+**M2 (in progress): the Model Lab.** End-to-end pages for linear regression, decision trees, gradient
+boosting, XGBoost vs LightGBM vs CatBoost and the MLP, each with a hand-worked example, a playground,
+every hyperparameter visualized and a **Failure Lab** that trains all four model families live on
+the same retail scenarios. Plus *Tree vs MLP*, Bayes rung 2 (losses as negative log-likelihoods) and
+the **Model Arena**, a benchmark of ten real models on seven stress scenarios.
+
+### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also
   common screening questions in senior data science interviews:
@@ -62,6 +70,18 @@ The Python tests need `numpy`, `pandas` and `pytest` (`pip install -r python/req
 ```bash
 npm run data:sample    # small JSON extract used by the site (committed)
 npm run data:full      # full CSV tables + truth.json in data/boltbeam (gitignored)
+```
+
+## Model Arena
+
+The Model Arena page reads `public/data/arena.json`, produced offline with the real libraries
+(scikit-learn, XGBoost, LightGBM, CatBoost) on Bolt & Beam weekly demand:
+
+```bash
+python3 -m venv --system-site-packages python/.venv
+python/.venv/bin/pip install -r python/requirements.txt -r python/requirements-arena.txt
+npm run data:arena     # about 10 minutes on a laptop; fixed seeds
+npm run test:arena     # reproducibility and a from-scratch check against scikit-learn
 ```
 
 ## Deploy

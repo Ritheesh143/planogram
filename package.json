@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "test:py": "cd python && python3 -m pytest -q",
     "data:sample": "cd python && python3 -m boltbeam --sample ../public/data/boltbeam-sample.json",
-    "data:full": "cd python && python3 -m boltbeam --out ../data/boltbeam"
+    "data:full": "cd python && python3 -m boltbeam --out ../data/boltbeam",
+    "test:arena": "cd python && .venv/bin/python -m pytest -q tests/test_arena.py",
+    "data:arena": "cd python && .venv/bin/python -m arena --out ../public/data/arena.json"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

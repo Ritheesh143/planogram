@@ -1,0 +1,787 @@
+{
+ "models": [
+  {
+   "id": "ridge",
+   "name": "Linear (ridge)",
+   "family": "linear"
+  },
+  {
+   "id": "poisson",
+   "name": "Poisson GLM (log features)",
+   "family": "linear"
+  },
+  {
+   "id": "tree",
+   "name": "Decision tree",
+   "family": "tree"
+  },
+  {
+   "id": "rf",
+   "name": "Random forest",
+   "family": "tree"
+  },
+  {
+   "id": "hgb",
+   "name": "sklearn HistGB",
+   "family": "boosting"
+  },
+  {
+   "id": "xgb",
+   "name": "XGBoost",
+   "family": "boosting"
+  },
+  {
+   "id": "lgbm",
+   "name": "LightGBM",
+   "family": "boosting"
+  },
+  {
+   "id": "lgbm_tweedie",
+   "name": "LightGBM (Tweedie)",
+   "family": "boosting"
+  },
+  {
+   "id": "catboost",
+   "name": "CatBoost",
+   "family": "boosting"
+  },
+  {
+   "id": "mlp",
+   "name": "MLP",
+   "family": "neural"
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "baseline",
+   "name": "Weekly demand",
+   "story": "Forecast the next 26 weeks for every store and SKU, one week ahead, with price, promotions, season and recent sales.",
+   "metric": "wape",
+   "lesson": "",
+   "train_rows": 177600,
+   "test_rows": 62400,
+   "results": {
+    "ridge": {
+     "wape": 0.2407,
+     "deviance": 1.6767,
+     "rmse": 5.51,
+     "bias": 0.0056,
+     "negative": 0.0006,
+     "seconds": 0.16,
+     "size_kb": 3.0,
+     "price_rises": 0.0
+    },
+    "poisson": {
+     "wape": 0.2342,
+     "deviance": 1.5431,
+     "rmse": 5.365,
+     "bias": 0.0024,
+     "negative": 0.0,
+     "seconds": 2.33,
+     "size_kb": 4.2,
+     "price_rises": 0.0
+    },
+    "tree": {
+     "wape": 0.2378,
+     "deviance": 1.5931,
+     "rmse": 5.456,
+     "bias": 0.0004,
+     "negative": 0.0,
+     "seconds": 0.51,
+     "size_kb": 37.5,
+     "price_rises": 0.0256
+    },
+    "rf": {
+     "wape": 0.2278,
+     "deviance": 1.4589,
+     "rmse": 5.217,
+     "bias": 0.0083,
+     "negative": 0.0,
+     "seconds": 8.59,
+     "size_kb": 248616.1,
+     "price_rises": 0.0957
+    },
+    "hgb": {
+     "wape": 0.2192,
+     "deviance": 1.36,
+     "rmse": 5.029,
+     "bias": 0.0099,
+     "negative": 0.0,
+     "seconds": 2.32,
+     "size_kb": 1114.0,
+     "price_rises": 0.0303
+    },
+    "xgb": {
+     "wape": 0.2192,
+     "deviance": 1.3555,
+     "rmse": 5.035,
+     "bias": 0.0119,
+     "negative": 0.0,
+     "seconds": 1.34,
+     "size_kb": 1483.5,
+     "price_rises": 0.0556
+    },
+    "lgbm": {
+     "wape": 0.2195,
+     "deviance": 1.3636,
+     "rmse": 5.032,
+     "bias": 0.011,
+     "negative": 0.0,
+     "seconds": 1.36,
+     "size_kb": 854.3,
+     "price_rises": 0.1554
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2177,
+     "deviance": 1.3374,
+     "rmse": 5.009,
+     "bias": 0.0081,
+     "negative": 0.0,
+     "seconds": 1.52,
+     "size_kb": 1033.7,
+     "price_rises": 0.1474
+    },
+    "catboost": {
+     "wape": 0.2247,
+     "deviance": 1.4224,
+     "rmse": 5.129,
+     "bias": 0.0111,
+     "negative": 0.0,
+     "seconds": 7.47,
+     "size_kb": 335.7,
+     "price_rises": 0.0975
+    },
+    "mlp": {
+     "wape": 0.2272,
+     "deviance": 1.4641,
+     "rmse": 5.2,
+     "bias": -0.0034,
+     "negative": 0.0,
+     "seconds": 45.4,
+     "size_kb": 95.1,
+     "price_rises": 0.0453
+    }
+   }
+  },
+  {
+   "id": "big_stores",
+   "name": "Bigger stores than ever",
+   "story": "Train on stores under 75k sq ft; forecast the chain's largest stores (over 85k sq ft).",
+   "metric": "wape",
+   "lesson": "tree-vs-mlp",
+   "train_rows": 128760,
+   "test_rows": 10920,
+   "results": {
+    "ridge": {
+     "wape": 0.2148,
+     "deviance": 1.8888,
+     "rmse": 7.283,
+     "bias": -0.0044,
+     "negative": 0.0,
+     "seconds": 0.1,
+     "size_kb": 3.0
+    },
+    "poisson": {
+     "wape": 0.2096,
+     "deviance": 1.8,
+     "rmse": 7.027,
+     "bias": -0.0043,
+     "negative": 0.0,
+     "seconds": 1.81,
+     "size_kb": 4.2
+    },
+    "tree": {
+     "wape": 0.2268,
+     "deviance": 2.1422,
+     "rmse": 7.861,
+     "bias": -0.0679,
+     "negative": 0.0,
+     "seconds": 0.41,
+     "size_kb": 37.7
+    },
+    "rf": {
+     "wape": 0.2202,
+     "deviance": 2.0093,
+     "rmse": 7.602,
+     "bias": -0.067,
+     "negative": 0.0,
+     "seconds": 5.51,
+     "size_kb": 180132.8
+    },
+    "hgb": {
+     "wape": 0.2206,
+     "deviance": 2.0355,
+     "rmse": 7.668,
+     "bias": -0.0969,
+     "negative": 0.0,
+     "seconds": 1.91,
+     "size_kb": 1107.9
+    },
+    "xgb": {
+     "wape": 0.2248,
+     "deviance": 2.1272,
+     "rmse": 7.853,
+     "bias": -0.1085,
+     "negative": 0.0,
+     "seconds": 0.92,
+     "size_kb": 1466.6
+    },
+    "lgbm": {
+     "wape": 0.2203,
+     "deviance": 2.0334,
+     "rmse": 7.681,
+     "bias": -0.1001,
+     "negative": 0.0,
+     "seconds": 0.97,
+     "size_kb": 850.0
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2179,
+     "deviance": 1.9883,
+     "rmse": 7.577,
+     "bias": -0.1038,
+     "negative": 0.0,
+     "seconds": 1.21,
+     "size_kb": 1031.1
+    },
+    "catboost": {
+     "wape": 0.2159,
+     "deviance": 1.9474,
+     "rmse": 7.507,
+     "bias": -0.0836,
+     "negative": 0.0,
+     "seconds": 5.67,
+     "size_kb": 335.0
+    },
+    "mlp": {
+     "wape": 0.2063,
+     "deviance": 1.7642,
+     "rmse": 6.947,
+     "bias": -0.0278,
+     "negative": 0.0,
+     "seconds": 25.97,
+     "size_kb": 94.9
+    }
+   }
+  },
+  {
+   "id": "intermittent",
+   "name": "Slow movers",
+   "story": "Only the slowest quarter of store-SKU series, where many weeks sell little or nothing. Scored by Poisson deviance, which rewards getting the rate right on zero-heavy data.",
+   "metric": "deviance",
+   "lesson": "mle-peak",
+   "train_rows": 44400,
+   "test_rows": 15600,
+   "results": {
+    "ridge": {
+     "wape": 0.3333,
+     "deviance": 1.1705,
+     "rmse": 2.647,
+     "bias": 0.009,
+     "negative": 0.0,
+     "seconds": 0.04,
+     "size_kb": 3.0
+    },
+    "poisson": {
+     "wape": 0.3331,
+     "deviance": 1.1709,
+     "rmse": 2.646,
+     "bias": 0.0086,
+     "negative": 0.0,
+     "seconds": 1.79,
+     "size_kb": 4.2
+    },
+    "tree": {
+     "wape": 0.3376,
+     "deviance": 1.201,
+     "rmse": 2.689,
+     "bias": 0.0129,
+     "negative": 0.0,
+     "seconds": 0.15,
+     "size_kb": 32.2
+    },
+    "rf": {
+     "wape": 0.3286,
+     "deviance": 1.1389,
+     "rmse": 2.612,
+     "bias": 0.0138,
+     "negative": 0.0,
+     "seconds": 1.77,
+     "size_kb": 61813.1
+    },
+    "hgb": {
+     "wape": 0.3193,
+     "deviance": 1.0811,
+     "rmse": 2.542,
+     "bias": 0.0141,
+     "negative": 0.0,
+     "seconds": 0.52,
+     "size_kb": 506.4
+    },
+    "xgb": {
+     "wape": 0.3197,
+     "deviance": 1.0836,
+     "rmse": 2.548,
+     "bias": 0.0133,
+     "negative": 0.0,
+     "seconds": 0.49,
+     "size_kb": 1447.6
+    },
+    "lgbm": {
+     "wape": 0.3193,
+     "deviance": 1.0777,
+     "rmse": 2.541,
+     "bias": 0.0148,
+     "negative": 0.0,
+     "seconds": 0.51,
+     "size_kb": 837.4
+    },
+    "lgbm_tweedie": {
+     "wape": 0.318,
+     "deviance": 1.0758,
+     "rmse": 2.535,
+     "bias": 0.0071,
+     "negative": 0.0,
+     "seconds": 0.6,
+     "size_kb": 1019.7
+    },
+    "catboost": {
+     "wape": 0.3188,
+     "deviance": 1.0766,
+     "rmse": 2.536,
+     "bias": 0.0124,
+     "negative": 0.0,
+     "seconds": 2.24,
+     "size_kb": 342.8
+    },
+    "mlp": {
+     "wape": 0.3283,
+     "deviance": 1.1403,
+     "rmse": 2.606,
+     "bias": 0.0158,
+     "negative": 0.0,
+     "seconds": 4.12,
+     "size_kb": 94.4
+    }
+   }
+  },
+  {
+   "id": "ids_only",
+   "name": "IDs instead of attributes",
+   "story": "No store size, region, category or sales history: the models only see store and SKU IDs, so they must learn each ID's level.",
+   "metric": "wape",
+   "lesson": "xgb-lgbm-catboost",
+   "train_rows": 177600,
+   "test_rows": 62400,
+   "results": {
+    "ridge": {
+     "wape": 0.2568,
+     "deviance": 4.1608,
+     "rmse": 5.764,
+     "bias": 0.0125,
+     "negative": 0.0249,
+     "seconds": 1.5,
+     "size_kb": 4.2
+    },
+    "poisson": {
+     "wape": 0.2136,
+     "deviance": 1.2926,
+     "rmse": 4.878,
+     "bias": 0.009,
+     "negative": 0.0,
+     "seconds": 4.23,
+     "size_kb": 5.0
+    },
+    "tree": {
+     "wape": 0.4478,
+     "deviance": 5.3455,
+     "rmse": 10.093,
+     "bias": 0.0035,
+     "negative": 0.0,
+     "seconds": 0.29,
+     "size_kb": 35.2
+    },
+    "rf": {
+     "wape": 0.2683,
+     "deviance": 2.0544,
+     "rmse": 6.41,
+     "bias": 0.0159,
+     "negative": 0.0,
+     "seconds": 4.71,
+     "size_kb": 232507.7
+    },
+    "hgb": {
+     "wape": 0.2115,
+     "deviance": 1.2674,
+     "rmse": 4.842,
+     "bias": 0.0123,
+     "negative": 0.0,
+     "seconds": 0.83,
+     "size_kb": 565.6
+    },
+    "xgb": {
+     "wape": 0.213,
+     "deviance": 1.2863,
+     "rmse": 4.865,
+     "bias": 0.014,
+     "negative": 0.0,
+     "seconds": 1.48,
+     "size_kb": 2531.6
+    },
+    "lgbm": {
+     "wape": 0.212,
+     "deviance": 1.2755,
+     "rmse": 4.853,
+     "bias": 0.0133,
+     "negative": 0.0,
+     "seconds": 1.12,
+     "size_kb": 864.1
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2114,
+     "deviance": 1.2647,
+     "rmse": 4.846,
+     "bias": 0.0127,
+     "negative": 0.0,
+     "seconds": 1.37,
+     "size_kb": 1048.4
+    },
+    "catboost": {
+     "wape": 0.2146,
+     "deviance": 1.3033,
+     "rmse": 4.903,
+     "bias": 0.0088,
+     "negative": 0.0,
+     "seconds": 6.44,
+     "size_kb": 1797.5
+    },
+    "mlp": {
+     "wape": 0.2078,
+     "deviance": 1.228,
+     "rmse": 4.74,
+     "bias": 0.015,
+     "negative": 0.0,
+     "seconds": 10.66,
+     "size_kb": 220.4
+    }
+   }
+  },
+  {
+   "id": "missing",
+   "name": "Missing values",
+   "story": "A third of the lagged-sales and price fields are blank. Linear models, the MLP and scikit-learn's classic trees get mean-imputed data; the boosting libraries handle the gaps natively.",
+   "metric": "wape",
+   "lesson": "xgb-lgbm-catboost",
+   "train_rows": 177600,
+   "test_rows": 62400,
+   "results": {
+    "ridge": {
+     "wape": 0.2859,
+     "deviance": 3.6632,
+     "rmse": 6.499,
+     "bias": 0.0073,
+     "negative": 0.0131,
+     "seconds": 0.15,
+     "size_kb": 3.0
+    },
+    "poisson": {
+     "wape": 0.2758,
+     "deviance": 2.0923,
+     "rmse": 6.427,
+     "bias": 0.0047,
+     "negative": 0.0,
+     "seconds": 1.73,
+     "size_kb": 4.2
+    },
+    "tree": {
+     "wape": 0.2705,
+     "deviance": 2.1227,
+     "rmse": 6.233,
+     "bias": -0.0014,
+     "negative": 0.0,
+     "seconds": 0.52,
+     "size_kb": 35.1
+    },
+    "rf": {
+     "wape": 0.229,
+     "deviance": 1.4714,
+     "rmse": 5.262,
+     "bias": 0.0081,
+     "negative": 0.0,
+     "seconds": 8.27,
+     "size_kb": 248287.9
+    },
+    "hgb": {
+     "wape": 0.2202,
+     "deviance": 1.3657,
+     "rmse": 5.063,
+     "bias": 0.011,
+     "negative": 0.0,
+     "seconds": 2.25,
+     "size_kb": 1108.9
+    },
+    "xgb": {
+     "wape": 0.2206,
+     "deviance": 1.3686,
+     "rmse": 5.077,
+     "bias": 0.012,
+     "negative": 0.0,
+     "seconds": 1.96,
+     "size_kb": 1486.5
+    },
+    "lgbm": {
+     "wape": 0.2215,
+     "deviance": 1.383,
+     "rmse": 5.083,
+     "bias": 0.0119,
+     "negative": 0.0,
+     "seconds": 1.52,
+     "size_kb": 856.7
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2186,
+     "deviance": 1.3472,
+     "rmse": 5.037,
+     "bias": 0.0093,
+     "negative": 0.0,
+     "seconds": 1.66,
+     "size_kb": 1036.8
+    },
+    "catboost": {
+     "wape": 0.2256,
+     "deviance": 1.4311,
+     "rmse": 5.171,
+     "bias": 0.0109,
+     "negative": 0.0,
+     "seconds": 7.28,
+     "size_kb": 334.8
+    },
+    "mlp": {
+     "wape": 0.2364,
+     "deviance": 1.5855,
+     "rmse": 5.419,
+     "bias": 0.0046,
+     "negative": 0.0,
+     "seconds": 112.94,
+     "size_kb": 97.4
+    }
+   }
+  },
+  {
+   "id": "small",
+   "name": "A new market, 16 weeks",
+   "story": "Five stores, twelve SKUs and only 16 weeks of history.",
+   "metric": "wape",
+   "lesson": "linear-regression",
+   "train_rows": 960,
+   "test_rows": 1560,
+   "results": {
+    "ridge": {
+     "wape": 0.2838,
+     "deviance": 2.7694,
+     "rmse": 5.804,
+     "bias": -0.1582,
+     "negative": 0.0026,
+     "seconds": 0.01,
+     "size_kb": 3.0
+    },
+    "poisson": {
+     "wape": 0.2659,
+     "deviance": 1.8863,
+     "rmse": 5.584,
+     "bias": -0.1373,
+     "negative": 0.0,
+     "seconds": 0.59,
+     "size_kb": 4.1
+    },
+    "tree": {
+     "wape": 0.2674,
+     "deviance": 1.8451,
+     "rmse": 5.797,
+     "bias": -0.029,
+     "negative": 0.0,
+     "seconds": 0.02,
+     "size_kb": 8.1
+    },
+    "rf": {
+     "wape": 0.2495,
+     "deviance": 1.6037,
+     "rmse": 5.417,
+     "bias": -0.022,
+     "negative": 0.0,
+     "seconds": 0.21,
+     "size_kb": 1364.3
+    },
+    "hgb": {
+     "wape": 0.2676,
+     "deviance": 1.9482,
+     "rmse": 5.784,
+     "bias": -0.0561,
+     "negative": 0.0,
+     "seconds": 0.59,
+     "size_kb": 1083.5
+    },
+    "xgb": {
+     "wape": 0.2622,
+     "deviance": 1.8107,
+     "rmse": 5.751,
+     "bias": -0.0461,
+     "negative": 0.0,
+     "seconds": 0.13,
+     "size_kb": 1161.0
+    },
+    "lgbm": {
+     "wape": 0.2616,
+     "deviance": 1.7923,
+     "rmse": 5.627,
+     "bias": -0.0402,
+     "negative": 0.0,
+     "seconds": 0.13,
+     "size_kb": 765.6
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2622,
+     "deviance": 1.7901,
+     "rmse": 5.602,
+     "bias": -0.0423,
+     "negative": 0.0,
+     "seconds": 0.13,
+     "size_kb": 976.2
+    },
+    "catboost": {
+     "wape": 0.2506,
+     "deviance": 1.6278,
+     "rmse": 5.516,
+     "bias": -0.0234,
+     "negative": 0.0,
+     "seconds": 0.22,
+     "size_kb": 329.9
+    },
+    "mlp": {
+     "wape": 0.2758,
+     "deviance": 2.0701,
+     "rmse": 5.646,
+     "bias": -0.0486,
+     "negative": 0.0,
+     "seconds": 0.35,
+     "size_kb": 89.2
+    }
+   }
+  },
+  {
+   "id": "new_region",
+   "name": "A region it has never seen",
+   "story": "Train without the South region; forecast the South's stores.",
+   "metric": "wape",
+   "lesson": "",
+   "train_rows": 111000,
+   "test_rows": 23400,
+   "results": {
+    "ridge": {
+     "wape": 0.2332,
+     "deviance": 1.6354,
+     "rmse": 5.739,
+     "bias": -0.0075,
+     "negative": 0.0,
+     "seconds": 0.09,
+     "size_kb": 3.0
+    },
+    "poisson": {
+     "wape": 0.2314,
+     "deviance": 1.5798,
+     "rmse": 5.639,
+     "bias": 0.0307,
+     "negative": 0.0,
+     "seconds": 2.06,
+     "size_kb": 4.1
+    },
+    "tree": {
+     "wape": 0.2345,
+     "deviance": 1.6537,
+     "rmse": 5.811,
+     "bias": -0.0169,
+     "negative": 0.0,
+     "seconds": 0.35,
+     "size_kb": 37.4
+    },
+    "rf": {
+     "wape": 0.2257,
+     "deviance": 1.5335,
+     "rmse": 5.556,
+     "bias": -0.0146,
+     "negative": 0.0,
+     "seconds": 4.79,
+     "size_kb": 155430.5
+    },
+    "hgb": {
+     "wape": 0.2247,
+     "deviance": 1.5172,
+     "rmse": 5.549,
+     "bias": -0.031,
+     "negative": 0.0,
+     "seconds": 1.6,
+     "size_kb": 1104.7
+    },
+    "xgb": {
+     "wape": 0.2272,
+     "deviance": 1.5529,
+     "rmse": 5.682,
+     "bias": -0.047,
+     "negative": 0.0,
+     "seconds": 0.78,
+     "size_kb": 1462.6
+    },
+    "lgbm": {
+     "wape": 0.224,
+     "deviance": 1.5089,
+     "rmse": 5.538,
+     "bias": -0.0261,
+     "negative": 0.0,
+     "seconds": 0.79,
+     "size_kb": 844.3
+    },
+    "lgbm_tweedie": {
+     "wape": 0.2239,
+     "deviance": 1.5081,
+     "rmse": 5.515,
+     "bias": -0.0272,
+     "negative": 0.0,
+     "seconds": 1.09,
+     "size_kb": 1029.5
+    },
+    "catboost": {
+     "wape": 0.224,
+     "deviance": 1.5057,
+     "rmse": 5.489,
+     "bias": -0.0067,
+     "negative": 0.0,
+     "seconds": 5.03,
+     "size_kb": 335.5
+    },
+    "mlp": {
+     "wape": 0.2505,
+     "deviance": 1.943,
+     "rmse": 6.252,
+     "bias": -0.1287,
+     "negative": 0.0,
+     "seconds": 33.06,
+     "size_kb": 94.7
+    }
+   }
+  }
+ ],
+ "meta": {
+  "seed": 7,
+  "stores": 40,
+  "skus": 60,
+  "days": 730,
+  "model_seed": 7,
+  "python": "3.13.16",
+  "versions": {
+   "scikit-learn": "1.9.1",
+   "xgboost": "3.4.1",
+   "lightgbm": "4.7.0",
+   "catboost": "1.2.10"
+  }
+ }
+}

@@ -1,0 +1,330 @@
+<Section id="origin">
+
+Every Model Lab page so far used small, hand-sized data: six stores, eight weeks, a Failure Lab with 40 points. That's how you learn the mechanics. But the question you'll be asked at work, and in interviews, is different: **on our real data, which model should we ship, and where will it hurt us?**
+
+The Arena answers it the way a careful team would. Ten models, the real libraries (scikit-learn, XGBoost, LightGBM, CatBoost), one realistic task, **Bolt & Beam's weekly demand for 40 stores × 60 SKUs**, and then seven variants of that task, each built to stress one weakness from the Failure Lab: bigger stores than ever seen, slow movers, ID-only features, missing data, a tiny new market, an unseen region.
+
+The benchmark runs offline (`npm run data:arena`) with fixed seeds, and this page reads its results.
+
+<KeyIdea>
+
+**There is no best model, only a best model for a situation.** On the main task XGBoost, LightGBM and scikit-learn's HistGB finish within 1% of each other. The big differences appear at the edges: extrapolation, IDs, missing values, small data. Benchmark the edges you'll actually face, and report bias and cost as well as error.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Before reading any leaderboard, know what the scores reward. Four store-weeks of a slow-moving SKU, and two forecasts:
+
+| Week | 1 | 2 | 3 | 4 | Total |
+|---|---|---|---|---|---|
+| Sold | 2 | 0 | 10 | 8 | 20 |
+| Forecast A | 3 | 1 | 9 | 7 | 20 |
+| Forecast B | 0 | 0 | 9 | 7 | 16 |
+
+<Steps>
+<Step>
+
+**WAPE** (weighted absolute percentage error) is total units missed over total units sold. A misses $1 + 1 + 1 + 1 = 4$ units; B misses $2 + 0 + 1 + 1 = 4$. Both score $4/20 =$ **0.20**. WAPE calls it a tie.
+
+</Step>
+<Step>
+
+**Bias** is total forecast minus total sold, over total sold. A: $(20 - 20)/20 =$ **0%**. B: $(16 - 20)/20 =$ **−20%**. B under-forecasts by a fifth. For replenishment, that's a stockout plan.
+
+</Step>
+<Step>
+
+**Poisson deviance** is twice the average Poisson negative log-likelihood gap to a perfect forecast: $2\cdot\text{mean}\left[y\log(y/\hat y) - (y - \hat y)\right]$.
+
+- Forecast A: $0.189 + 1 + 0.054 + 0.068 = 1.311$; doubled and averaged over 4 weeks gives **0.655**.
+- Forecast B forecast **zero** for week 1, which sold 2. Under a Poisson model, selling 2 units when the rate is zero is essentially impossible, so that single week costs about 27 and the deviance is about **13.6**.
+
+Deviance punishes a forecast of zero for something that sells, and it rewards getting the **rate** right. That's why the slow-mover scenario is ranked by it.
+
+</Step>
+<Step>
+
+**The lesson from [MLE and Losses](/learn/bayes/mle-peak), at scale:** WAPE is an absolute-error score, so it's minimized by the median, and on skewed SKUs the median under-forecasts. A model can win on WAPE while starving the shelves. The Arena reports bias next to every score for this reason.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="On the main task, how far apart are XGBoost, LightGBM and scikit-learn's HistGradientBoosting?" options={["Within about 1%", "About 5%", "More than 10%"]} answer={0}>
+
+**Within about 1%** (WAPE 0.218–0.220). The ranking among the boosting libraries on a normal task is mostly noise. The large gaps on this page are between model *families*, and they show up in the stress scenarios.
+
+</Predict>
+
+<FailureMatrix />
+
+**Try this:**
+
+1. Click through the **Weekly demand** column. Boosting fills the top four places; then CatBoost, the MLP and the random forest (3–5% behind); then the single tree and the linear models.
+2. Now read across the **Decision tree** row. It's never the best, and on *IDs instead of attributes* it's more than twice as bad as the leader. That's not a tree problem in general: the native-category libraries are near the top of the same column.
+3. Find the columns where the **MLP** wins (there are two). Then find the one where it comes last. Same model, same settings.
+4. Click a boosting model on **Bigger stores than ever** and look at the bias: about −10%. Every tree-based model under-forecasts the largest stores.
+
+<ArenaCosts />
+
+The last column checks a business rule: in promo weeks, a deeper discount should never *lower* the forecast. The linear models obey it by construction. LightGBM breaks it in about 15% of promo weeks, which is what `monotone_constraints` exists to prevent.
+
+</Section>
+
+<Section id="formula">
+
+For test rows $i = 1, \dots, n$ with actual sales $y_i$ and forecast $\hat y_i$:
+
+$$
+\text{WAPE} = \frac{\sum_i \lvert y_i - \hat y_i\rvert}{\sum_i y_i}
+\qquad
+\text{Bias} = \frac{\sum_i \hat y_i - \sum_i y_i}{\sum_i y_i}
+$$
+
+$$
+\text{Poisson deviance} = \frac{2}{n}\sum_i\left[y_i\log\frac{y_i}{\hat y_i} - (y_i - \hat y_i)\right]
+$$
+
+**Which number to rank on depends on the decision.** WAPE suits a planner who cares about total units missed and treats over- and under-forecasting alike. Deviance suits rate estimation on counts with many zeros. Neither says anything about direction, so always report bias.
+
+<Depth min={2}>
+
+**WAPE favours the median.** WAPE is total absolute error divided by a constant (total sales), so for each row it's minimized by the conditional median. On right-skewed demand, median < mean: a model trained on squared or Poisson loss forecasts the mean and pays a small WAPE penalty for it, while being unbiased in total. This is why tuning a model "to win on WAPE" can quietly push it toward under-forecasting.
+
+**Deviance is a likelihood.** The Poisson deviance is $2\,[\ell(\text{perfect}) - \ell(\hat y)]$: twice the gap in Poisson log-likelihood between a perfect forecast and yours. Ranking by it is ranking by how probable each model makes the observed sales, the scoring rule matching the Poisson and Tweedie objectives.
+
+**How the scenarios are built.** Every scenario keeps the same time split: the last 26 weeks are the test set and everything earlier is training, so no model sees the future. Each variant then changes one thing: which stores are in train and test (*bigger stores*, *new region*), which series (*slow movers*, *small*), which features (*IDs only*), or how complete they are (*missing*). Changing one thing at a time is what lets a column be read as "what this weakness costs".
+
+</Depth>
+
+<Depth min={3}>
+
+**Leaderboard noise.** With tens of thousands of test rows, a difference of a few tenths of a percent in WAPE is within what a different seed, a different test window or slightly different hyperparameters would change. Treat the top cluster of each column as a tie. Differences of 5% or more, and consistent signs of bias, are the reliable findings.
+
+**What's deliberately not done.** No hyperparameter tuning and no early stopping: every model gets sensible defaults (see *Every Knob*). Tuning would narrow some gaps (especially for the MLP) and would cost each model a validation split. A production benchmark should tune each contestant with the same budget on a separate validation window, then test once.
+
+</Depth>
+
+</Section>
+
+<Section id="knobs">
+
+Every contestant uses fixed, sensible settings, the same in every scenario:
+
+| Model | Settings | Preprocessing |
+|---|---|---|
+| Linear (ridge) | α = 1 | Mean-impute, standardize, one-hot categories |
+| Poisson GLM (log features) | α = 0.0001, log link | As ridge, plus log of lagged sales and store size |
+| Decision tree | depth 8, 20 rows per leaf | Mean-impute; categories as integer codes |
+| Random forest | 100 trees, 5 rows per leaf, half the features per split | As decision tree |
+| sklearn HistGB | 300 iterations, learning rate 0.1 | Native categories and missing values |
+| XGBoost | 300 trees, depth 6, learning rate 0.1, 80% row and column sampling | Native categories and missing values |
+| LightGBM | 300 trees, 31 leaves, learning rate 0.1, 80% row and column sampling | Native categories and missing values |
+| LightGBM (Tweedie) | As LightGBM, Tweedie objective with power 1.3 | As LightGBM |
+| CatBoost | 300 iterations, depth 6, learning rate 0.1 | Native categories (ordered statistics) and missing values |
+| MLP | Layers of 64 and 32, early stopping | As ridge |
+
+Features on the main task: price relative to the reference price, promo share of the week, log reference price, store size, region, category, week-of-year (as sine and cosine), a festive-season flag, a monsoon flag, and last week's sales, the week before, and the last 4 weeks' average.
+
+**Notice what the preprocessing does to the results.** The classic scikit-learn trees get categories as integer codes and mean-imputed gaps, which is exactly why they collapse on *IDs only* and *Missing values*, while the libraries with native handling don't. Often "which model" is really "which preprocessing".
+
+</Section>
+
+<Section id="failure">
+
+What each scenario shows, with the lesson that explains it:
+
+| Scenario | Winner | What broke, and why |
+|---|---|---|
+| **Weekly demand** | LightGBM (Tweedie), with the boosting pack within 1% | Ridge and the single tree trail by 9–11%: they can't model the interactions of price, promo, season and category |
+| **Bigger stores than ever** | MLP, then the log-feature Poisson GLM (bias ≈ 0) | Every tree-based model **under-forecasts by 7–11%**: store size beyond the training range lands in the edge leaves ([Tree vs MLP](/learn/models/tree-vs-mlp)) |
+| **Slow movers** (deviance) | LightGBM (Tweedie), with the boosting pack within 1% | Linear models, the forest and the single tree are 6–12% worse at getting low rates right ([MLE and Losses](/learn/bayes/mle-peak)) |
+| **IDs instead of attributes** | MLP, then boosting within 3% | Ridge is 24% worse (additive ID effects can't make multiplicative store × SKU levels); scikit-learn's forest and single tree, fed IDs as integer codes, are 29% and 116% worse ([XGBoost vs LightGBM vs CatBoost](/models/xgb-lgbm-catboost)) |
+| **Missing values** | Boosting with native missing-value handling | Mean imputation costs ridge 0.241 → 0.286 and the tree 0.238 → 0.271; native handling costs LightGBM (Tweedie) almost nothing (0.218 → 0.219) |
+| **A new market, 16 weeks** | Random forest and CatBoost | LightGBM-style boosting is about 5% behind; ridge under-forecasts by 16% ([Linear Regression](/models/linear-regression) explains small-data variance; here averaging and symmetric trees are the steadier choice) |
+| **A region it has never seen** | Boosting, CatBoost and the forest, all within 1.5% | The MLP is 12% worse and under-forecasts by 13%: its learned interactions transfer worst to new stores |
+
+**What surprised me, and should surprise you:** the single best-known fact about trees (they can't extrapolate) shows up here as a quiet 10% under-forecast on the biggest stores, not as an error you'd notice on a leaderboard. The MLP wins that column and then loses *A region it has never seen*. Both are the same property: networks extrapolate and generalize by smooth interpolation, for better and for worse.
+
+For the mechanisms behind each row, the in-browser Failure Lab shows the same failures on tiny data you can see:
+
+<FailureLab start="trend" />
+
+</Section>
+
+<Section id="build">
+
+A miniature arena in the browser: synthetic stores whose sales grow with size, trained on small stores and tested on large ones. Expected: the random forest and LightGBM under-forecast the big stores by roughly 15–25%, while ridge and the log-log Poisson GLM, which can extend the size effect, stay within a couple of percent.
+
+<PyRunner title="A miniature arena: bigger stores than ever" code={`
+import warnings
+import numpy as np
+import lightgbm as lgb
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import PoissonRegressor, Ridge
+warnings.filterwarnings("ignore", category=UserWarning)
+
+rng = np.random.default_rng(7)
+n = 6000
+size = rng.uniform(20, 100, n)                     # thousand sq ft
+promo = (rng.random(n) < 0.15).astype(float)
+price = np.where(promo == 1, rng.uniform(0.7, 0.9, n), 1.0)
+rate = np.exp(np.log(size / 50) + 2.0 - 1.8 * np.log(price))   # sales grow in proportion to size
+sales = rng.poisson(rate)
+
+X = np.column_stack([size, promo, price])
+train = size < 75
+test = size > 85
+
+models = {
+    "ridge": Ridge(alpha=1.0),
+    "poisson glm (log size, log price)": PoissonRegressor(alpha=1e-6, max_iter=1000),
+    "random forest": RandomForestRegressor(n_estimators=100, min_samples_leaf=5, random_state=0, n_jobs=1),
+    "lightgbm": lgb.LGBMRegressor(n_estimators=300, learning_rate=0.05, verbose=-1, random_state=0),
+}
+for name, m in models.items():
+    Xm = np.column_stack([np.log(size), promo, np.log(price)]) if "glm" in name else X
+    m.fit(Xm[train], sales[train])
+    p = m.predict(Xm[test])
+    wape = np.abs(sales[test] - p).sum() / sales[test].sum()
+    bias = (p.sum() - sales[test].sum()) / sales[test].sum()
+    print(f"{name:34s} WAPE {wape:.3f}   bias {bias:+.1%}")
+`} />
+
+The full Arena (ten models, seven scenarios, 240,000 store-weeks) takes a few minutes on a laptop: `npm run data:arena` after installing `python/requirements-arena.txt` into `python/.venv`.
+
+</Section>
+
+<Section id="production">
+
+- **Benchmark like this before you argue about libraries.** One time-based split, the same features for everyone, a few stress scenarios matched to your business (new stores, new SKUs, promotions deeper than ever, feed outages), and bias and cost reported next to accuracy.
+- **Pick the family, then the library.** Boosting is the default for retail tables. Within boosting, choose for operations: LightGBM for speed on big data, CatBoost when categories dominate or data are small, XGBoost or scikit-learn's HistGB when they fit your stack.
+- **Cover the edges with structure, not just a better model.** Model the growth of new or bigger stores with a log-scale baseline (a GLM or a ratio target) and let boosting predict the residual pattern. Constrain price effects to be monotone. Handle missing feeds explicitly.
+- **Watch the cost column.** The random forest's saved model is about 240 MB here, against about 1 MB for a boosted model. The MLP takes 30–100× longer to train than LightGBM on this task. At 10,000 stores those differences decide what's feasible.
+- **Re-run the arena when the data change**, not only when the model changes: a new region, a pricing policy change or a POS migration can reorder the leaderboard.
+
+</Section>
+
+<Section id="leads">
+
+<Lineage
+  self="Model Arena"
+  from={[
+    { label: "Linear regression", slug: "linear-regression", note: "Ridge and the log-link GLM" },
+    { label: "Decision trees", slug: "decision-tree", note: "The single tree and the forest" },
+    { label: "XGBoost, LightGBM, CatBoost", slug: "xgb-lgbm-catboost", note: "Four boosting implementations" },
+    { label: "The MLP", slug: "mlp", note: "The neural contestant" },
+  ]}
+  to={[
+    { label: "Global LightGBM with Tweedie", slug: "fc-tweedie-lgbm", note: "The winning recipe, derived" },
+    { label: "Forecasting: anatomy of a store series", slug: "fc-anatomy", note: "Where the features come from" },
+    { label: "Demand ≠ sales", slug: "fc-censored-demand", note: "Every model here learned censored sales" },
+    { label: "System design: forecasting for 10k stores", slug: "sd-forecasting", note: "Turning the arena into a platform" },
+  ]}
+/>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Score a forecast">
+
+Actual sales 5, 0, 3; forecast 4, 1, 3. Compute WAPE and bias.
+
+<Solution>
+
+Missed units: $1 + 1 + 0 = 2$; sold 8. WAPE $= 2/8 =$ **0.25**. Bias $= (8 - 8)/8 =$ **0%**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Read the matrix">
+
+On *Bigger stores than ever*, LightGBM's WAPE is about 7% worse than the MLP's but its bias is −10%. Which number matters more to a replenishment planner, and why?
+
+<Solution>
+
+**The bias.** A 10% under-forecast on the chain's largest stores is a systematic stockout plan for its highest-revenue locations. The WAPE gap mixes over- and under-forecasting; the bias says which way the errors lean.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Why did ridge collapse on IDs?">
+
+With only store and SKU IDs, ridge regression is 24% worse than the Poisson GLM, though both see the same one-hot columns. Explain.
+
+<Solution>
+
+Ridge is additive: forecast = store effect + SKU effect + …, so a big store adds the same number of units to every SKU. Real demand is multiplicative: a big store sells *proportionally* more of everything. The Poisson GLM's log link makes the effects add on the log scale, which is multiplication on the sales scale, so the same one-hot columns describe the data correctly.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Mean imputation's hidden cost">
+
+When a third of last week's sales values were blanked, ridge's WAPE rose from 0.241 to 0.286 but LightGBM's barely moved. Give two reasons.
+
+<Solution>
+
+(1) Mean imputation replaces a store-SKU's own history with the chain average, so a fast mover's missing lag looks like an average SKU's: the strongest feature becomes misleading on a third of rows. (2) LightGBM learns a default direction for missing values at every split, and it can lean on the other history features (lag 2, the 4-week average) when lag 1 is missing. A linear model can't switch features depending on which is present.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Design a scenario">
+
+Your company is about to run deeper promotions than ever before (40% off, against a maximum of 30% in history). Design an Arena scenario to test which model to trust, and predict the result.
+
+<Solution>
+
+Train on all weeks; in the test set, take promo weeks and re-score them with the price ratio lowered to 0.6 (or hold out the deepest historical discounts as the test set and train on shallower ones). Since the truth isn't observed for unseen discounts, use the generator's planted elasticities to compute true demand. Prediction: tree models will treat 40% off like their deepest training discount (flat beyond it) and under-forecast the lift; a log-log model with a price elasticity extrapolates the lift; an MLP extrapolates linearly in its inputs and could go either way.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="When is a 1% gap real?">
+
+LightGBM beats XGBoost by 0.5% WAPE. Describe how you'd check whether that's real before switching libraries.
+
+<Solution>
+
+Repeat the comparison across several test windows (rolling origins) and seeds, and compute the per-week or per-series difference in error. If the difference flips sign across windows or its spread is larger than its mean, it's noise. A paired bootstrap over series gives an interval for the difference. Only a consistent gap, across windows, justifies the cost of switching.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How would you choose a model for store-SKU demand forecasting?">
+
+Set up a time-based backtest that mirrors the deployment (forecast horizon, refit frequency), with the same features for every candidate. Compare a seasonal-naive baseline, a GLM, a global gradient-boosted model with a Poisson or Tweedie objective, and optionally a neural model. Report WAPE, bias and a deviance or quantile loss, plus cost. Then stress-test the scenarios the business will hit: new stores, deep promotions, missing feeds. Usually a global GBM wins, with structure added for the edges.
+
+</QA>
+
+<QA q="Your new model improved WAPE by 3%, but planners report more stockouts. What happened?">
+
+WAPE rewards forecasting the median, and on right-skewed demand the median is below the mean, so the model probably became more negatively biased. Check total bias and bias by segment (fast vs slow movers, promo weeks). Replenishment needs either an unbiased mean forecast plus a safety stock calculation, or a direct quantile forecast at the service level.
+
+</QA>
+
+<QA q="When would a GLM beat gradient boosting in production?">
+
+When the business needs to extrapolate along a dimension with known structure (store size, price beyond the observed range), when data are small, when coefficients must be explained (elasticities), and when monotonicity must hold by construction. In the Arena the log-feature Poisson GLM was second on bigger stores with essentially zero bias, while every tree model under-forecast by 7–11%.
+
+</QA>
+
+<Trap>
+
+**"The model with the lowest error on the leaderboard is the one to ship."** The leaderboard is one test window, one metric, and one set of conditions. The Arena's main-task winner under-forecasts the largest stores by 10%, breaks the price rule in 15% of promo weeks, and its lead over three other libraries is within noise. Ship the model whose failures you've measured and can live with.
+
+</Trap>
+
+</Section>

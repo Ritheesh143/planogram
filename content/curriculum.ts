@@ -64,7 +64,7 @@ const raw: LessonInput[] = [
   { slug: "xgb-lgbm-catboost", aisle: "models", kind: "model", title: "XGBoost vs LightGBM vs CatBoost", status: "ready", week: 4, minutes: 70, summary: "Level-wise vs leaf-wise growth, histograms, GOSS, EFB and ordered target statistics.", prereqs: ["gradient-boosting"] },
   { slug: "mlp", aisle: "models", kind: "model", title: "The MLP, End to End", status: "ready", week: 4, minutes: 75, summary: "One neuron by hand, ReLU kinks building a demand curve, backprop as the chain rule.", prereqs: ["linear-regression"] },
   { slug: "tree-vs-mlp", aisle: "models", title: "Tree vs MLP: Boxes vs Bends", status: "ready", week: 4, minutes: 45, summary: "Piecewise constant vs piecewise linear, and why trees cannot extrapolate a trend.", prereqs: ["decision-tree", "mlp"] },
-  { slug: "model-arena", aisle: "models", kind: "model", title: "Model Arena and the Failure Matrix", week: 4, summary: "Every model on one demand task, scored on each failure scenario.", prereqs: ["xgb-lgbm-catboost", "mlp"] },
+  { slug: "model-arena", aisle: "models", kind: "model", title: "Model Arena and the Failure Matrix", status: "ready", week: 4, minutes: 60, summary: "Every model on one demand task, scored on each failure scenario.", prereqs: ["xgb-lgbm-catboost", "mlp"] },
 
   // Aisle 3: Retail Science (signatures)
   { slug: "fc-anatomy", aisle: "retail", title: "Forecasting: Anatomy of a Store Time Series", week: 5, summary: "STL decomposition and what the ACF really computes.", prereqs: ["clt-weekly-sales"] },

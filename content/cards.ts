@@ -86,6 +86,13 @@ export const cards: Flashcard[] = [
   { id: "tm-2", lesson: "tree-vs-mlp", front: "Which model suits thresholds and jumps, and which suits smooth diagonal effects?", back: "Thresholds and jumps: trees. Smooth, oblique effects: MLPs." },
   { id: "tm-3", lesson: "tree-vs-mlp", front: "Three reasons tree ensembles beat MLPs on typical tabular data (Grinsztajn et al., 2022).", back: "Irregular targets (MLPs over-smooth), uninformative features (MLPs mix them in), and meaningful feature axes (MLPs are rotation-invariant)." },
   { id: "tm-4", lesson: "tree-vs-mlp", front: "Does boosting fix trees' inability to extrapolate?", back: "No. A sum of piecewise-constant trees is still piecewise constant and flat beyond the data. Fix it by detrending the target or using linear leaves." },
+
+  // Model Arena
+  { id: "ar-1", lesson: "model-arena", front: "WAPE: definition, and which point forecast minimizes it.", back: "Σ|y − ŷ| / Σy. It's an absolute-error score, so the median minimizes it, which under-forecasts right-skewed demand." },
+  { id: "ar-2", lesson: "model-arena", front: "Why report bias next to WAPE?", back: "WAPE ignores direction. Two forecasts can tie on WAPE while one under-forecasts by 20%, which is a stockout plan." },
+  { id: "ar-3", lesson: "model-arena", front: "In the Arena, how did tree models do on stores bigger than any in training?", back: "All under-forecast by about 7–11%: store size beyond the training range falls in edge leaves. The MLP and a log-feature Poisson GLM extrapolated." },
+  { id: "ar-4", lesson: "model-arena", front: "Why did scikit-learn's classic trees collapse when given only store and SKU IDs?", back: "They received the IDs as arbitrary integer codes. Libraries with native categorical handling (LightGBM, CatBoost, HistGB, XGBoost) stayed near the top." },
+  { id: "ar-5", lesson: "model-arena", front: "Three rules for a fair model benchmark.", back: "One time-based split for everyone; the same features and a stated tuning budget; report bias and cost alongside error, on the stress scenarios your business will face." },
 ];
 
 export function cardsForLesson(slug: string): Flashcard[] {

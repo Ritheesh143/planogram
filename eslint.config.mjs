@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python virtual environment for the Model Arena benchmarks.
+    "python/.venv/**",
   ]),
 ]);
 

@@ -12,5 +12,6 @@ export const lessonBodies: Record<string, () => Promise<{ default: ComponentType
   "gradient-boosting": () => import("./models/gradient-boosting.mdx"),
   "xgb-lgbm-catboost": () => import("./models/xgb-lgbm-catboost.mdx"),
   mlp: () => import("./models/mlp.mdx"),
+  "model-arena": () => import("./models/model-arena.mdx"),
   "tree-vs-mlp": () => import("./lessons/models/tree-vs-mlp.mdx"),
 };

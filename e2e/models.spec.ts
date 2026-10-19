@@ -114,3 +114,13 @@ test("tree vs MLP: bends win the diagonal, boxes win the thresholds", async ({ p
   await setRange(page, "bb-depth", 3);
   await expect(page.getByTestId("bb-tree")).toHaveText("5.8", { timeout: 15_000 });
 });
+
+test("model arena: the failure matrix opens each cell", async ({ page }) => {
+  await page.goto("/models/model-arena");
+  await expect(page.getByTestId("fm-baseline-lgbm_tweedie")).toHaveText("best");
+  await page.getByTestId("fm-big_stores-lgbm").click();
+  await expect(page.getByTestId("fm-detail")).toContainText("LightGBM: WAPE 0.220, bias -10.0%");
+  await page.getByTestId("fm-ids_only-tree").click();
+  await expect(page.getByTestId("fm-detail")).toContainText("Decision tree: WAPE 0.448");
+  await expect(page.getByTestId("ac-rises-ridge")).toHaveText("0% of promo weeks");
+});

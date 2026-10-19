@@ -12,6 +12,7 @@ import { GBMFunctionSpace, GBMKnobs } from "@/components/viz/BoostingLab";
 import { CIRepeat } from "@/components/viz/CIRepeat";
 import { CountingWorlds, FraudSimulation } from "@/components/viz/CountingWorlds";
 import { FailureLab } from "@/components/viz/FailureLab";
+import { ArenaCosts, FailureMatrix } from "@/components/viz/FailureMatrix";
 import { CollinearCloud, RidgeLassoGeometry } from "@/components/viz/LinearKnobs";
 import { LinRegPlayground } from "@/components/viz/LinRegPlayground";
 import { LossMirror, LossSimulation } from "@/components/viz/LossMirror";
@@ -83,6 +84,8 @@ const components: MDXComponents = {
   BackpropStep,
   MLPTrainer,
   BoxesVsBends,
+  FailureMatrix,
+  ArenaCosts,
 };
 
 export function useMDXComponents(): MDXComponents {

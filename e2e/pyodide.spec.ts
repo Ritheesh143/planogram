@@ -15,6 +15,7 @@ const lessons: [string, string][] = [
   ["/models/xgb-lgbm-catboost", "missing rows go left"],
   ["/models/mlp", "after one step: prediction 9.714, loss 0.0409"],
   ["/learn/models/tree-vs-mlp", "tree forecast weeks 8, 10: [28.5 28.5]"],
+  ["/models/model-arena", "bias -25.0%"],
 ];
 
 for (const [path, expected] of lessons) {

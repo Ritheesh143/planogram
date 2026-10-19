@@ -29,6 +29,12 @@
   --seq-400: #3987e5;
   --seq-550: #1c5cab;
   --seq-700: #0d366b;
+  /* Label colors that stay readable on each sequential step. */
+  --on-seq-100: #0b0b0b;
+  --on-seq-250: #0b0b0b;
+  --on-seq-400: #ffffff;
+  --on-seq-550: #ffffff;
+  --on-seq-700: #ffffff;
 
   --good: #0ca30c;
   --good-text: #006300;
@@ -67,6 +73,11 @@
     --seq-400: #256abf;
     --seq-550: #5598e7;
     --seq-700: #9ec5f4;
+    --on-seq-100: #ffffff;
+    --on-seq-250: #ffffff;
+    --on-seq-400: #ffffff;
+    --on-seq-550: #0b0b0b;
+    --on-seq-700: #0b0b0b;
 
     --good-text: #0ca30c;
     --neutral-mid: #383835;
@@ -101,6 +112,11 @@
   --seq-400: #256abf;
   --seq-550: #5598e7;
   --seq-700: #9ec5f4;
+  --on-seq-100: #ffffff;
+  --on-seq-250: #ffffff;
+  --on-seq-400: #ffffff;
+  --on-seq-550: #0b0b0b;
+  --on-seq-700: #0b0b0b;
 
   --good-text: #0ca30c;
   --neutral-mid: #383835;
