@@ -43,6 +43,7 @@ export async function renderLessonPage(slug: string) {
   return (
     <LessonShell
       slug={slug}
+      kind={lesson.kind}
       title={lesson.title}
       aisleName={aisle.name}
       aisleNumber={aisle.number}

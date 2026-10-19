@@ -2,14 +2,15 @@
 
 import type { ReactNode } from "react";
 import { toggleSection, useProgress } from "@/lib/progress";
-import { useLessonSlug } from "./LessonContext";
-import { SECTIONS, type SectionId } from "./sections";
+import { useLessonKind, useLessonSlug } from "./LessonContext";
+import { sectionsFor, type SectionId } from "./sections";
 
 export function Section({ id, children }: { id: SectionId; children: ReactNode }) {
   const slug = useLessonSlug();
+  const sections = sectionsFor(useLessonKind());
   const progress = useProgress();
-  const meta = SECTIONS.find((s) => s.id === id)!;
-  const index = SECTIONS.findIndex((s) => s.id === id) + 1;
+  const meta = sections.find((s) => s.id === id)!;
+  const index = sections.findIndex((s) => s.id === id) + 1;
   const done = progress.lessons[slug]?.sections.includes(id) ?? false;
 
   return (
@@ -19,7 +20,7 @@ export function Section({ id, children }: { id: SectionId; children: ReactNode }
           {meta.icon}
         </span>
         <div className="flex-1">
-          <div className="text-xs text-muted tabular">Section {index} of {SECTIONS.length}</div>
+          <div className="text-xs text-muted tabular">Section {index} of {sections.length}</div>
           <h2 className="text-xl font-semibold tracking-tight">{meta.title}</h2>
         </div>
         <label className="no-print flex cursor-pointer items-center gap-2 text-xs text-ink-2">

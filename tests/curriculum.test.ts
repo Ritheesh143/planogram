@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { cards } from "@/content/cards";
 import { checkQuestions, misconceptions } from "@/content/checks";
 import { lessonBodies } from "@/content/registry";
-import { AUTHORED_SECTIONS } from "@/components/lesson/sections";
+import { authoredSections } from "@/components/lesson/sections";
 import { allLessons, getLesson, validateCurriculum } from "@/lib/curriculum";
 
 describe("curriculum", () => {
@@ -25,10 +25,11 @@ describe("curriculum", () => {
   it.each(allLessons.filter((l) => l.status === "ready").map((l) => [l.slug, l.aisle] as const))(
     "%s contains every template section once, in order",
     (slug, aisle) => {
-      const dir = getLesson(slug)!.kind === "model" ? "models" : `lessons/${aisle}`;
+      const kind = getLesson(slug)!.kind;
+      const dir = kind === "model" ? "models" : `lessons/${aisle}`;
       const mdx = readFileSync(`content/${dir}/${slug}.mdx`, "utf8");
       const found = [...mdx.matchAll(/<Section id="([a-z]+)">/g)].map((m) => m[1]);
-      expect(found).toEqual(AUTHORED_SECTIONS);
+      expect(found).toEqual(authoredSections(kind));
     },
   );
 

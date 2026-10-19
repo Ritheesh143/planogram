@@ -4,10 +4,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { setDepth, setMastered, useProgress } from "@/lib/progress";
 import { LessonContext } from "./LessonContext";
-import { SECTIONS } from "./sections";
+import { sectionsFor, type LessonKind } from "./sections";
 
 type Props = {
   slug: string;
+  kind: LessonKind;
   title: string;
   aisleName: string;
   aisleNumber: string;
@@ -32,7 +33,7 @@ export function LessonShell(props: Props) {
   const mastered = lp?.mastered ?? false;
 
   return (
-    <LessonContext.Provider value={{ slug: props.slug }}>
+    <LessonContext.Provider value={{ slug: props.slug, kind: props.kind }}>
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_220px]">
         <article className="min-w-0" data-depth={progress.depth}>
           <nav className="text-xs text-muted">
@@ -41,6 +42,9 @@ export function LessonShell(props: Props) {
             </Link>{" "}
             / Aisle {props.aisleNumber} · {props.aisleName}
           </nav>
+          {props.kind === "model" && (
+            <div className="mt-4 text-xs font-semibold tracking-wide text-accent">MODEL LAB</div>
+          )}
           {props.keystone && (
             <div className="mt-4 text-xs font-semibold tracking-wide text-accent">
               KEYSTONE {props.keystone}
@@ -115,9 +119,9 @@ export function LessonShell(props: Props) {
 
         <aside className="no-print hidden lg:block">
           <div className="sticky top-20">
-            <div className="text-xs font-medium tracking-widest text-muted">IN THIS LESSON</div>
+            <div className="text-xs font-medium tracking-widest text-muted">{props.kind === "model" ? "ON THIS MODEL" : "IN THIS LESSON"}</div>
             <ol className="mt-3 space-y-1 text-sm">
-              {SECTIONS.map((s) => (
+              {sectionsFor(props.kind).map((s) => (
                 <li key={s.id}>
                   <a
                     href={`#${s.id}`}

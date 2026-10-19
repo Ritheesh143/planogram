@@ -8,6 +8,9 @@ const lessons: [string, string][] = [
   ["/learn/foundations/ci-repeat", "80 stores"],
   ["/learn/foundations/likelihood-dial", "sample mean:                  1.0"],
   ["/learn/models/boosting-by-hand", "32.25"],
+  ["/models/linear-regression", "lasso, alpha=6:  b = -5.00"],
+  ["/models/decision-tree", "root: tier < 1.5, gain 5880.00"],
+  ["/learn/bayes/mle-peak", "Bernoulli NLL at p=0.4: 3.365"],
 ];
 
 for (const [path, expected] of lessons) {

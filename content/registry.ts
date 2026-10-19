@@ -6,4 +6,7 @@ export const lessonBodies: Record<string, () => Promise<{ default: ComponentType
   "ci-repeat": () => import("./lessons/foundations/ci-repeat.mdx"),
   "likelihood-dial": () => import("./lessons/foundations/likelihood-dial.mdx"),
   "boosting-by-hand": () => import("./lessons/models/boosting-by-hand.mdx"),
+  "mle-peak": () => import("./lessons/bayes/mle-peak.mdx"),
+  "linear-regression": () => import("./models/linear-regression.mdx"),
+  "decision-tree": () => import("./models/decision-tree.mdx"),
 };

@@ -32,6 +32,30 @@ export const cards: Flashcard[] = [
   { id: "bh-4", lesson: "boosting-by-hand", front: "Boosting vs bagging (random forest) in one line.", back: "Bagging averages many independent deep trees to reduce variance. Boosting adds many small trees in sequence, each correcting the last, to reduce bias." },
   { id: "bh-5", lesson: "boosting-by-hand", front: "What is a pseudo-residual?", back: "The negative gradient of any loss with respect to the current prediction. For MSE it equals the plain residual. For other losses (quantile, Tweedie) it is what the next tree fits." },
   { id: "bh-6", lesson: "boosting-by-hand", front: "Why use a small learning rate in boosting?", back: "Each tree only takes a small step, so mistakes from one noisy tree are diluted. More trees are needed, but the model generalizes better (shrinkage)." },
+
+  // Model Lab: linear regression
+  { id: "lr-1", lesson: "linear-regression", front: "One-feature OLS slope, in words and symbols.", back: "Covariance over variance: b = Σ(x − x̄)(y − ȳ) / Σ(x − x̄)². It comes from setting dSSE/db = 0." },
+  { id: "lr-2", lesson: "linear-regression", front: "What do the normal equations XᵀXβ = Xᵀy say geometrically?", back: "The residual y − Xβ is perpendicular to every column of X, so Xβ is the projection of y onto the space the columns span." },
+  { id: "lr-3", lesson: "linear-regression", front: "Why is minimizing squared error the 'right' choice under Gaussian noise?", back: "The Gaussian log-likelihood is a constant minus SSE / (2σ²), so the MLE and the least-squares line are the same." },
+  { id: "lr-4", lesson: "linear-regression", front: "Ridge as a Bayesian estimate: which prior, and what is λ?", back: "A Gaussian prior β ~ N(0, τ²). Ridge is the posterior mode (MAP) with λ = σ² / τ²." },
+  { id: "lr-5", lesson: "linear-regression", front: "Why does lasso zero out coefficients but ridge doesn't?", back: "The L1 ball is a diamond with corners on the axes; the error ellipse usually first touches it at a corner, where a coefficient is exactly 0. The L2 ball is round, with no corners." },
+  { id: "lr-6", lesson: "linear-regression", front: "What does multicollinearity damage, and what does it leave alone?", back: "It inflates the variance of individual coefficients (VIF = 1/(1 − R²ⱼ)), so they swing between refits. Predictions within the data's range, and sums of the collinear coefficients, stay stable." },
+
+  // Model Lab: decision tree
+  { id: "dt-1", lesson: "decision-tree", front: "How does a regression tree score a candidate split?", back: "Gain = SSE(parent) − SSE(left) − SSE(right), where each SSE is measured around that node's own mean. Keep the split with the largest gain." },
+  { id: "dt-2", lesson: "decision-tree", front: "Gini impurity of a node with class share p (binary).", back: "1 − p² − (1 − p)² = 2p(1 − p): the chance two random rows from the node disagree. 0 when pure, 0.5 at 50/50." },
+  { id: "dt-3", lesson: "decision-tree", front: "Why is misclassification rate a poor splitting criterion?", back: "It is linear in p, so splits that create pure children can score the same as splits that don't. Concave impurities (Gini, entropy) reward purity." },
+  { id: "dt-4", lesson: "decision-tree", front: "Cost-complexity pruning objective.", back: "Minimize total leaf impurity + α × number of leaves. A split survives only if its gain exceeds α." },
+  { id: "dt-5", lesson: "decision-tree", front: "Why can't a tree extrapolate a trend?", back: "Every leaf predicts an average of training targets, so beyond the last split point the prediction is a constant." },
+  { id: "dt-6", lesson: "decision-tree", front: "Why do trees not need feature scaling?", back: "A split only asks whether x < t, so any increasing transform of a feature keeps the same ordering and the same tree." },
+
+  // Bayes rung 2: MLE and losses
+  { id: "ml-1", lesson: "mle-peak", front: "Squared error is the negative log-likelihood of which noise model? What does it estimate?", back: "Gaussian noise with fixed variance. Its best constant is the mean." },
+  { id: "ml-2", lesson: "mle-peak", front: "Absolute error is the negative log-likelihood of which noise model? What does it estimate?", back: "Laplace noise. Its best constant is the median, because the signs of the residuals must balance." },
+  { id: "ml-3", lesson: "mle-peak", front: "Write binary cross-entropy and say what it is.", back: "−[y log p + (1 − y) log(1 − p)]: the negative log-likelihood of a Bernoulli outcome. Minimizing it is maximum likelihood for p." },
+  { id: "ml-4", lesson: "mle-peak", front: "Which loss gives a 90th-percentile forecast?", back: "Pinball (quantile) loss with τ = 0.9: under-predictions cost 0.9 per unit, over-predictions 0.1." },
+  { id: "ml-5", lesson: "mle-peak", front: "Why is Tweedie a common objective for daily SKU sales?", back: "It's a Poisson number of gamma-sized purchases: a point mass at zero plus a continuous spread, with a log link that keeps forecasts positive." },
+  { id: "ml-6", lesson: "mle-peak", front: "You report WAPE. Which point forecast minimizes it, and why does that matter for slow movers?", back: "The median (WAPE is scaled absolute error). On intermittent SKUs the median can be 0, so a WAPE-optimal model may forecast zero." },
 ];
 
 export function cardsForLesson(slug: string): Flashcard[] {

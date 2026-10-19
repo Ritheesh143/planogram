@@ -15,8 +15,9 @@ retailer **Bolt & Beam** (never a real company's data or branding).
 
 1. **Curriculum entry** in `content/curriculum.ts`: set `status: "ready"`, keep `slug`, `aisle`,
    `week`, `prereqs` accurate, and add `minutes`. Add the slug to any Golden Thread it belongs to.
-2. **MDX body** at `content/lessons/<aisle>/<slug>.mdx` (Model Lab pages with `kind: "model"`
-   live in `content/models/<slug>.mdx`). Register it in `content/registry.ts`.
+2. **MDX body** at `content/lessons/<aisle>/<slug>.mdx`. Register it in `content/registry.ts`.
+   Model Lab pages (`kind: "model"`) live in `content/models/<slug>.mdx` and use a different
+   section list: see `.claude/skills/new-model/SKILL.md`.
 3. **Exactly these sections, in this order** (the Recall section is appended automatically):
    `floor`, `hand`, `see`, `simulate`, `formula`, `paper`, `build`, `production`, `interview`.
    - `floor`: a 3–6 sentence store story with a concrete decision at stake, plus a `<KeyIdea>`.

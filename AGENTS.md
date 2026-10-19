@@ -17,10 +17,12 @@ browser's localStorage.
 - `content/lessons/**.mdx` + `content/registry.ts`: lesson bodies; `content/cards.ts`: flashcards;
   `content/checks.ts`: Floor Check questions and misconceptions
 - `components/lesson/`: the lesson template; `components/viz/`: interactive visuals (`kit.tsx`
-  holds the shared chart helpers); `lib/sim/`: the math behind the visuals (tested in `tests/`)
+  holds the shared chart helpers); `lib/sim/`: the math behind the visuals, including from-scratch
+  models (`linreg`, `tree`, `gbm`, `mlp`) and the Failure Lab scenarios (tested in `tests/`)
 - `python/boltbeam/`: seeded synthetic retailer with planted ground truth, tested in `python/tests/`
 
-To add or rewrite a lesson, follow `.claude/skills/new-lesson/SKILL.md`.
+To add or rewrite a lesson, follow `.claude/skills/new-lesson/SKILL.md`; for a Model Lab page
+(`kind: "model"`, rendered at `/models/<slug>`), also follow `.claude/skills/new-model/SKILL.md`.
 
 Never add real company data, client names or the learner's private notes (`/private/` is
 gitignored).

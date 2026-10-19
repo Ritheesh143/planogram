@@ -28,6 +28,10 @@ export const misconceptions: Misconception[] = [
   { id: "boosting-as-bagging", name: "Confusing boosting with bagging", explain: "Bagging trains each tree on the original target and averages them. Boosting trains each tree on what's still wrong.", lesson: "boosting-by-hand" },
   { id: "boosting-as-adaboost", name: "Confusing gradient boosting with AdaBoost", explain: "AdaBoost re-weights rows. Gradient boosting changes the target each tree learns (residuals / negative gradients).", lesson: "boosting-by-hand" },
   { id: "forgets-learning-rate", name: "Forgetting the learning rate", explain: "Each tree's output is scaled by the learning rate before it's added.", lesson: "boosting-by-hand" },
+  { id: "tree-extrapolates", name: "Expecting a tree to extend a trend", explain: "Each leaf predicts an average of training targets, so beyond the training range a tree's prediction is flat.", lesson: "decision-tree" },
+  { id: "tree-needs-scaling", name: "Thinking trees need scaled features", explain: "A split only compares x with a threshold, so rescaling a feature leaves the tree unchanged.", lesson: "decision-tree" },
+  { id: "loss-unrelated-to-noise", name: "Treating the loss function as arbitrary", explain: "Each common loss is the negative log-likelihood of a noise model: squared error for Gaussian noise, absolute error for Laplace noise, cross-entropy for yes/no outcomes.", lesson: "mle-peak" },
+  { id: "loss-mean-median", name: "Mixing up what each loss estimates", explain: "Squared error is minimized by the mean, absolute error by the median, and pinball loss by a quantile.", lesson: "mle-peak" },
   { id: "unsure", name: "Not sure yet", explain: "An honest 'not sure' is useful: it tells you exactly where to start.", lesson: "counting-worlds" },
 ];
 
@@ -162,5 +166,31 @@ export const checkQuestions: CheckQuestion[] = [
     ],
     explain: "New prediction = old + learning rate × tree output = 100 + 0.1 × 20 = 102.",
     lesson: "boosting-by-hand",
+  },
+  {
+    id: "tree-extrapolation",
+    topic: "Model Lab",
+    prompt: "A depth-6 regression tree is trained on stores of 10k–40k sq ft. What does it predict for a new 80k sq ft store?",
+    options: [
+      { id: "a", text: "Roughly double a 40k store, following the trend", misconception: "tree-extrapolates" },
+      { id: "b", text: "The same as the largest stores it was trained on", correct: true },
+      { id: "c", text: "It depends on whether the area feature was standardized", misconception: "tree-needs-scaling" },
+      { id: "d", text: "Not sure", misconception: "unsure" },
+    ],
+    explain: "The 80k store falls in the same leaf as the biggest training stores, and a leaf predicts their average. Trees can't extrapolate.",
+    lesson: "decision-tree",
+  },
+  {
+    id: "loss-noise",
+    topic: "Likelihood ↔ Loss",
+    prompt: "Daily sales of a slow-moving SKU are skewed: most days 0–2 units, some days 15. You fit a constant with absolute error instead of squared error. What does the fitted constant estimate?",
+    options: [
+      { id: "a", text: "The mean, like any reasonable loss", misconception: "loss-mean-median" },
+      { id: "b", text: "The median", correct: true },
+      { id: "c", text: "Nothing in particular: a loss is just a way to score errors", misconception: "loss-unrelated-to-noise" },
+      { id: "d", text: "Not sure", misconception: "unsure" },
+    ],
+    explain: "Absolute error is minimized by the median (it's the Laplace negative log-likelihood). Squared error gives the mean, and Poisson deviance gives the rate.",
+    lesson: "mle-peak",
   },
 ];

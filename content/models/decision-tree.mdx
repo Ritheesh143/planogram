@@ -1,0 +1,415 @@
+<Section id="origin">
+
+Bolt & Beam's replenishment team already thinks in trees: *"If it's a tier-1 store and the SKU is a fast mover, keep 3 weeks of cover; otherwise 2."* Rules like this were written by hand for decades. In 1963 Morgan and Sonquist's AID program started growing them automatically from survey data. In 1984 Breiman, Friedman, Olshen and Stone published **CART** (Classification and Regression Trees), which added the piece that made trees trustworthy: **grow big, then prune back**. Quinlan's ID3 and C4.5 did the same with entropy.
+
+**What it fixed:** a linear model needs you to tell it about interactions, kinks and thresholds. A tree **finds them itself** ("tier 1 *and* large floor area"), doesn't care about units or scaling, mixes numbers and categories, and prints its logic as rules a store manager can read.
+
+<KeyIdea>
+
+**A decision tree asks one yes/no question at a time, always picking the question that makes the groups below it as uniform as possible.** Each leaf predicts the average of the rows that land in it. That's all of it, plus a rule for when to stop.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Eight stores. Predict weekly paint sales (litres) from city tier and floor area (thousand sq ft).
+
+| Store | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 |
+|---|---|---|---|---|---|---|---|---|
+| Tier | 1 | 1 | 1 | 2 | 2 | 3 | 3 | 2 |
+| Area | 30 | 25 | 18 | 28 | 15 | 22 | 12 | 10 |
+| **Sales** | **120** | **110** | **100** | **80** | **60** | **50** | **40** | **40** |
+
+<Steps>
+<Step>
+
+**Score doing nothing.** With no questions asked, the best single prediction is the mean, $600/8 = 75$. The misses are 45, 35, 25, 5, −15, −25, −35, −35, and their squares add up to
+
+$$
+2025 + 1225 + 625 + 25 + 225 + 625 + 1225 + 1225 = \mathbf{7{,}200}
+$$
+
+This is the **impurity** of the root: how far the stores are from being alike.
+
+</Step>
+<Step>
+
+**Try the question "Is the tier below 1.5?"** (that is, tier 1 or not).
+
+- **Yes:** S1, S2, S3 with sales 120, 110, 100. Mean 110, squared error $100 + 0 + 100 = 200$.
+- **No:** S4, S5, S6, S7, S8 with sales 80, 60, 50, 40, 40. Mean 54, squared error $676 + 36 + 16 + 196 + 196 = 1{,}120$.
+
+Total after the split: $200 + 1{,}120 = 1{,}320$. The split **gains** $7{,}200 - 1{,}320 =$ **5,880**.
+
+</Step>
+<Step>
+
+**Try a question on area: "Is the area below 13.5?"**
+
+- **Yes:** S7, S8 (40, 40). Squared error **0**.
+- **No:** the other six, mean $520/6 \approx 86.67$, squared error **3,933.33**.
+
+Gain: $7{,}200 - 3{,}933.33 =$ **3,266.67**. Good, but not as good as tier.
+
+</Step>
+<Step>
+
+**Try every possible question** (every midpoint between neighbouring values, for each feature) and keep the best:
+
+| Question | Gain |
+|---|---|
+| **tier < 1.5** | **5,880** ✓ |
+| tier < 2.5 | 2,400 |
+| area < 11 | 1,400 |
+| area < 13.5 | 3,266.67 |
+| area < 16.5 | 3,853.33 |
+| area < 20 | 1,800 |
+| area < 23.5 | 3,853.33 |
+| area < 26.5 | 1,666.67 |
+| area < 29 | 2,314.29 |
+
+The root question is **tier < 1.5**.
+
+</Step>
+<Step>
+
+**Repeat inside each branch.** This is the whole algorithm: the same search, on fewer rows.
+
+- **Tier-1 branch** (120, 110, 100; squared error 200): the best question is *area < 21.5*, which separates S3 (100) from S1 and S2 (mean 115, squared error 50). Gain $200 - 50 =$ **150**.
+- **Other branch** (squared error 1,120): the best question is *area < 25*, which separates S4 (80) from S5, S6, S7, S8 (mean 47.5, squared error $156.25 + 6.25 + 56.25 + 56.25 = 275$). Gain $1{,}120 - 275 =$ **845**.
+
+</Step>
+<Step>
+
+**Read off the tree.** Depth 2, four leaves, total squared error $0 + 50 + 275 + 0 =$ **325** (down from 7,200):
+
+| Rule | Predicts |
+|---|---|
+| tier 1 and area < 21.5 | 100 |
+| tier 1 and area ≥ 21.5 | 115 |
+| tier 2–3 and area < 25 | 47.5 |
+| tier 2–3 and area ≥ 25 | 80 |
+
+A brand-new 60k sq ft tier-1 store lands in the "tier 1, area ≥ 21.5" leaf and gets **115**, the same as a 25k store. A tree can never predict beyond the averages it has seen.
+
+</Step>
+</Steps>
+
+**Classification works the same way, with a different impurity.** Eight SKUs, days of stock cover, and whether each stocked out the next week:
+
+| Days of cover | 2 | 3 | 4 | 5 | 7 | 9 | 12 | 15 |
+|---|---|---|---|---|---|---|---|---|
+| Stocked out? | yes | yes | no | yes | no | no | no | no |
+
+The root has 3 stockouts in 8 ($p = 0.375$), so its **Gini impurity** is $1 - p^2 - (1 - p)^2 = 1 - 0.141 - 0.391 =$ **0.469**.
+
+- Split at **cover < 6**: left (2, 3, 4, 5) has $p = 0.75$, Gini $0.375$; right is pure, Gini 0. Weighted: $\tfrac48(0.375) + \tfrac48(0) =$ **0.1875**. Gain **0.281**.
+- Split at **cover < 3.5**: left is pure; right (4, 5, 7, 9, 12, 15) has $p = 1/6$, Gini $0.278$. Weighted: $\tfrac68(0.278) =$ **0.208**. Gain **0.260**.
+
+The 6-day split wins. With **entropy** instead (root 0.954 bits) the gains are 0.549 vs 0.467: the same winner.
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Which single question best splits the eight stores: one on city tier, or one on floor area?" options={["City tier", "Floor area", "They tie"]} answer={0}>
+
+**City tier** gains 5,880. The best area questions gain 3,853: area alone mixes big tier-3 stores with small tier-1 stores.
+
+</Predict>
+
+<TreeSplitByHand />
+
+**Try this:**
+
+1. Step through every *floor area* threshold and watch the gain. Two thresholds (16.5 and 23.5) tie at 3,853.33: when splits tie, implementations simply keep the first one they find.
+2. Switch to *city tier* and pick 1.5. You've found the root.
+3. Set **depth 2** and read the four regions. They match the rule table above.
+4. Imagine a 34k sq ft tier-1 store at the right edge. It sits in the 115 region no matter how far right it goes.
+
+</Section>
+
+<Section id="formula">
+
+**Regression impurity is squared error.** For a node with rows $S$ and mean $\bar y_S$:
+
+$$
+I(S) = \sum_{i \in S}(y_i - \bar y_S)^2 = |S|\cdot\operatorname{Var}(y_S)
+\qquad
+\text{Gain} = I(S) - I(L) - I(R)
+$$
+
+The leaf predicts $\bar y_S$, because the mean is the constant that minimizes squared error (the same fact behind round 0 of boosting).
+
+**Classification impurity** for a node with class shares $p_k$:
+
+$$
+\text{Gini} = \sum_k p_k(1 - p_k) \qquad \text{Entropy} = -\sum_k p_k \log_2 p_k
+$$
+
+Gini is the chance that two random rows from the node disagree. Entropy is the average number of yes/no questions needed to learn a row's class. Both are 0 for a pure node and largest at a 50/50 mix.
+
+<ImpurityCurves />
+
+<Depth min={2}>
+
+**Why not just count mistakes?** Misclassification error, $\min(p, 1 - p)$, is a straight line on each side of 0.5, and that makes it blind to useful splits. Take a node with 400 stockouts and 400 non-stockouts:
+
+- Split A gives (300 yes, 100 no) and (100 yes, 300 no): 200 mistakes.
+- Split B gives (200 yes, 400 no) and (200 yes, 0 no): also 200 mistakes.
+
+Misclassification calls it a tie. Gini prefers B (weighted 0.333 against 0.375), because B produces a **pure** node that will never need another split. Curved (strictly concave) impurities reward purity; a straight line can't.
+
+**Finding the best split quickly.** Sort the rows by a feature once ($O(n\log n)$). Walk left to right, keeping running sums $\sum y$ and $\sum y^2$ on each side. Then every candidate's impurity is $\sum y^2 - (\sum y)^2/n$ for each side, computed in $O(1)$. One pass per feature evaluates every split. Histogram methods (LightGBM, XGBoost `hist`) replace the sort with ~255 pre-computed bins.
+
+**Pruning.** Grow a deep tree, then choose the subtree $T$ that minimizes
+
+$$
+R_\alpha(T) = \sum_{\text{leaves}} I(\text{leaf}) + \alpha\,|\text{leaves}|
+$$
+
+Each leaf must "pay" α in error reduction to stay. In the hand example, the tier-1 split gained only 150 and the other branch's split 845, so:
+
+| α | Leaves kept | Why |
+|---|---|---|
+| below 150 | 4 | Both depth-2 splits pay for themselves |
+| 150 to 845 | 3 | The tier-1 split (gain 150) is pruned |
+| 845 to 5,880 | 2 | Only the root split survives |
+| above 5,880 | 1 | Just the mean |
+
+scikit-learn's `ccp_alpha` is the same idea with impurity averaged over rows, so its values are these divided by the number of rows (8): 18.75, 105.6 and 735.
+
+</Depth>
+
+<Depth min={3}>
+
+**Greedy isn't optimal.** Suppose sales are high when exactly one of *promo* and *weekend* is true (an XOR pattern). No single split reduces the error at all, so a greedy tree with a minimum-gain rule stops at the root, even though a depth-2 tree would be perfect. Finding the optimal tree is NP-hard (Hyafil and Rivest, 1976), so every practical library is greedy.
+
+**Bias toward many-valued features.** A feature with 39 possible thresholds (say, store ID coded 1–40) gets 39 chances to fit noise; a binary flag gets one. Impurity-based feature importance inherits this bias. Permutation importance or SHAP on held-out data avoids it.
+
+**Variance.** A small change in the data can change the root split, and everything below it changes too. Trees are low-bias, high-variance learners, which is exactly what averaging (bagging) and boosting are designed to fix.
+
+</Depth>
+
+</Section>
+
+<Section id="knobs">
+
+<TreeDepthPlayground />
+
+- **max_depth** controls how many questions a row can be asked. Training error falls to almost zero by depth 10, but test error is lowest around depth 5 (about 10.9 litres) and climbs back to 11.8 as the tree memorizes noise.
+- **min_samples_leaf** forbids leaves smaller than *k* rows. With *k* = 5, deep trees stop at about 19 leaves and test error stays near 10.7, whatever the depth.
+- **ccp_alpha** (pruning) grows the full tree and cuts back branches that don't pay their way. α = 500 shrinks 113 leaves to 11.
+- **Also worth knowing:** `max_features` (consider a random subset of features at each split, the "random" in random forest), `min_impurity_decrease`, and `class_weight` for rare classes such as fraud.
+- **No scaling needed.** A split only asks whether $x \lt t$, so any increasing transform of a feature (log, rupees to paise) gives the same tree.
+
+</Section>
+
+<Section id="failure">
+
+<FailureLab focus="tree" start="trend" />
+
+**Where a single tree breaks:**
+
+- **Trends.** It predicts a constant beyond the last training value. For forecasting, detrend first or model growth separately.
+- **Smooth curves** come out as staircases, and each step needs enough rows to estimate.
+- **Small data.** With six rows a tree memorizes noise.
+- **Monotonic rules** ("price up, demand down") can be broken by noisy leaves.
+- **Instability.** Resample the stores and you get a different tree:
+
+<BaggingDemo />
+
+One depth-8 tree scores about 11.2 litres on new stores. Averaging 50 trees, each grown on a bootstrap resample, brings that down to about 9.8. That's **bagging**, and adding random feature subsets on top makes it a **random forest**. Boosting is the other route: instead of averaging independent trees, add small trees one after another, each fixing the last.
+
+**Where it wins:** sudden jumps (the *step change* scenario) and interactions, where one or two splits say what a linear model can't.
+
+</Section>
+
+<Section id="build">
+
+The split search from scratch, then scikit-learn. Both should find tier < 1.5 with gain 5,880, then area < 21.5 and area < 25, with leaves 100, 115, 47.5 and 80.
+
+<PyRunner title="Growing the tree by hand and with scikit-learn" code={`
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier, export_text
+
+X = np.array([[1, 30], [1, 25], [1, 18], [2, 28], [2, 15], [3, 22], [3, 12], [2, 10]], dtype=float)
+y = np.array([120, 110, 100, 80, 60, 50, 40, 40], dtype=float)
+names = ["tier", "area"]
+
+def sse(v):
+    return ((v - v.mean())**2).sum() if len(v) else 0.0
+
+def best_split(X, y):
+    best = None
+    for f in range(X.shape[1]):
+        vals = np.unique(X[:, f])
+        for t in (vals[:-1] + vals[1:]) / 2:
+            left = X[:, f] < t
+            gain = sse(y) - sse(y[left]) - sse(y[~left])
+            if best is None or gain > best[0] + 1e-9:
+                best = (gain, f, t)
+    return best
+
+gain, f, t = best_split(X, y)
+print(f"root: {names[f]} < {t}, gain {gain:.2f}  (root SSE {sse(y):.0f})")
+left = X[:, f] < t
+for side, mask in [("tier 1", left), ("tier 2-3", ~left)]:
+    g, f2, t2 = best_split(X[mask], y[mask])
+    print(f"  {side}: {names[f2]} < {t2}, gain {g:.2f}")
+
+reg = DecisionTreeRegressor(max_depth=2).fit(X, y)
+print(export_text(reg, feature_names=names))
+print("leaf predictions:", sorted(set(reg.predict(X).tolist())))
+print("pruning path (ccp_alpha):", reg.cost_complexity_pruning_path(X, y).ccp_alphas.round(3))
+
+cover = np.array([2, 3, 4, 5, 7, 9, 12, 15], dtype=float).reshape(-1, 1)
+stockout = np.array([1, 1, 0, 1, 0, 0, 0, 0])
+for crit in ["gini", "entropy"]:
+    clf = DecisionTreeClassifier(max_depth=1, criterion=crit).fit(cover, stockout)
+    print(f"{crit}: root split at cover <= {clf.tree_.threshold[0]}, root impurity {clf.tree_.impurity[0]:.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Single trees are rarely the production model** for accuracy. Random forests and gradient boosting are. But single trees earn their place as **readable policies**: replenishment exceptions, fraud review queues, and "why was this store flagged?" explanations that operations teams can audit.
+- **Export rules to SQL.** A depth-4 tree is 16 `CASE WHEN` branches that run in the warehouse with no model server.
+- **Missing values.** scikit-learn (1.3 and later), XGBoost and LightGBM send missing values down whichever branch reduces error more. Older pipelines imputed first, which hides the fact that "missing" is often informative (no loyalty card, new store).
+- **Categorical features.** One-hot encoding a 2,000-level SKU category gives a tree 2,000 weak yes/no questions. LightGBM and CatBoost split categories natively by sorting levels by their mean target, which needs care to avoid leakage (see the XGBoost vs LightGBM vs CatBoost page).
+- **Feature importance.** Impurity-based importance favours many-valued features. Report permutation importance or SHAP computed on a validation set.
+- **Inference is cheap:** a handful of comparisons per row, microseconds even for deep trees.
+
+</Section>
+
+<Section id="leads">
+
+<Lineage
+  self="Decision tree"
+  from={[
+    { label: "Hand-written business rules", note: "\"If tier 1 and fast mover, keep 3 weeks\"" },
+    { label: "AID, CHAID, CART, ID3/C4.5", note: "Automatic splits, then pruning" },
+  ]}
+  to={[
+    { label: "Random forest", note: "Average bootstrap trees with random feature subsets" },
+    { label: "Gradient boosting", slug: "gradient-boosting", note: "Add small trees that fix the last trees' mistakes" },
+    { label: "XGBoost, LightGBM, CatBoost", slug: "xgb-lgbm-catboost", note: "Fast, regularized boosting" },
+    { label: "Tree vs MLP", slug: "tree-vs-mlp", note: "Boxes vs bends on the same data" },
+    { label: "Isolation forest", note: "Anomalies are points that are easy to isolate with random splits" },
+  ]}
+/>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Route a new store">
+
+Using the depth-2 tree from *By Hand*, what does a new tier-2 store with 20k sq ft get? A tier-3 store with 26k?
+
+<Solution>
+
+Tier 2 fails "tier < 1.5" and goes right. Area 20 is below 25, so it predicts **47.5**. The tier-3 26k store also goes right; 26 ≥ 25, so it predicts **80**, the value learned from a single tier-2 store (S4). Small leaves make shaky predictions.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Impurity of a leaf">
+
+A leaf holds three stores selling 10, 20 and 30 litres. What does it predict, and what is its squared-error impurity?
+
+<Solution>
+
+It predicts the mean, **20**. Impurity: $100 + 0 + 100 =$ **200**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Gini and entropy">
+
+A node has 10 SKUs, 2 of which stocked out. Compute its Gini impurity and entropy.
+
+<Solution>
+
+$p = 0.2$. Gini $= 1 - 0.04 - 0.64 =$ **0.32**. Entropy $= -(0.2\log_2 0.2 + 0.8\log_2 0.8) = 0.2(2.322) + 0.8(0.322) \approx$ **0.722 bits**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="When does the branch get pruned?">
+
+Using the cost $\text{leaf error} + \alpha \times \text{leaves}$, show that the tier-1 branch's split (gain 150) is kept when α = 100 and removed when α = 200.
+
+<Solution>
+
+Keeping the split costs $(0 + 50) + 2\alpha$; collapsing it to one leaf costs $200 + \alpha$. Keep it when $50 + 2\alpha \lt 200 + \alpha$, that is, when $\alpha \lt 150$. At α = 100: 250 vs 300, so **keep**. At α = 200: 450 vs 400, so **prune**. A split survives exactly when its gain exceeds α.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Where greedy fails">
+
+Four store-weeks: (promo, weekend) = (0, 0) sells 10, (0, 1) sells 30, (1, 0) sells 30, (1, 1) sells 10. What gain does each root split have? What would a depth-2 tree achieve?
+
+<Solution>
+
+Splitting on promo gives groups {10, 30} and {30, 10}, both with mean 20: exactly the root mean, so **gain 0**. Weekend is the same. A greedy tree with any positive minimum gain stops here. A depth-2 tree (promo, then weekend) has four pure leaves and **zero error**. The signal lives only in the *interaction*, which no single split can see. (scikit-learn with no minimum gain would still split, picking a zero-gain split arbitrarily, and then find the interaction by luck.)
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Why store ID looks important">
+
+You add *store_id* (coded 1–40) as a numeric feature to a demand tree, and it becomes the top feature by impurity importance. Give two reasons this might be misleading, and what you'd do instead.
+
+<Solution>
+
+(1) **Many thresholds:** store_id offers 39 split points, so by chance alone some split reduces training error, and impurity importance credits every such reduction. (2) **Arbitrary order:** the codes have no meaning, so "store_id < 17.5" groups unrelated stores. If stores truly differ, the tree is memorizing store effects that won't transfer to new stores. Instead: compute **permutation importance on held-out data**, replace the ID with real store attributes (area, tier, footfall), or use a hierarchical model or target encoding done out-of-fold.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How does a decision tree choose a split?">
+
+For every feature and every candidate threshold (midpoints between sorted values), compute the impurity of the two child nodes weighted by their size, and choose the split that reduces impurity most. Impurity is squared error (variance) for regression, and Gini or entropy for classification. Recurse on each child until a stopping rule hits (max depth, minimum leaf size, minimum gain), then optionally prune.
+
+</QA>
+
+<QA q="Gini vs entropy: does it matter?">
+
+Rarely. Both are concave, zero for pure nodes and maximal at 50/50, and they pick the same split most of the time. Gini is slightly cheaper (no logarithm); entropy is slightly more sensitive to small, pure nodes. Mention why misclassification rate is a poor splitting criterion: it's linear, so it can't reward splits that create pure children.
+
+</QA>
+
+<QA q="How do you stop a tree from overfitting?">
+
+Pre-pruning: limit max_depth, min_samples_leaf, min_impurity_decrease or max_leaf_nodes. Post-pruning: grow fully, then apply cost-complexity pruning with α chosen by cross-validation. Or don't use one tree: bagging and random forests average away variance, and boosting with shallow trees and shrinkage controls it differently.
+
+</QA>
+
+<QA q="Why don't trees need feature scaling, and why can't they extrapolate?">
+
+A split only compares a feature with a threshold, so any monotone transform leaves the ordering, and therefore the tree, unchanged. Each leaf predicts an average of training targets, so the prediction is always within the range of training targets, and beyond the last split point it's constant.
+
+</QA>
+
+<QA q="Impurity-based feature importance says store_id matters most. Do you trust it?">
+
+No. It's biased toward high-cardinality and continuous features, because they offer more split points to fit noise, and it's measured on training data. Use permutation importance or SHAP on a validation set, and check whether the feature would even exist for a new store.
+
+</QA>
+
+<Trap>
+
+**"A deeper tree is more accurate."** It's more accurate on the **training** data: with enough depth, every row gets its own leaf and training error is zero. Test error falls, bottoms out, then rises. In the depth playground the best depth was 5, and depth 10 was worse on new stores despite near-perfect training error.
+
+</Trap>
+
+</Section>

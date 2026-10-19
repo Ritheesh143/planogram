@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 import { Depth } from "@/components/lesson/Depth";
+import { Lineage } from "@/components/lesson/Lineage";
 import { Exercise, KeyIdea, QA, Solution, Trap } from "@/components/lesson/Exercise";
 import { Predict } from "@/components/lesson/Predict";
 import { PyRunner } from "@/components/lesson/PyRunner";
@@ -8,6 +9,11 @@ import { Step, Steps } from "@/components/lesson/Steps";
 import { BoostingByHand, BoostingOverfit } from "@/components/viz/BoostingByHand";
 import { CIRepeat } from "@/components/viz/CIRepeat";
 import { CountingWorlds, FraudSimulation } from "@/components/viz/CountingWorlds";
+import { FailureLab } from "@/components/viz/FailureLab";
+import { CollinearCloud, RidgeLassoGeometry } from "@/components/viz/LinearKnobs";
+import { LinRegPlayground } from "@/components/viz/LinRegPlayground";
+import { LossMirror, LossSimulation } from "@/components/viz/LossMirror";
+import { BaggingDemo, ImpurityCurves, TreeDepthPlayground, TreeSplitByHand } from "@/components/viz/TreePlayground";
 import { LikelihoodDial, LikelihoodSimulation } from "@/components/viz/LikelihoodDial";
 
 // Lesson building blocks are available in every MDX file without imports.
@@ -52,6 +58,17 @@ const components: MDXComponents = {
   BoostingOverfit,
   FraudSimulation,
   LikelihoodSimulation,
+  Lineage,
+  FailureLab,
+  LinRegPlayground,
+  RidgeLassoGeometry,
+  CollinearCloud,
+  TreeSplitByHand,
+  TreeDepthPlayground,
+  ImpurityCurves,
+  BaggingDemo,
+  LossMirror,
+  LossSimulation,
 };
 
 export function useMDXComponents(): MDXComponents {

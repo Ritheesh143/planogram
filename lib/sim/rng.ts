@@ -39,3 +39,29 @@ export function binomial(rng: Rng, n: number, p: number): number {
   for (let i = 0; i < n; i++) if (rng() < p) k++;
   return k;
 }
+
+/** Gamma(shape, scale) draw by Marsaglia and Tsang's method. */
+export function gamma(rng: Rng, shape: number, scale = 1): number {
+  if (shape < 1) {
+    // Boost the shape above 1, then scale back down: G(a) = G(a + 1) · U^(1/a).
+    return gamma(rng, shape + 1, scale) * rng() ** (1 / shape);
+  }
+  const d = shape - 1 / 3;
+  const c = 1 / Math.sqrt(9 * d);
+  for (;;) {
+    let x: number;
+    let v: number;
+    do {
+      x = normal(rng);
+      v = 1 + c * x;
+    } while (v <= 0);
+    v = v * v * v;
+    const u = rng();
+    if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v * scale;
+  }
+}
+
+/** Negative binomial as a gamma-Poisson mixture: mean m, variance m + m²/k (smaller k, more skew). */
+export function negBinomial(rng: Rng, mean: number, k: number): number {
+  return poisson(rng, gamma(rng, k, mean / k));
+}

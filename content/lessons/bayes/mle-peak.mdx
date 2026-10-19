@@ -1,0 +1,306 @@
+<Section id="floor">
+
+Three analysts build the same demand model for a slow-moving premium drill. One trains LightGBM with the default `regression` objective (squared error), one switches to `regression_l1` (absolute error) "because it's robust", and one uses `poisson` "because sales are counts". Their forecasts differ by 30%, and the planning team asks which one is right.
+
+None of them is wrong about the algorithm. They disagree about something they never wrote down: **what the noise in daily sales looks like**. Every loss function is a hidden assumption about noise, and each one points at a different "best" number.
+
+<KeyIdea>
+
+**A loss function is a negative log-likelihood.** Choosing squared error means assuming bell-shaped noise, and it targets the **mean**. Absolute error assumes Laplace noise and targets the **median**. Cross-entropy is the Bernoulli likelihood of yes/no outcomes. Pick the loss by asking what the noise looks like and which number the business needs.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The drill sold **2, 3 and 7** units on three days. We want one number μ to predict a day's sales. Recall from [The Likelihood Dial](/learn/foundations/likelihood-dial): fix the data, slide the parameter, and find where the data are most probable.
+
+<Steps>
+<Step>
+
+**Assume Gaussian noise** with σ = 1. Each day's density is $\frac{1}{\sqrt{2\pi}}e^{-(y - \mu)^2/2}$. Multiply the three, take −log, and every term splits into a constant plus a square:
+
+$$
+-\log L(\mu) = \underbrace{1.5\log(2\pi)}_{2.757} + \tfrac12\left[(2 - \mu)^2 + (3 - \mu)^2 + (7 - \mu)^2\right]
+$$
+
+| μ | Squared error | −log L |
+|---|---|---|
+| 3 | 1 + 0 + 16 = 17 | 2.757 + 8.5 = **11.257** |
+| **4** | 4 + 1 + 9 = **14** | 2.757 + 7 = **9.757** |
+| 5 | 9 + 4 + 4 = 17 | 11.257 |
+
+The negative log-likelihood **is** squared error, halved, plus a constant. Both bottom out at **μ = 4, the mean**.
+
+</Step>
+<Step>
+
+**Assume Laplace noise** instead: a sharper peak and fatter tails, density $\frac12 e^{-\lvert y - \mu\rvert}$. Now −log L is a constant plus the sum of **absolute** errors:
+
+| μ | Absolute error | −log L = 3 log 2 + abs. error |
+|---|---|---|
+| **3** | 1 + 0 + 4 = **5** | 2.079 + 5 = **7.079** |
+| 4 | 2 + 1 + 3 = 6 | 8.079 |
+| 5 | 3 + 2 + 2 = 7 | 9.079 |
+
+The best μ is **3, the median**. The 7-unit day pulls the mean up to 4 but doesn't move the median at all.
+
+</Step>
+<Step>
+
+**Assume Poisson counts** with rate λ: $P(y) = e^{-\lambda}\lambda^y/y!$. Then
+
+$$
+-\log L(\lambda) = 3\lambda - (2 + 3 + 7)\log\lambda + \log(2!\,3!\,7!)
+$$
+
+At λ = 3, 4, 5 this gives **6.827**, **6.375**, **6.697**. The minimum is again **4, the mean**. Setting the derivative $3 - 12/\lambda$ to zero gives exactly λ = 12/3 = 4.
+
+</Step>
+<Step>
+
+**Yes/no outcomes.** Five shoppers passed an endcap and two bought: 1, 0, 0, 1, 0. With purchase probability $p$:
+
+$$
+-\log L(p) = -\left[2\log p + 3\log(1 - p)\right]
+$$
+
+At $p = 0.4$: $-(2 \times -0.916 + 3 \times -0.511) =$ **3.365**. At $p = 0.5$: $5\log 2 =$ **3.466**. The minimum is at **2/5 = 0.4**. This expression is exactly **binary cross-entropy** (log loss), the loss behind every logistic regression and classifier.
+
+</Step>
+<Step>
+
+**The pattern:**
+
+| Noise model | Its −log L is… | Best constant |
+|---|---|---|
+| Gaussian | squared error (MSE) | mean |
+| Laplace | absolute error (MAE) | median |
+| Poisson | Poisson deviance | mean, on a log scale where variance = mean |
+| Bernoulli | cross-entropy (log loss) | the proportion |
+| Asymmetric Laplace | pinball loss at τ | the τ-quantile |
+
+Minimizing a loss and maximizing a likelihood are the **same act**.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Add a 15-unit spike day, so the data are 2, 3, 7, 15. Where does the absolute-error loss bottom out?" options={["At the mean, 6.75", "At exactly 5", "Anywhere from 3 to 7"]} answer={2}>
+
+**Anywhere from 3 to 7.** With an even number of days, any μ between the two middle values has the same total absolute error: moving right adds one unit of error from each of the two lower days and removes one from each of the two higher days. The loss has a flat bottom, and "the median" is a whole interval.
+
+</Predict>
+
+<LossMirror />
+
+**Try this:**
+
+1. With **Gaussian** noise, slide μ. The top curve (likelihood) peaks exactly where the bottom curve (loss) is lowest. One is −log of the other.
+2. Switch to **Laplace**. The loss becomes a set of straight pieces with corners at each day's sales, and its minimum sits on the middle day, 3.
+3. Tick **Add a spike day**. Under Gaussian noise the best μ jumps from 4 to 6.75; under Laplace it stays between 3 and 7. This is what "robust to outliers" means, made concrete.
+4. Switch to **Poisson**. The peak is at the mean, like Gaussian, but the curve is lopsided: under-predicting a count is punished more steeply than over-predicting it.
+
+</Section>
+
+<Section id="simulate">
+
+Now 2,000 days of a skewed slow mover, the kind that fills a home-improvement catalogue: many zeros, occasional contractor orders.
+
+<LossSimulation />
+
+With the default skew, **more than half of all days sell nothing**, so the median is **0**. A model trained with absolute error would forecast zero for this SKU every day. The mean is about 2.04, and stocking 2 a day fully serves about 75% of days. If the business wants a 90% service level, neither the mean nor the median is the right target: the **pinball loss at τ = 0.9** targets the 90th percentile (6 units), which serves 91% of days.
+
+Slide toward **k = ∞** (plain Poisson): the three lines move closer together, because less skew means mean, median and upper quantile agree more. The choice of loss matters most exactly where retail data are hardest.
+
+</Section>
+
+<Section id="formula">
+
+**Maximum likelihood estimation.** If observations are independent with density $p(y \mid \theta)$:
+
+$$
+\hat\theta = \arg\max_\theta \prod_i p(y_i \mid \theta) = \arg\min_\theta \sum_i \big[-\log p(y_i \mid \theta)\big]
+$$
+
+The log turns a product into a sum, and the minus sign turns "maximize" into "minimize a loss". Any model trained by minimizing an average loss is, implicitly, a maximum-likelihood model for some noise.
+
+<Depth min={2}>
+
+**Gaussian → squared error.** $-\log p(y \mid \mu) = \tfrac12\log(2\pi\sigma^2) + \frac{(y - \mu)^2}{2\sigma^2}$. With σ fixed, minimizing the sum over rows is minimizing $\sum(y_i - \mu_i)^2$. If $\mu_i = a + bx_i$, that's linear regression; if $\mu_i$ is a tree ensemble, it's LightGBM's default objective.
+
+**Laplace → absolute error → median.** The derivative of $\lvert y - \mu\rvert$ with respect to μ is $-\operatorname{sign}(y - \mu)$. At the minimum the signs balance: as many points above μ as below. That's the definition of the median.
+
+**Pinball → quantile.** The pinball loss charges τ per unit of under-prediction and $1 - \tau$ per unit of over-prediction. Its derivative is $-\tau \cdot \#\{\text{above}\} + (1 - \tau)\cdot\#\{\text{below}\}$, which is zero when a fraction τ of points lies below μ: the τ-quantile.
+
+**Bernoulli → cross-entropy.** $-\log p(y \mid p) = -[y\log p + (1 - y)\log(1 - p)]$. With $p = \sigma(w^\top x)$ that's logistic regression; with a softmax over many classes it's categorical cross-entropy, the loss used to train language models.
+
+**Poisson → Poisson deviance.** $-\log p(y \mid \mu) = \mu - y\log\mu + \log y!$. The deviance $2\sum[y\log(y/\mu) - (y - \mu)]$ is twice the gap to a perfect fit, so minimizing either is the same. With a log link $\mu = e^{f(x)}$, predictions stay positive, and each feature multiplies demand. **Tweedie** with power $1 \lt p \lt 2$ is a Poisson number of gamma-sized purchases: a point mass at zero plus a continuous spread, which is why it's the standard objective for intermittent retail sales.
+
+</Depth>
+
+<Depth min={3}>
+
+**When the noise model is wrong.** The MLE under a misspecified model converges to the parameter that minimizes the KL divergence from the true distribution. For the Gaussian and Poisson cases there is a useful bonus: their score equations are $\sum_i (y_i - \mu_i)\,\partial\mu_i/\partial\theta = 0$, which hold on average whenever **the mean is right**, even if the variance is wrong. So a Poisson objective still estimates the mean of over-dispersed (negative binomial) sales consistently. This is *quasi-likelihood*. The point estimates survive; the stated uncertainty does not.
+
+**Asymptotics.** Under regularity conditions the MLE is consistent and approximately normal, $\hat\theta \approx \mathcal N(\theta, I(\theta)^{-1}/n)$, where $I$ is the Fisher information (the curvature of the log-likelihood at its peak, from Keystone 3). Sharper peaks mean more precise estimates.
+
+**Proper scoring rules.** Log loss and the Brier score are minimized in expectation only by the true probabilities, so they reward honest probability forecasts. Accuracy is not proper: it ignores how confident a prediction was.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Mean or median?">
+
+A SKU sold 1, 2 and 9 units. What constant minimizes squared error, and what minimizes absolute error?
+
+<Solution>
+
+Squared error: the mean, **4**. Absolute error: the median, **2**. The 9-unit day drags the mean but not the median.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Log loss per shopper">
+
+A model gives a shopper an 80% chance to buy. What log loss does it pay if the shopper buys? If they don't?
+
+<Solution>
+
+Buys: $-\log 0.8 =$ **0.223**. Doesn't buy: $-\log 0.2 =$ **1.609**. Confident wrong predictions cost the most, and a prediction of exactly 0% for an event that happens costs infinity.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Poisson MLE in general">
+
+For counts $y_1, \dots, y_n$ under a Poisson model, derive the MLE of λ.
+
+<Solution>
+
+$-\log L = n\lambda - (\sum y_i)\log\lambda + \text{const}$. The derivative is $n - \sum y_i/\lambda$; setting it to zero gives $\hat\lambda = \sum y_i/n$, **the sample mean**. The second derivative $\sum y_i/\lambda^2 \gt 0$ confirms a minimum.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Estimating σ too">
+
+For the Gaussian model on days 2, 3, 7, let σ vary too. What is the MLE of σ²? Is it unbiased?
+
+<Solution>
+
+$\hat\mu = 4$, and $\hat\sigma^2 = \frac1n\sum(y_i - \hat\mu)^2 = 14/3 \approx$ **4.67**. It's biased low: the unbiased estimate divides by $n - 1$, giving 7. The MLE divides by $n$ because it uses the same data to estimate μ, which sits closer to the data than the true mean does.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="A service-level forecast">
+
+A SKU's ten days of demand were 1, 2, …, 10. You need stock that fully serves 90% of days. Which loss should the model minimize, and what constant does it give?
+
+<Solution>
+
+The **pinball loss at τ = 0.9**. Its minimizer is the 90th percentile. With ten values, any level from 9 to 10 gives the same loss (the flat bottom again); stocking **9** covers 9 of the 10 days. A squared-error model would say 5.5 and serve only 5 days out of 10.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Poisson objective on over-dispersed sales">
+
+Real sales are negative binomial (variance well above the mean), but you train with LightGBM's `poisson` objective. Are the forecasts biased? Is anything wrong?
+
+<Solution>
+
+The mean forecasts are **not biased** from this alone: the Poisson score equation, $\sum (y_i - \mu_i)\,\partial\mu_i/\partial\theta = 0$, only needs the mean to be correctly specified (quasi-likelihood). What's wrong is the **uncertainty**: a Poisson model believes variance = mean, so any interval or quantile derived from it is far too narrow. For safety stock, model the dispersion (negative binomial, Tweedie) or forecast quantiles directly.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Minimize each negative log-likelihood numerically and compare with the closed forms. Then check that scikit-learn's `log_loss` is the Bernoulli NLL per row.
+
+<PyRunner title="Losses are negative log-likelihoods" code={`
+import numpy as np
+from scipy.optimize import minimize_scalar
+from scipy.stats import norm, laplace, poisson
+from sklearn.metrics import log_loss
+
+days = np.array([2, 3, 7])
+nll = {
+    "gaussian (squared error)": lambda m: -norm.logpdf(days, loc=m, scale=1).sum(),
+    "laplace (absolute error)": lambda m: -laplace.logpdf(days, loc=m, scale=1).sum(),
+    "poisson (deviance)":       lambda m: -poisson.logpmf(days, m).sum(),
+}
+for name, f in nll.items():
+    best = minimize_scalar(f, bounds=(0.1, 10), method="bounded", options={"xatol": 1e-8})
+    print(f"{name:26s} best mu = {best.x:.4f}   NLL at 4 = {f(4.0):.3f}")
+print("mean =", days.mean(), " median =", np.median(days))
+
+bought = np.array([1, 0, 0, 1, 0])
+p = 0.4
+manual = -(bought * np.log(p) + (1 - bought) * np.log(1 - p)).sum()
+print(f"Bernoulli NLL at p=0.4: {manual:.3f}  sklearn log_loss x 5: {log_loss(bought, [p]*5) * 5:.3f}")
+
+# 2,000 skewed days: mean, median and 90th percentile are what squared, absolute and pinball losses target
+rng = np.random.default_rng(3)
+k, m = 0.3, 2.0
+sales = rng.poisson(rng.gamma(k, m / k, 2000))
+for name, v in [("mean", sales.mean()), ("median", np.median(sales)), ("p90", np.quantile(sales, 0.9))]:
+    print(f"{name:6s} = {v:5.2f}   share of days with demand <= floor(value): {(sales <= np.floor(v)).mean():.0%}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **LightGBM's `objective` is a likelihood choice.** `regression` (Gaussian), `regression_l1` (Laplace), `huber` (Gaussian in the middle, Laplace in the tails), `quantile` (pinball), `poisson`, `gamma`, `tweedie`, `binary` (Bernoulli). For SKU-store-day demand with many zeros, `tweedie` with a variance power around 1.1–1.5 is the common default.
+- **Train on one loss, evaluate on another, carefully.** WAPE and MAE are minimized by the **median**, not the mean. A squared-error model evaluated on WAPE looks worse than it is on skewed SKUs, and a model tuned to win on WAPE will under-forecast them (sometimes to zero). Decide which number the business needs first, then pick the loss and the metric to match.
+- **Service levels need quantiles.** Safety stock for a 95% service level is a 95th-percentile question. Train a quantile model, or a distributional one (Tweedie, negative binomial, NGBoost), rather than adding a fudge factor to a mean forecast.
+- **Cross-entropy everywhere.** Conversion models, fraud classifiers, two-tower retrieval (InfoNCE) and LLM next-token training all minimize a categorical negative log-likelihood. It's the same idea as this lesson, with more categories.
+- **Weights are part of the likelihood.** Weighting rows by revenue makes the fitted model the MLE of a different question: "get the high-value SKUs right". Make it a deliberate choice.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why do we use MSE for regression and cross-entropy for classification?">
+
+Both are negative log-likelihoods. MSE is the NLL of Gaussian noise around a predicted mean; cross-entropy is the NLL of a Bernoulli or categorical outcome with predicted probabilities. Using them makes training a maximum-likelihood fit. Cross-entropy with a sigmoid also gives clean gradients ($\hat p - y$), whereas MSE on probabilities gives flat gradients when the model is confidently wrong.
+
+</QA>
+
+<QA q="Which objective would you use for SKU-store daily demand, and why?">
+
+Usually Poisson or Tweedie with a log link: the data are non-negative counts with many zeros and variance that grows with the mean, and the log link keeps predictions positive and makes effects multiplicative. If the business needs service levels, add quantile models or a distributional model. Mention checking calibration on held-out weeks.
+
+</QA>
+
+<QA q="Your stakeholders evaluate forecasts with WAPE. Does that change your loss?">
+
+Yes, potentially. WAPE is a scaled absolute error, which is minimized by the median. On skewed, intermittent SKUs the median can be far below the mean (even zero), so a mean forecast scores worse on WAPE than a median one. Agree on the decision first (replenishment usually needs a quantile), then align the loss and the metric, or report both.
+
+</QA>
+
+<QA q="What's the relationship between MLE and minimizing a loss?">
+
+They're the same thing: the MLE maximizes $\prod p(y_i \mid \theta)$, which is the same as minimizing $\sum -\log p(y_i \mid \theta)$, an additive loss. Adding a penalty (L2, L1) turns it into MAP estimation with a Gaussian or Laplace prior.
+
+</QA>
+
+<Trap>
+
+**"MAE is just a more robust MSE; it estimates the same thing."** It estimates a **different number**: the median, not the mean. On symmetric noise they coincide. On retail sales, which are right-skewed, they don't, and on intermittent SKUs the median can be zero.
+
+</Trap>
+
+</Section>

@@ -44,7 +44,7 @@ const raw: LessonInput[] = [
   { slug: "lagrange-budget", aisle: "foundations", title: "Lagrange Multipliers for a Budget", week: 7, summary: "Why the optimal media budget equalizes marginal ROI across channels.", prereqs: ["elasticity-derivative"] },
 
   // Aisle 1: Bayesian, Finally
-  { slug: "mle-peak", aisle: "bayes", title: "MLE and Losses as Negative Log-Likelihood", week: 2, summary: "MSE is Gaussian MLE, cross-entropy is Bernoulli MLE, Tweedie is compound Poisson-gamma MLE.", prereqs: ["likelihood-dial"] },
+  { slug: "mle-peak", aisle: "bayes", title: "MLE and Losses as Negative Log-Likelihood", status: "ready", week: 2, minutes: 50, summary: "MSE is Gaussian MLE, cross-entropy is Bernoulli MLE, Tweedie is compound Poisson-gamma MLE.", prereqs: ["likelihood-dial"] },
   { slug: "posterior-grid", aisle: "bayes", title: "A Grid of Hypotheses", week: 2, summary: "Prior bars × likelihood bars, divide by the Σ: a parameter as a distribution, made concrete.", prereqs: ["likelihood-dial", "counting-worlds"] },
   { slug: "beta-binomial", aisle: "bayes", title: "Beta–Binomial: Endcap Conversion", week: 3, summary: "Update a conversion rate customer by customer.", prereqs: ["posterior-grid", "integrals-thin-bars"] },
   { slug: "gamma-poisson", aisle: "bayes", title: "Gamma–Poisson: A Store's Demand Rate", week: 3, summary: "The posterior predictive is the negative binomial, which explains over-dispersion.", prereqs: ["beta-binomial", "poisson-paint-counter"] },
@@ -58,8 +58,8 @@ const raw: LessonInput[] = [
 
   // Aisle 2: Model Lab
   { slug: "boosting-by-hand", aisle: "models", title: "Boosting by Hand on 6 Rows", status: "ready", keystone: 4, week: 1, minutes: 50, summary: "Each new tree fits what the previous trees got wrong. Residuals, learning rate and the gradient, all on six stores.", prereqs: [] },
-  { slug: "linear-regression", aisle: "models", kind: "model", title: "Linear Regression, End to End", week: 3, summary: "OLS via derivatives, projection, Ridge/Lasso, GLMs and Bayesian regression.", prereqs: ["mle-peak"] },
-  { slug: "decision-tree", aisle: "models", kind: "model", title: "Decision Trees, End to End", week: 3, summary: "CART by hand, Gini and entropy, split search and pruning.", prereqs: [] },
+  { slug: "linear-regression", aisle: "models", kind: "model", title: "Linear Regression, End to End", status: "ready", week: 3, minutes: 75, summary: "OLS via derivatives, projection, Ridge/Lasso, GLMs and Bayesian regression.", prereqs: ["mle-peak"] },
+  { slug: "decision-tree", aisle: "models", kind: "model", title: "Decision Trees, End to End", status: "ready", week: 3, minutes: 70, summary: "CART by hand, Gini and entropy, split search and pruning.", prereqs: [] },
   { slug: "gradient-boosting", aisle: "models", kind: "model", title: "Gradient Boosting, End to End", week: 3, summary: "GBM as gradient descent in function space, then XGBoost's second-order step.", prereqs: ["boosting-by-hand", "decision-tree"] },
   { slug: "xgb-lgbm-catboost", aisle: "models", kind: "model", title: "XGBoost vs LightGBM vs CatBoost", week: 4, summary: "Level-wise vs leaf-wise growth, histograms, GOSS, EFB and ordered target statistics.", prereqs: ["gradient-boosting"] },
   { slug: "mlp", aisle: "models", kind: "model", title: "The MLP, End to End", week: 4, summary: "One neuron by hand, ReLU kinks building a demand curve, backprop as the chain rule.", prereqs: ["linear-regression"] },

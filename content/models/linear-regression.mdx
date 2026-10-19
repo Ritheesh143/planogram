@@ -1,0 +1,399 @@
+<Section id="origin">
+
+In 1805 Legendre needed to fit a comet's orbit to more observations than unknowns. No single curve passed through every point, so he chose the curve that made the **sum of squared misses** as small as possible. Gauss then showed that this is the best choice when the misses are bell-shaped noise. Eighty years later Galton noticed that tall parents had slightly less tall children, "regression toward the mean", and the name stuck.
+
+**What it fixed:** before least squares, people averaged ad hoc subsets of the data or picked "representative" points by eye. Least squares gave **one answer, computable by anyone, from all of the data**.
+
+At Bolt & Beam the question is plainer. The category manager wants to know: *if we raise the price of our emulsion paint by ₹100 a litre, how many litres a week do we lose?* That number, the slope, is the most-used number in retail pricing.
+
+<KeyIdea>
+
+**Linear regression picks the line whose squared vertical misses add up to the least.** Setting two derivatives to zero finds it exactly, with no search. Everything else on this page (ridge, lasso, GLMs, Bayesian regression) is that same idea with one thing changed.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Five weeks of one paint SKU. Price is in ₹100s per litre, so 4 means ₹400.
+
+| Week | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Price $x$ | 4 | 5 | 6 | 7 | 8 |
+| Litres sold $y$ | 69 | 58 | 54 | 42 | 37 |
+
+<Steps>
+<Step>
+
+**Score a guess.** Try the line $\hat y = 90 - 6x$. Its predictions are 66, 60, 54, 48, 42, so the misses (residuals $y - \hat y$) are 3, −2, 0, −6, −5.
+
+Squared error: $9 + 4 + 0 + 36 + 25 =$ **74**. Every line gets a score like this. We want the line with the smallest score.
+
+</Step>
+<Step>
+
+**Write the score as a function of the two knobs** $a$ (intercept) and $b$ (slope):
+
+$$
+\text{SSE}(a, b) = \sum_{i} (y_i - a - b x_i)^2
+$$
+
+At the bottom of a bowl, both slopes of the bowl are zero. So take the derivative with respect to each knob and set it to zero.
+
+</Step>
+<Step>
+
+**Derivative with respect to $a$:**
+
+$$
+\frac{\partial\,\text{SSE}}{\partial a} = -2\sum_i (y_i - a - b x_i) = 0 \;\Rightarrow\; \bar y = a + b\,\bar x
+$$
+
+The best line **passes through the point of averages**. Here $\bar x = 30/5 = 6$ and $\bar y = 260/5 = 52$.
+
+</Step>
+<Step>
+
+**Derivative with respect to $b$**, after substituting $a = \bar y - b\bar x$:
+
+$$
+b = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2}
+$$
+
+| Week | $x - \bar x$ | $y - \bar y$ | product | $(x - \bar x)^2$ |
+|---|---|---|---|---|
+| 1 | −2 | 17 | −34 | 4 |
+| 2 | −1 | 6 | −6 | 1 |
+| 3 | 0 | 2 | 0 | 0 |
+| 4 | 1 | −10 | −10 | 1 |
+| 5 | 2 | −15 | −30 | 4 |
+| **Sum** | | | **−80** | **10** |
+
+$b = -80 / 10 =$ **−8**, and $a = 52 - (-8)(6) =$ **100**.
+
+</Step>
+<Step>
+
+**Check the answer.** The line $\hat y = 100 - 8x$ predicts 68, 60, 52, 44, 36. The residuals are **1, −2, 2, −2, 1**, so the squared error is $1 + 4 + 4 + 4 + 1 =$ **14**, down from 74. No other line does better.
+
+Two facts hide in those residuals: they **sum to zero** ($1 - 2 + 2 - 2 + 1 = 0$), and they are **uncorrelated with price** ($4 - 10 + 12 - 14 + 8 = 0$). Those are the two derivative conditions, read off the data. Remember them: they come back as "projection".
+
+</Step>
+<Step>
+
+**Read it as a manager would.** Each extra ₹100 per litre loses about **8 litres a week**. At the average week (₹600, 52 litres) that is an elasticity of $-8 \times 6/52 \approx$ **−0.92**: a 1% price rise loses about 0.92% of volume.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="If you drag week 5 (₹800) from 37 litres up to 60 litres, what happens to the best line's slope?" options={["Gets steeper (more negative)", "Gets flatter (less negative)", "Stays at −8"]} answer={1}>
+
+It gets **flatter**: the slope becomes −3.4. Week 5 sits far from the average price, so it has the most leverage on the slope. Squared error makes the line work hardest to reduce the biggest miss.
+
+</Predict>
+
+<LinRegPlayground />
+
+**Try this:**
+
+1. Turn on **Show the squares**. Each residual is drawn as a real square, and the squared error is their total area. Move the sliders to make the total area as small as you can.
+2. Press **Roll downhill** with *Center prices first* switched **off**. Gradient descent crawls: the error falls fast at first, then barely moves. Switch centering **on** and run again. Same data, same algorithm, a few dozen steps. (The reason is in *The Math*.)
+3. Drag week 3 (the middle week, ₹600) far up or down. The intercept moves but the slope doesn't: a point at the average price has **no leverage** on the slope.
+4. Drag week 1 up to 100. One week drags the whole line. That's the outlier problem in the Failure Lab below.
+
+</Section>
+
+<Section id="formula">
+
+**The table view.** Put each week in a row, with a column of 1s for the intercept. Then every prediction is a row of the table dotted with the coefficients:
+
+$$
+X = \begin{bmatrix} 1 & 4 \\ 1 & 5 \\ 1 & 6 \\ 1 & 7 \\ 1 & 8 \end{bmatrix},\quad
+\beta = \begin{bmatrix} a \\ b \end{bmatrix},\quad
+\hat y = X\beta
+$$
+
+The two derivative conditions from the hand example, written for all columns at once, are the **normal equations**:
+
+$$
+X^\top X\,\beta = X^\top y
+\qquad\text{here}\qquad
+\begin{bmatrix} 5 & 30 \\ 30 & 190 \end{bmatrix}\begin{bmatrix} a \\ b\end{bmatrix} = \begin{bmatrix} 260 \\ 1480 \end{bmatrix}
+$$
+
+Each entry of $X^\top X$ is two columns dotted together: 5 is "1s·1s" (the number of weeks), 30 is $\sum x$, 190 is $\sum x^2$. On the right, 260 is $\sum y$ and 1,480 is $\sum xy$. Solving gives $a = 100$, $b = -8$ again. With 40 features it's the same equation, just a 41 × 41 table.
+
+<Depth min={2}>
+
+**Projection.** The condition $X^\top(y - X\beta) = 0$ says the residual vector is perpendicular to every column of $X$. Picture $y$ as a point in 5-dimensional space (one axis per week) and the columns as two directions. Every possible $X\beta$ lies on the flat sheet those directions span. Least squares drops a **perpendicular** from $y$ onto that sheet. The foot of the perpendicular is $\hat y$, and the residual is the perpendicular itself. That's why the residuals summed to zero (perpendicular to the 1s column) and were uncorrelated with price (perpendicular to the price column).
+
+**Why squares? Because of the bell curve.** Assume $y_i = a + b x_i + \varepsilon_i$ with $\varepsilon_i \sim \mathcal N(0, \sigma^2)$. The log-likelihood is
+
+$$
+\log L(a, b) = \text{const} - \frac{1}{2\sigma^2}\sum_i (y_i - a - b x_i)^2
+$$
+
+so maximizing the likelihood is **exactly** minimizing squared error. Least squares is the MLE for Gaussian noise. That's the *Likelihood ↔ Loss* thread from [The Likelihood Dial](/learn/foundations/likelihood-dial).
+
+**Why gradient descent crawled.** The bowl $\text{SSE}(a, b)$ has curvature given by $2X^\top X$. With raw prices its two curvatures are about 390 and 0.5, a ratio near 760: a long, narrow valley. A step size small enough not to bounce across the valley walls is far too small to travel along the valley floor. Centering price makes $X^\top X$ diagonal, $\begin{bmatrix} 5 & 0 \\ 0 & 10\end{bmatrix}$, and the valley becomes almost round. This is why every neural network standardizes its inputs.
+
+</Depth>
+
+**Ridge** adds a penalty $\lambda \sum_j \beta_j^2$, so the slope becomes
+
+$$
+b_{\text{ridge}} = \frac{\sum (x - \bar x)(y - \bar y)}{\sum (x - \bar x)^2 + \lambda} = \frac{-80}{10 + \lambda}
+$$
+
+At $\lambda = 10$ the slope halves to **−4**. **Lasso** penalizes $\alpha\sum_j|\beta_j|$ instead (with ½·SSE), which **soft-thresholds** the slope: $b = -(80 - \alpha)/10$ while $\alpha < 80$, and exactly **0** after that. At $\alpha = 30$ it's **−5**.
+
+<Depth min={2}>
+
+**Ridge is a prior.** Put a prior $b \sim \mathcal N(0, \tau^2)$ on the slope and keep Gaussian noise $\sigma^2$. The log-posterior is the log-likelihood plus the log-prior:
+
+$$
+-\frac{1}{2\sigma^2}\text{SSE}(b) - \frac{1}{2\tau^2}b^2 + \text{const}
+$$
+
+Multiply by $-2\sigma^2$ and you get $\text{SSE} + (\sigma^2/\tau^2)\, b^2$. So **ridge is the most probable (MAP) estimate** under a Gaussian prior, with $\lambda = \sigma^2/\tau^2$: a tighter prior is a bigger λ. A Laplace prior gives lasso. Rung 8 of *Bayesian, Finally* keeps the whole posterior instead of only its peak.
+
+**GLMs** keep the linear score $\eta = X\beta$ but change two things: a link and a noise model. For unit sales, $\log \mathbb E[y] = X\beta$ with Poisson noise. Predictions $e^{X\beta}$ can never go negative, and a coefficient on $\log(\text{price})$ is directly an elasticity. Tweedie noise (variance $\propto \mu^p$ with $1 \lt p \lt 2$) adds a point mass at zero for intermittent SKUs.
+
+</Depth>
+
+<Depth min={3}>
+
+**Gauss–Markov.** If errors have mean zero, equal variance and no correlation, OLS has the smallest variance among all *linear unbiased* estimators. Normality isn't needed for this; it's needed only for exact t-tests in small samples. Ridge beats OLS on mean squared error by giving up unbiasedness, which Gauss–Markov never promised to protect.
+
+**Standard errors** come from $\operatorname{Var}(\hat\beta) = \sigma^2 (X^\top X)^{-1}$. For one feature that's $\sigma^2/\sum(x - \bar x)^2$: spread-out prices give precise slopes. With correlated features, the variance of $\hat\beta_j$ is inflated by $\text{VIF}_j = 1/(1 - R_j^2)$, where $R_j^2$ is how well the other features predict feature $j$. Shelf and app prices with $R^2 = 0.99$ inflate the variance 100-fold.
+
+**Endogeneity.** Least squares estimates $\mathbb E[y \mid x]$, not what happens if you *set* $x$. If managers cut prices when demand is already weak, the slope mixes the price effect with the reason for the cut. Fixing that (instruments, experiments, double ML) is Signature D.
+
+</Depth>
+
+</Section>
+
+<Section id="knobs">
+
+Plain least squares has no hyperparameters. The knobs are the penalty, the features you give it, and how you scale them.
+
+<RidgeLassoGeometry />
+
+- **Ridge** (circle): the penalty shrinks every coefficient smoothly toward zero, but almost never *to* zero. Good when many features each matter a little.
+- **Lasso** (diamond): the ellipse usually touches the diamond at a **corner**, where one coefficient is exactly zero. That's automatic feature selection. Drag the slider and watch *facings* hit zero well before *price*.
+- **Elastic net** blends the two, so groups of correlated features enter together instead of lasso picking one at random.
+- **Scaling matters for penalties.** The penalty is on the size of β, and β's size depends on units. Standardize features before ridge or lasso, or a feature measured in paise gets penalized 100× less than the same feature in rupees.
+
+<CollinearCloud />
+
+Slide toward ±0.01 and watch the axes: the shelf-price coefficient now ranges from about −140 to +55 across refits, and the cloud lies along the diagonal. Yet their **sum** stays near −8. The model can't tell the two prices apart, so it splits the effect arbitrarily. Ridge pulls the cloud toward the middle of that diagonal, which is why it's the standard fix.
+
+</Section>
+
+<Section id="failure">
+
+<FailureLab focus="linear" start="saturation" />
+
+**Where linear regression breaks, and what fixes it:**
+
+| Situation | What goes wrong | The fix |
+|---|---|---|
+| Diminishing returns | A straight line through a curve | Transform the feature (log, Hill), add splines, or use a tree or MLP |
+| Step change | One slope through two levels | Add the indicator feature ("remodeled") |
+| Interaction | Same slope for promo and non-promo weeks | Add price × promo, or use a model that finds interactions |
+| Outlier week | Squared error lets one row tilt the line | Huber or absolute loss, or clean the data |
+| Intermittent counts | Predicts negative sales | Poisson or Tweedie GLM (log link) |
+| Collinear features | Coefficients swing wildly | Ridge, drop or combine features |
+
+**Where it wins:** the *trend* scenario (it's the only model that continues the line) and the *small data* scenario (two parameters can't memorize six noisy weeks). In 40 reseeded versions of that small-data scenario, the line beat the tree and the boosted model every time.
+
+</Section>
+
+<Section id="build">
+
+The normal equations in NumPy, then scikit-learn's versions of everything on this page. Every number should match the hand example: slope −8, intercept 100, squared error 14, ridge slope −4, lasso slope −5.
+
+<PyRunner title="Least squares four ways" code={`
+import numpy as np
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, PoissonRegressor
+
+x = np.array([4, 5, 6, 7, 8], dtype=float)
+y = np.array([69, 58, 54, 42, 37], dtype=float)
+
+# 1. The normal equations: (X'X) beta = X'y
+X = np.column_stack([np.ones_like(x), x])
+print("X'X =", (X.T @ X).tolist())
+print("X'y =", (X.T @ y).tolist())
+a, b = np.linalg.solve(X.T @ X, X.T @ y)
+resid = y - (a + b * x)
+print(f"normal equations: a = {a:.2f}, b = {b:.2f}, SSE = {(resid**2).sum():.2f}")
+print("residuals:", resid.round(2), " sum:", resid.sum().round(10), " sum x*e:", (x * resid).sum().round(10))
+
+# 2. scikit-learn agrees
+lr = LinearRegression().fit(x.reshape(-1, 1), y)
+print(f"sklearn OLS: a = {lr.intercept_:.2f}, b = {lr.coef_[0]:.2f}")
+
+# 3. Ridge: SSE + alpha * b^2, so b = -80 / (10 + alpha)
+print(f"ridge, alpha=10: b = {Ridge(alpha=10).fit(x.reshape(-1, 1), y).coef_[0]:.2f}")
+
+# 4. Lasso: sklearn minimizes SSE/(2n) + alpha*|b|, so our alpha=30 is 30/5 = 6 here
+print(f"lasso, alpha=6:  b = {Lasso(alpha=6).fit(x.reshape(-1, 1), y).coef_[0]:.2f}")
+
+# 5. A Poisson GLM on simulated drill sales: log E[y] = 1 - 0.8 x
+rng = np.random.default_rng(5)
+xs = rng.uniform(0, 2, 5000)
+ys = rng.poisson(np.exp(1 - 0.8 * xs))
+pg = PoissonRegressor(alpha=0).fit(xs.reshape(-1, 1), ys)
+print(f"Poisson GLM recovers intercept {pg.intercept_:.2f} (true 1.0), slope {pg.coef_[0]:.2f} (true -0.8)")
+print("prediction at x = 10 (far outside the data):", pg.predict([[10.0]]).round(5), "- never negative")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **It's the default baseline, and often the final model,** for pricing and elasticity work, because the coefficient *is* the business answer. Pricing teams want "−0.92", not a SHAP plot.
+- **Log-log is the workhorse.** Model $\log(\text{units})$ on $\log(\text{price})$, store and week fixed effects, and promo flags. The price coefficient is the elasticity directly. With zeros in the data, use a Poisson GLM with $\log(\text{price})$ instead of taking the log of 0.
+- **Fixed effects are high-cardinality one-hot columns.** 40 stores × 52 weeks of dummies is fine; 10,000 SKUs × stores needs sparse matrices or a hierarchical model (rung 9).
+- **Solvers at scale.** The normal equations cost $O(np^2 + p^3)$. Libraries use QR or Cholesky decompositions rather than inverting $X^\top X$. Beyond memory, use SGD or Spark's distributed solvers.
+- **Tune λ by time-based cross-validation.** Use `RidgeCV` / `LassoCV` with folds that respect time, never a random shuffle of weeks.
+- **Monitor coefficients, not just accuracy.** A price elasticity that drifts from −0.9 to −0.3 between monthly refits is a data or business change worth investigating, even if the error looks fine.
+- **Causal claims need design.** The slope is "what sales looked like at that price", not "what sales will be if we set that price". Use A/B tests or double ML (Signature D) for decisions.
+
+</Section>
+
+<Section id="leads">
+
+<Lineage
+  self="Linear regression"
+  from={[
+    { label: "Least squares (Legendre, Gauss)", note: "Fit orbits to noisy observations" },
+    { label: "The Likelihood Dial", slug: "likelihood-dial", note: "Squared error = Gaussian likelihood" },
+  ]}
+  to={[
+    { label: "Ridge, Lasso, Elastic net", note: "Penalties that trade bias for variance" },
+    { label: "GLMs: logistic, Poisson, Tweedie", slug: "fc-tweedie-lgbm", note: "Same linear score, new link and noise" },
+    { label: "Bayesian linear regression", slug: "bayes-linreg", note: "Ridge = MAP; keep the whole posterior" },
+    { label: "Hierarchical models → MMM", slug: "mmm-bayesian", note: "Regression with partial pooling and adstock" },
+    { label: "The MLP", slug: "mlp", note: "Stack linear layers with ReLU bends" },
+  ]}
+/>
+
+Linear regression is the building block underneath nearly everything else here. Logistic regression is a GLM. Each layer of an MLP is a linear regression followed by a bend. A Bayesian MMM is a regression with transformed media columns and priors. Attention scores are dot products. If one model deserves complete mastery, it's this one.
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Read the line">
+
+Using $\hat y = 100 - 8x$ (x in ₹100s), how many litres do you expect to sell at ₹750? At ₹1,300?
+
+<Solution>
+
+At ₹750, $x = 7.5$: $100 - 60 =$ **40 litres**. At ₹1,300, $x = 13$: $100 - 104 =$ **−4 litres**, which is impossible. That's extrapolation beyond the ₹400–800 data, and a reason to use a log link for sales.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Elasticity at a different point">
+
+What's the price elasticity of the fitted line at ₹400? At ₹800? Why do they differ?
+
+<Solution>
+
+Elasticity $= b \cdot x/\hat y$. At ₹400: $-8 \times 4/68 \approx$ **−0.47**. At ₹800: $-8 \times 8/36 \approx$ **−1.78**. A straight line has a constant *slope* but not a constant *elasticity*. A log-log model has constant elasticity instead.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Three weeks by hand">
+
+Fit the least-squares line to $x = (1, 2, 3)$, $y = (2, 4, 5)$.
+
+<Solution>
+
+$\bar x = 2$, $\bar y = 11/3$. Deviations of $x$: −1, 0, 1. $\sum (x - \bar x)(y - \bar y) = (-1)(2 - 11/3) + (1)(5 - 11/3) = 5/3 + 4/3 = 3$, and $\sum (x - \bar x)^2 = 2$. So $b =$ **1.5** and $a = 11/3 - 3 =$ **2/3**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Ridge by hand">
+
+For the paint data, what is the ridge slope at λ = 30? What λ makes the slope −2?
+
+<Solution>
+
+$b = -80/(10 + \lambda)$. At λ = 30: $-80/40 =$ **−2**. So λ = 30 is also the answer to the second question. The intercept moves too: the line still passes through (6, 52), so $a = 52 + 2 \times 6 = 64$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Why the residuals are uncorrelated with price">
+
+Show that at the least-squares solution $\sum_i x_i e_i = 0$, where $e_i = y_i - a - b x_i$. Then explain why this makes $\hat y$ the closest point to $y$ among all lines.
+
+<Solution>
+
+$\partial \text{SSE}/\partial b = -2\sum x_i(y_i - a - bx_i) = -2\sum x_i e_i$, and it's zero at the minimum. Likewise $\partial/\partial a$ gives $\sum e_i = 0$. So the residual vector is perpendicular to the 1s column and to the price column. Any other line's predictions are $\hat y + d$ for some $d$ built from those two columns, so $d \perp e$ and $\lVert y - (\hat y + d)\rVert^2 = \lVert e - d\rVert^2 = \lVert e\rVert^2 + \lVert d\rVert^2 \ge \lVert e\rVert^2$. That's Pythagoras: the perpendicular is the shortest way down.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Log-log elasticity">
+
+A log-log model gives $\log(\text{units}) = 8.0 - 1.2\,\log(\text{price})$. What happens to units if the price rises 10%? Why is the answer not exactly −12%?
+
+<Solution>
+
+Units scale by $1.1^{-1.2} = e^{-1.2 \ln 1.1} \approx 0.892$, a **10.8% drop**. The coefficient −1.2 is the elasticity at an infinitesimal change; −12% is its first-order approximation. For small changes they agree; for a 10% change the curvature of the log shows.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Derive the OLS estimator.">
+
+Write SSE(β) = (y − Xβ)ᵀ(y − Xβ). Set the gradient −2Xᵀ(y − Xβ) to zero to get XᵀXβ = Xᵀy, so β = (XᵀX)⁻¹Xᵀy when XᵀX is invertible. For one feature, show b = Σ(x − x̄)(y − ȳ)/Σ(x − x̄)². Then say what it means geometrically (projection onto the column space) and probabilistically (Gaussian MLE).
+
+</QA>
+
+<QA q="What are the assumptions of linear regression, and which ones matter for prediction?">
+
+Linearity in the parameters, independent errors, constant variance, and (for exact small-sample inference) normal errors. For **prediction**, only the functional form really matters. For **inference** (standard errors, p-values), independence and constant variance matter a lot: weekly retail data is autocorrelated and heteroskedastic, so use robust or clustered standard errors.
+
+</QA>
+
+<QA q="Ridge vs Lasso: when would you use each?">
+
+Ridge (L2) shrinks all coefficients smoothly, handles correlated features gracefully and almost never zeroes anything. Lasso (L1) can set coefficients exactly to zero, so it selects features, but among correlated features it picks one somewhat arbitrarily. Elastic net combines them. Geometrically, the L1 ball has corners on the axes, and the error ellipse usually touches a corner. Bayesianly, ridge is a Gaussian prior and lasso a Laplace prior.
+
+</QA>
+
+<QA q="How do you detect and handle multicollinearity?">
+
+Symptoms: large standard errors, coefficients that flip sign between refits, and a good overall fit with no individually significant feature. Detect with VIF = 1/(1 − R²ⱼ) (above about 5–10 is a warning) or the condition number of XᵀX. Handle by combining or dropping features, using ridge, or accepting it if you only need predictions, since collinearity hurts coefficients, not predictions within the data's range.
+
+</QA>
+
+<QA q="Your price coefficient is positive: higher price, more sales. What happened?">
+
+Most likely confounding: prices are set in response to demand (raised in peak season, cut when demand is weak), or premium stores have both higher prices and higher sales. Add controls (store and week fixed effects, seasonality), use within-SKU price variation, use promotions or experiments as the source of variation, or use an instrument. Also check collinearity with other price columns.
+
+</QA>
+
+<Trap>
+
+**"Linear regression assumes the features are normally distributed."** It assumes nothing about the features' distribution. The normality assumption (only needed for exact small-sample inference) is about the **errors**. Skewed features are fine; a skewed target may call for a log transform or a GLM.
+
+</Trap>
+
+</Section>
