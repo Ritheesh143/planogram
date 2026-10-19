@@ -11,11 +11,13 @@ and only then write the formula: **Concrete → Pictorial → Simulation → For
 
 ## What's built so far
 
-**M2 (in progress): the Model Lab.** End-to-end pages for linear regression, decision trees, gradient
+**M2: the Model Lab and the Bayes ladder.** End-to-end pages for linear regression, decision trees, gradient
 boosting, XGBoost vs LightGBM vs CatBoost and the MLP, each with a hand-worked example, a playground,
 every hyperparameter visualized and a **Failure Lab** that trains all four model families live on
 the same retail scenarios. Plus *Tree vs MLP*, Bayes rung 2 (losses as negative log-likelihoods) and
-the **Model Arena**, a benchmark of ten real models on seven stress scenarios.
+the **Model Arena**, a benchmark of ten real models on seven stress scenarios. Bayes rungs 3–9 (grid
+posteriors to hierarchical pooling), the Math Toolkit, and Plan, Exercises, Concept Graph and Golden
+Threads pages complete the milestone.
 
 ### M1
 
@@ -93,7 +95,6 @@ Import the repository and keep the defaults.
 
 | Milestone | Scope |
 |---|---|
-| M2 | Model Lab (linear regression, decision tree, gradient boosting incl. XGBoost vs LightGBM vs CatBoost, MLP), Model Arena and Failure Matrix, Bayes rungs 2–9, Math Toolkit, Plan page, Concept Graph |
 | M3 | AI layer (Claude-powered tutor, Feynman grader, mock interviewer with Project Grill) |
 | M4+ | Weekly lesson batches in sprint order: MCMC → forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
 
