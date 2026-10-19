@@ -72,3 +72,45 @@ test("MLE rung: each noise model bottoms out at its own summary", async ({ page 
   await expect(page.getByTestId("ls-median")).toHaveText("0");
   await expect(page.getByTestId("ls-p90")).toHaveText("6");
 });
+
+test("gradient boosting: absolute loss lands on 20 and 33; λ helps the knobs playground", async ({ page }) => {
+  await page.goto("/models/gradient-boosting");
+  await setRange(page, "fs-round", 1);
+  await expect(page.getByTestId("fs-pred")).toHaveText("20, 20, 20, 33, 33, 33");
+  await page.getByRole("radio", { name: "Poisson" }).click();
+  await expect(page.getByTestId("fs-pred")).toHaveText("21.81, 21.81, 21.81, 35.95, 35.95, 35.95");
+  await expect(page.getByTestId("gk-test")).toHaveText("10.3");
+  await setRange(page, "gk-lambda", 20);
+  await expect(page.getByTestId("gk-test")).toHaveText("8.9");
+});
+
+test("XGBoost vs LightGBM vs CatBoost: histograms, growth order and leakage", async ({ page }) => {
+  await page.goto("/models/xgb-lgbm-catboost");
+  await expect(page.getByTestId("hs-gain")).toHaveText("420.50");
+  await setRange(page, "lvl-leaves", 16);
+  await expect(page.getByTestId("lvl-depth")).toHaveText("5");
+  await expect(page.getByTestId("tl-naive")).toHaveText("75%");
+  await expect(page.getByTestId("tl-ordered")).toHaveText("47%");
+});
+
+test("MLP: one backprop step, the kink by hand, and the scaling trap", async ({ page }) => {
+  await page.goto("/models/mlp");
+  await expect(page.getByTestId("bp-pred")).toHaveText("9");
+  await page.getByRole("button", { name: "Take one gradient step" }).click();
+  await expect(page.getByTestId("bp-pred")).toHaveText("9.714");
+  await setRange(page, "rk-k1", 4);
+  await setRange(page, "rk-s1", 9);
+  await expect(page.getByTestId("rk-sse")).toHaveText("106.4");
+  await expect(page.getByTestId("mt-test")).toHaveText("2.15", { timeout: 15_000 });
+  await page.getByTestId("mt-scale").uncheck();
+  await expect(page.getByTestId("mt-test")).toHaveText("19.67", { timeout: 15_000 });
+});
+
+test("tree vs MLP: bends win the diagonal, boxes win the thresholds", async ({ page }) => {
+  await page.goto("/learn/models/tree-vs-mlp");
+  await expect(page.getByTestId("bb-tree")).toHaveText("9.7", { timeout: 15_000 });
+  await expect(page.getByTestId("bb-mlp")).toHaveText("4.9");
+  await page.getByRole("radio", { name: "Jumps at thresholds" }).click();
+  await setRange(page, "bb-depth", 3);
+  await expect(page.getByTestId("bb-tree")).toHaveText("5.8", { timeout: 15_000 });
+});

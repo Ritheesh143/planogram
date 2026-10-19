@@ -1,0 +1,368 @@
+<Section id="origin">
+
+All three libraries run the algorithm from the [Gradient Boosting](/models/gradient-boosting) page. They differ in **engineering**: how they search for splits, which rows they look at, and how they handle categories and missing values. Those choices decide what you can train in an hour, and they create different ways to fail.
+
+- **XGBoost** (Chen and Guestrin, 2014–16) made boosting regularized and fast: the second-order objective with λ and γ, sparsity-aware handling of missing values, and parallel split finding. It won a large share of Kaggle competitions in 2015–16.
+- **LightGBM** (Microsoft, 2017) made it *much* faster on big data: histogram splits, **leaf-wise growth**, GOSS row sampling and exclusive feature bundling.
+- **CatBoost** (Yandex, 2017–18) made it safe with **categorical features**: ordered target statistics and ordered boosting remove a subtle leak, and symmetric trees make prediction fast.
+
+<KeyIdea>
+
+**Same math, different shortcuts.** XGBoost: grow level by level, regularize every leaf. LightGBM: bin the features, grow the best leaf first, skip easy rows. CatBoost: encode categories using only the past, so a row never sees its own answer.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Histogram splits (LightGBM, XGBoost `hist`).** Eight weeks of a tile adhesive:
+
+| Price (₹) | 120 | 135 | 150 | 210 | 220 | 380 | 400 | 640 |
+|---|---|---|---|---|---|---|---|---|
+| Units | 30 | 28 | 27 | 20 | 19 | 12 | 11 | 5 |
+
+Exact search tries all 7 gaps; the best is **₹300** with gain **448.53**. Histogram mode first cuts price into 4 bins of 2 weeks each, with edges at ₹142.5, ₹215 and ₹390, and only tries those 3 edges. The best is **₹215** with gain **420.50**, 94% of the exact best.
+
+Where the edges fall depends on each library's binning rule. In *Build It*, LightGBM's 4 bins lead it to ₹180 (gain 418.13, 93% of the best), while XGBoost's cut points happen to include ₹380, which separates the same two groups as the exact split. Either way, a little accuracy is traded for speed.
+
+With 50 million rows the saving is enormous: build one histogram per feature per node (one pass, no sorting), then scan ~255 bins instead of millions of gaps.
+
+</Step>
+<Step>
+
+**GOSS: skip the easy rows (LightGBM).** After a few rounds most rows are already predicted well, with tiny gradients. Ten rows:
+
+| Row | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Gradient | −9 | 7 | −0.6 | 0.5 | −0.4 | 0.3 | −0.2 | 0.6 | −0.5 | 0.4 |
+
+The true sum is $G = -1.9$. With $a = 0.2$ and $b = 0.2$, GOSS keeps the top 20% by size (rows 1 and 2, sum −2) and samples 20% of the rest (say rows 8 and 10: 0.6 and 0.4). Sampled rows stand in for $(1 - a)/b = 4$ rows each, so the estimate is $-2 + 4 \times (0.6 + 0.4) =$ **+2.0**.
+
+That's far off, but only by bad luck: averaged over all possible samples the estimate is exactly −1.9. On ten rows the noise is large; on ten million rows (where "20% of the rest" is millions of rows) it's negligible, and the tree was built from 40% of the data.
+
+</Step>
+<Step>
+
+**Exclusive feature bundling (LightGBM).** Two promo flags are never on in the same week: *catalogue promo* = 1, 0, 0, 1, 0 and *app-only promo* = 0, 1, 0, 0, 1. Store them as one column: **1, 2, 0, 1, 2**, where 2 means "the app flag" (shifted past the first feature's range). A split "below 1.5" or "above 1.5" can still isolate either promo. With thousands of sparse one-hot columns, bundling can cut the feature count by an order of magnitude.
+
+</Step>
+<Step>
+
+**Missing values: learn a default direction (XGBoost, LightGBM).** "Days since the customer's last visit" is missing for shoppers without a loyalty card. Six rows, squared loss, λ = 0:
+
+| Days since visit | 2 | 5 | 9 | 14 | missing | missing |
+|---|---|---|---|---|---|---|
+| Residual | 4 | 3 | −2 | −3 | 5 | 4 |
+
+For each threshold, try the missing rows on **both** sides and keep the better:
+
+| Threshold | Missing go left | Missing go right |
+|---|---|---|
+| 3.5 | 18.75 | 2.82 |
+| **7** | **28.17** ✓ | 4.17 |
+| 11.5 | 14.02 | 0.08 |
+
+Best: split at 7 days, and **send missing to the left**, with the recent visitors. The model has learned that card-less shoppers behave like frequent ones, which is something mean-imputation would have hidden.
+
+</Step>
+<Step>
+
+**Ordered target statistics (CatBoost).** Encode a *store* category for a "did the promo beat target?" model. Naive target encoding uses each store's average target, **including the row's own target**:
+
+| Row | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| Store | A | B | A | C | B | A |
+| Beat target | 1 | 0 | 1 | 1 | 0 | 0 |
+| Naive encoding | 0.667 | 0 | 0.667 | **1** | 0 | 0.667 |
+| Ordered (prior 0.5) | 0.5 | 0.5 | 0.75 | 0.5 | 0.25 | 0.833 |
+
+Store C has one row, so its naive encoding **is its target**: the feature leaks the answer. CatBoost walks the rows in a random order and encodes each one using **only earlier rows**: $(\text{sum of earlier targets} + 0.5)/(\text{earlier count} + 1)$. Row 3 sees only row 1 (one A that beat target): $(1 + 0.5)/2 = 0.75$. Row 6 sees rows 1 and 3: $(2 + 0.5)/3 = 0.833$. No row ever sees its own target.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Both trees get exactly 12 leaves. Which one fits the 120 training stores more closely?" options={["Level-wise (XGBoost)", "Leaf-wise (LightGBM)", "They're identical"]} answer={1}>
+
+**Leaf-wise.** Its training squared error is 4,931 against 5,724. It spends every split where the gain is biggest, even if that means going deeper on one side. Level-wise growth splits every node at a depth before going deeper, so some splits go to nodes that barely needed them.
+
+</Predict>
+
+<LevelVsLeaf />
+
+**Try this:**
+
+1. Slide from 2 to 16 leaves. Up to about 8 leaves the two trees are nearly the same. After that leaf-wise growth starts to carve up the busy region (big stores near the centre) while level-wise growth keeps splitting everywhere.
+2. At 16 leaves the leaf-wise tree is one level deeper. With LightGBM's default of 31 leaves and no depth limit, a tree can become very deep and narrow, which is how it overfits small data.
+3. This is why LightGBM's main complexity knob is `num_leaves`, while XGBoost's is `max_depth`. A depth-5 level-wise tree has up to 32 leaves; 32 leaf-wise leaves can sit at almost any depth.
+
+</Section>
+
+<Section id="formula">
+
+<HistogramSplit />
+
+**Histogram split finding.** Bucket each feature into at most $B$ bins once, before training (`max_bin`, default 255). At a node, one pass over its rows accumulates $G$ and $H$ per bin, and a scan over $B$ bins evaluates every candidate split. The cost per node drops from $O(n \log n)$ to $O(n + B)$. A further trick: build the histogram only for the **smaller** child and get the larger one by subtraction from the parent.
+
+<Depth min={2}>
+
+**XGBoost's weighted quantile sketch.** XGBoost's approximate mode places its cut points at quantiles weighted by the hessian $h_i$, not by row count. Since the second-order objective is $\sum_i \tfrac12 h_i (w - (-g_i/h_i))^2$ plus a constant, each row is a squared error weighted by $h_i$, so bins should hold equal amounts of $h$.
+
+**GOSS is an unbiased estimate.** Keep the top $a \cdot n$ rows by $\lvert g\rvert$ (set $A$), sample $b \cdot n$ of the rest (set $B$), and estimate $G \approx \sum_A g_i + \frac{1 - a}{b}\sum_B g_i$. Each of the $(1 - a)n$ small rows is in the sample with probability $b/(1 - a)$, so the weighted sample sum has the right expectation. The large-gradient rows, which matter most for the split, are never dropped.
+
+</Depth>
+
+<GossDemo />
+
+**Categorical splits.** LightGBM splits a category feature by sorting its levels by $G/H$ (the average gradient per level) and then finding the best cut in that order, an old result (Fisher, 1958) that makes the optimal two-group partition of $k$ levels findable in $O(k \log k)$ instead of $2^{k-1}$ tries. CatBoost instead turns each category, and combinations of categories, into ordered target statistics.
+
+<Depth min={3}>
+
+**Prediction shift.** In ordinary boosting, the gradient for row $i$ at round $m$ is computed from a model that was trained on row $i$, so the residuals the next tree sees are biased: smaller than residuals on new data. Prokhorenkova et al. (2018) call this *prediction shift*. CatBoost's **ordered boosting** keeps separate models trained only on the "past" of each row (in a random permutation) to compute unbiased gradients, the same idea as ordered target statistics applied to the boosting itself.
+
+**Symmetric (oblivious) trees.** CatBoost uses the same split for every node at a given depth. A depth-6 tree is then just 6 comparisons forming a 6-bit index into 64 leaf values, which makes prediction very fast and acts as a regularizer.
+
+**Sparsity-aware splits.** XGBoost's default-direction search (the missing-value step in *By Hand*) only iterates over non-missing entries, so sparse one-hot data costs time proportional to the non-zeros.
+
+</Depth>
+
+</Section>
+
+<Section id="knobs">
+
+The same ideas go by different names in each library:
+
+| Idea | XGBoost | LightGBM | CatBoost |
+|---|---|---|---|
+| Step size | `learning_rate` (eta) | `learning_rate` | `learning_rate` |
+| Number of trees | `n_estimators` | `num_iterations` | `iterations` |
+| Tree size | `max_depth` (6) | **`num_leaves` (31)**, `max_depth` (−1 = none) | `depth` (6, symmetric) |
+| Minimum leaf size | `min_child_weight` (hessian) | `min_data_in_leaf` (20), `min_sum_hessian_in_leaf` | `min_data_in_leaf` |
+| L2 on leaf values | `reg_lambda` (1) | `lambda_l2` (0) | `l2_leaf_reg` (3) |
+| Cost per split | `gamma` | `min_gain_to_split` | — |
+| Row sampling | `subsample` | `bagging_fraction` + `bagging_freq`, or GOSS | `subsample`, `bootstrap_type` |
+| Column sampling | `colsample_bytree` | `feature_fraction` | `rsm` |
+| Histogram bins | `max_bin` (`tree_method="hist"`) | `max_bin` (255) | `border_count` |
+| Categories | `enable_categorical` | `categorical_feature` | `cat_features` (its specialty) |
+| Monotone rules | `monotone_constraints` | `monotone_constraints` | `monotone_constraints` |
+
+**The first knob to watch in LightGBM is `num_leaves`.** Keep it below $2^{\text{max\_depth}}$ if you set both, and raise `min_data_in_leaf` on small data. In XGBoost, `max_depth` plays that role.
+
+</Section>
+
+<Section id="failure">
+
+**Where each one bites:**
+
+<TargetLeakage />
+
+Slide the number of store IDs up. When most IDs appear only once or twice, naive target encoding "predicts" whether the promo beat target with 75% or more accuracy on training rows, from an ID that carries **no information at all**. The model will trust that feature, then fail in production. Ordered statistics stay near 50%, which is the truth.
+
+| Library | Typical failure | Guard |
+|---|---|---|
+| **LightGBM** | Leaf-wise trees overfit small or noisy data; default `min_data_in_leaf = 20` hides this on big data and bites on small | Lower `num_leaves`, set `max_depth`, raise `min_data_in_leaf`, use early stopping |
+| **LightGBM / XGBoost** | Target-encoded or high-cardinality IDs leak during training | Out-of-fold encoding, or CatBoost |
+| **XGBoost** | Exact mode is slow on big data; deep trees on wide data are memory-hungry | `tree_method="hist"` |
+| **CatBoost** | Slower to train on large numeric-only data; symmetric trees can underfit very irregular targets | Use it where categories dominate; raise depth |
+| **All three** | Can't extrapolate trends; non-monotone wiggles; overfit without early stopping | Detrend, `monotone_constraints`, a time-based validation set |
+
+**Which to choose:**
+
+- **Mostly numeric, millions of rows, need speed:** LightGBM.
+- **Many high-cardinality categories (store, SKU, brand, supplier):** CatBoost, or LightGBM with careful out-of-fold encoding.
+- **Small or medium data, maximum control, heavy custom objectives:** XGBoost.
+- **In practice:** results are usually within a percent or two of each other after tuning. Pick the one your platform supports best, and spend the time on features, the objective and validation.
+
+</Section>
+
+<Section id="build">
+
+XGBoost exact vs histogram mode on the eight weeks, LightGBM's histogram split, XGBoost's learned direction for missing values, and ordered target statistics in NumPy. Expected: exact search splits below ₹300, the histogram modes split only at their own bin edges, missing values go left at 7 days, and the encodings match the *By Hand* table. CatBoost isn't available in the browser, so the last part implements its encoding directly.
+
+<PyRunner title="Splits, missing values and ordered statistics" code={`
+import json
+import numpy as np
+import xgboost as xgb
+import lightgbm as lgb
+
+price = np.array([120, 135, 150, 210, 220, 380, 400, 640], dtype=float).reshape(-1, 1)
+units = np.array([30, 28, 27, 20, 19, 12, 11, 5], dtype=float)
+
+def first_split(model):
+    tree = json.loads(model.get_booster().get_dump(dump_format="json")[0])
+    return tree["split_condition"]
+
+for method, bins in [("exact", None), ("hist", 4)]:
+    params = dict(n_estimators=1, max_depth=1, learning_rate=1.0, reg_lambda=0, min_child_weight=0, tree_method=method)
+    if bins:
+        params["max_bin"] = bins
+    m = xgb.XGBRegressor(**params).fit(price, units)
+    print(f"xgboost {method:5s}: first split at price < {first_split(m)}")
+
+lm = lgb.LGBMRegressor(n_estimators=1, num_leaves=2, max_bin=4, min_child_samples=1, min_data_in_bin=1,
+                       learning_rate=1.0, verbose=-1).fit(price, units)
+print("lightgbm (4 bins): first split at price <=", lm.booster_.dump_model()["tree_info"][0]["tree_structure"]["threshold"])
+
+# Missing values: residuals as the target, missing days encoded as NaN
+days = np.array([2, 5, 9, 14, np.nan, np.nan]).reshape(-1, 1)
+resid = np.array([4, 3, -2, -3, 5, 4], dtype=float)
+m = xgb.XGBRegressor(n_estimators=1, max_depth=1, learning_rate=1.0, reg_lambda=0, min_child_weight=0,
+                     base_score=0, tree_method="exact").fit(days, resid)
+tree = json.loads(m.get_booster().get_dump(dump_format="json")[0])
+side = "left (yes branch)" if tree["missing"] == tree["yes"] else "right (no branch)"
+print(f"missing values: split at {tree['split_condition']}, missing rows go {side}")
+
+# CatBoost-style ordered target statistics vs naive target encoding
+stores = ["A", "B", "A", "C", "B", "A"]
+beat = [1, 0, 1, 1, 0, 0]
+naive = [np.mean([b for s2, b in zip(stores, beat) if s2 == s]) for s in stores]
+ordered, seen = [], {}
+for s, b in zip(stores, beat):
+    tot, cnt = seen.get(s, (0, 0))
+    ordered.append((tot + 0.5) / (cnt + 1))
+    seen[s] = (tot + b, cnt + 1)
+print("naive  :", np.round(naive, 3))
+print("ordered:", np.round(ordered, 3))
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Big retail tables are LightGBM's home ground.** SKU × store × day for a year is hundreds of millions of rows; histograms, GOSS and bundling are what make a global model trainable on one machine.
+- **Pin `max_bin` and the library version.** Bin edges are computed from data; a retrain on a different sample shifts them slightly. Record them with the model.
+- **Categorical encodings are part of the model.** Whatever encodes store or SKU at training time (a category mapping, target statistics) must be saved and reused at prediction time, with a plan for unseen categories (new stores, new SKUs).
+- **GPU training** exists for all three and pays off on deep trees and wide data; for retail-sized tabular data the CPU histogram methods are often fast enough.
+- **Prediction speed:** CatBoost's symmetric trees and Treelite-compiled XGBoost or LightGBM models serve in microseconds per row.
+- **Reproducibility:** set seeds for bagging, feature fraction and CatBoost's permutations, or two "identical" runs will differ slightly.
+
+</Section>
+
+<Section id="leads">
+
+<Lineage
+  self="XGBoost · LightGBM · CatBoost"
+  from={[
+    { label: "Gradient boosting", slug: "gradient-boosting", note: "The shared algorithm" },
+    { label: "Decision trees", slug: "decision-tree", note: "Split search, impurity, pruning" },
+  ]}
+  to={[
+    { label: "Global LightGBM with Tweedie", slug: "fc-tweedie-lgbm", note: "Demand forecasting at chain scale" },
+    { label: "Model Arena", slug: "model-arena", note: "All models, one task, every failure scenario" },
+    { label: "Monotone and constrained boosting", note: "Pricing models that respect economics" },
+    { label: "Tabular deep learning (TabPFN, FT-Transformer)", note: "The challengers" },
+  ]}
+/>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Bundle three flags">
+
+Three promo flags are never on together: catalogue (1, 0, 0, 0), app (0, 1, 0, 0), in-store (0, 0, 1, 0). Bundle them into one column.
+
+<Solution>
+
+Shift each feature past the previous ones: catalogue stays 1, app becomes 2, in-store becomes 3. The bundle is **1, 2, 3, 0**. Any single promo can be isolated by two thresholds (e.g., between 1.5 and 2.5 is "app").
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Leaves at a given depth">
+
+A level-wise tree of depth 6 has at most how many leaves? A leaf-wise tree with `num_leaves = 31` and no depth limit can have depth at most what?
+
+<Solution>
+
+Level-wise: $2^6 =$ **64** leaves. Leaf-wise: each split adds one leaf, so 31 leaves takes 30 splits; if every split is on the deepest leaf the depth can reach **30**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Ordered statistics with a different order">
+
+Encode the six rows of *By Hand* with ordered statistics (prior 0.5, a = 1), but walk them in reverse order (6, 5, 4, 3, 2, 1).
+
+<Solution>
+
+Row 6 (A, first): 0.5. Row 5 (B, first): 0.5. Row 4 (C, first): 0.5. Row 3 (A; earlier: row 6 with 0): $(0 + 0.5)/2 =$ 0.25. Row 2 (B; earlier: row 5 with 0): 0.25. Row 1 (A; earlier: rows 6 and 3 with 0, 1): $(1 + 0.5)/3 =$ 0.5. Different orders give different encodings, which is why CatBoost averages over several random permutations.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="GOSS weights">
+
+With $a = 0.1$ and $b = 0.05$, what weight does each sampled small-gradient row get? What share of rows does each tree use?
+
+<Solution>
+
+Weight $(1 - a)/b = 0.9/0.05 =$ **18**. Each tree uses $a + b =$ **15%** of the rows.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Where should missing go?">
+
+In the missing-value example, compute by hand the gain for threshold 7 with missing rows going right. Explain in words why going left wins.
+
+<Solution>
+
+Gradients are $g = -r$. Left: rows with 2 and 5 days, $G_L = -7$, $H_L = 2$. Right: 9, 14 days and both missing, $G_R = 2 + 3 - 5 - 4 = -4$, $H_R = 4$. Parent: $G = -11$, $H = 6$. Gain $= \tfrac12[49/2 + 16/4 - 121/6] = \tfrac12[24.5 + 4 - 20.17] \approx$ **4.17**. Going left puts the missing rows (residuals 5, 4) with the rows they resemble (4, 3), making both children nearly uniform; going right mixes them with −2 and −3.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Why does naive encoding leak more with more stores?">
+
+In the leakage demo, why does naive encoding's training accuracy rise as the number of distinct store IDs grows, when the target is pure noise?
+
+<Solution>
+
+With more IDs, each ID covers fewer rows. A row's own target is one of those few, so it dominates its encoding: with one row per ID the encoding *is* the target (100% "accuracy"), with two rows it's half the target, and so on. The model learns "high encoding means beat target", a rule that's true in training only because the answer was copied into the feature. New rows don't contribute their own target, so the rule collapses to 50%.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="interview">
+
+<QA q="LightGBM vs XGBoost: what's actually different?">
+
+Both are second-order gradient boosting. LightGBM grows trees leaf-wise (best leaf first), uses histogram binning by default, and adds GOSS and exclusive feature bundling, so it's usually much faster on large data but more prone to overfit small data (control num_leaves and min_data_in_leaf). XGBoost grows level-wise by default, has exact and histogram modes, and its main complexity control is max_depth. After tuning, accuracy is usually similar.
+
+</QA>
+
+<QA q="Why does CatBoost handle categorical features better?">
+
+Naive target encoding computes a category's mean target including each row's own target, which leaks the label, worst for rare categories. CatBoost uses ordered target statistics: in a random permutation, each row is encoded only with the targets of rows before it, plus a prior. It applies the same idea to boosting itself (ordered boosting) to avoid prediction shift, and it builds feature combinations of categories automatically.
+
+</QA>
+
+<QA q="How do these libraries handle missing values?">
+
+They learn a default direction per split: during split finding, rows with a missing value are tried on both sides and sent where the gain is higher. So "missing" can carry information (no loyalty card, a new store) without imputation. Imputing a mean first throws that information away.
+
+</QA>
+
+<QA q="Your LightGBM model has 99% training accuracy and 70% validation accuracy on 5,000 rows. What do you change?">
+
+It's overfitting, probably through deep leaf-wise trees. Lower num_leaves (e.g., 15), set max_depth, raise min_data_in_leaf, add lambda_l2 and feature_fraction / bagging_fraction, lower the learning rate and use early stopping. Then check for leakage: target-encoded IDs or features computed with future data produce the same symptom.
+
+</QA>
+
+<Trap>
+
+**"LightGBM is more accurate than XGBoost."** It's usually **faster**, and on big data that buys more experiments. Accuracy after tuning is typically within noise of XGBoost and CatBoost. Gains come from features, the objective and validation, much more than from the choice among the three.
+
+</Trap>
+
+</Section>

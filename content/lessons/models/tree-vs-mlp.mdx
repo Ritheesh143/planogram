@@ -1,0 +1,279 @@
+<Section id="floor">
+
+Two analysts forecast paint sales for the festive weeks. One uses a gradient-boosted tree model; the other a small neural network. On last year's held-out weeks they score about the same. On the first two festive weeks of this year, which sit **above anything in the training data**, the tree model forecasts a flat line while the network keeps climbing.
+
+Neither is a bug. Trees and MLPs carve up the same data in fundamentally different shapes: **boxes** and **bends**. Knowing which shape fits a problem tells you which model to trust, before you train either.
+
+<KeyIdea>
+
+**A tree predicts a constant inside each box, and the boxes have edges parallel to the feature axes. An MLP predicts a linear function inside each region, and its regions have edges at any angle.** So trees are good at thresholds and jumps and go flat outside the data; MLPs are good at smooth, diagonal effects and continue in straight lines outside the data.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Six weeks of paint sales, growing about 4 units a week:
+
+| Week | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| Sales | 10 | 14 | 19 | 22 | 27 | 30 |
+
+<Steps>
+<Step>
+
+**A depth-2 regression tree.** The best first split separates weeks 1–3 from 4–6 (at 3.5). Inside each half, the best second splits are at 2.5 and 4.5. The four leaves predict:
+
+| Weeks | 1–2 | 3 | 4 | 5–6 |
+|---|---|---|---|---|
+| Leaf value | 12 | 19 | 22 | 28.5 |
+
+</Step>
+<Step>
+
+**A one-unit MLP.** Take a single hidden unit $h = \text{ReLU}(\text{week} - 1)$ and output $\hat y = 10 + 4h$. It predicts 10, 14, 18, 22, 26, 30: a line with one bend at week 1, which is the left edge of the data. (Training a one-unit network on these six weeks gives almost exactly this: the least-squares slope is 4.06.)
+
+</Step>
+<Step>
+
+**Forecast weeks 8 and 10.**
+
+| Week | 8 | 10 |
+|---|---|---|
+| Tree | 28.5 | 28.5 |
+| MLP | 38 | 46 |
+
+The tree sends week 8 to the "weeks 5–6" leaf, because 8 ≥ 4.5, and returns that leaf's average. Every week after 6 gets 28.5 forever. The MLP's unit is on, so the line simply continues.
+
+</Step>
+<Step>
+
+**Now flip the situation.** Suppose a store was remodeled before week 4, and sales were 10, 10, 10, 30, 30, 30. The tree needs one split (at 3.5) and fits perfectly. One ReLU unit can only make a ramp, and even two units ($10 + 20\,\text{ReLU}(w - 3) - 20\,\text{ReLU}(w - 4)$) need a steep ramp between weeks 3 and 4 to fake a jump. **Jumps favour boxes; trends favour bends.**
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Store sales rise smoothly with floor area and fall smoothly with distance from the city centre: a diagonal effect. With 100 stores, which model wins?" options={["The tree", "The MLP", "They tie"]} answer={1}>
+
+**The MLP**, by a wide margin: about 4.9 against 9.7 for a depth-4 tree, where 5 is pure noise. A diagonal effect needs a staircase of many small boxes, and each box needs enough stores to estimate. Switch to *Jumps at thresholds* and the result reverses.
+
+</Predict>
+
+<BoxesVsBends />
+
+**Try this:**
+
+1. With **Smooth, diagonal effect**, raise the tree's depth. The staircase gets finer but the error stops improving around depth 6 (about 9.1): the boxes become too small to hold enough stores.
+2. Switch to **Jumps at thresholds**. Now a depth-3 tree scores about 5.8 (the noise floor), while the MLP blurs every edge into a ramp.
+3. Raise the MLP's hidden units on the jump surface. More units allow steeper ramps, but they never become true steps.
+4. Look at the corners of each heatmap: they're the edges of the data, where the tree goes flat and the MLP keeps tilting.
+
+</Section>
+
+<Section id="simulate">
+
+The same contrast on the Failure Lab's one-feature scenarios, now with all four models:
+
+<FailureLab only={["trend", "step", "saturation", "interaction"]} start="trend" />
+
+- **Trend:** the tree and boosting go flat beyond week 40; the line and the MLP keep growing.
+- **Step change:** the tree's single split wins; the MLP ramps across the remodel.
+- **Diminishing returns:** the MLP's smooth bend wins; the tree and boosting make staircases.
+- **Promo × price:** the MLP learns two different slopes; the tree uses boxes, and the line can't do it at all.
+
+</Section>
+
+<Section id="formula">
+
+**A tree is a sum of boxes.** With leaves $R_1, \dots, R_K$ and leaf values $c_k$:
+
+$$
+f_{\text{tree}}(x) = \sum_{k=1}^K c_k\,\mathbb 1[x \in R_k]
+$$
+
+Each $R_k$ is an axis-aligned box (a set of "feature $j$ below $t$" conditions). Inside a box the prediction is flat, so the gradient of a tree's prediction is zero almost everywhere, and outside the training range the prediction is the constant of an edge box.
+
+**A ReLU MLP is a sum of bends.** With one hidden layer:
+
+$$
+f_{\text{MLP}}(x) = c + \sum_{j=1}^m v_j\,\text{ReLU}(w_j^\top x + b_j)
+$$
+
+Each unit is zero on one side of the hyperplane $w_j^\top x + b_j = 0$ and linear on the other. The hyperplanes can point in any direction, and between them the function is linear, not constant. Outside the data it continues linearly.
+
+**Boosting doesn't change the shape.** A sum of trees is still piecewise constant on a grid of axis-aligned cells. Boosting makes the grid finer where the data demands it; it doesn't make the cells diagonal or the edges extrapolate.
+
+<Depth min={2}>
+
+**Why GBMs still win on most tabular data.** Grinsztajn, Oyallon and Varoquaux (2022) compared tuned trees and deep networks on 45 tabular datasets and traced the gap to three properties of tabular data:
+
+1. **Targets are irregular.** Real effects have thresholds and pockets ("tier-1 stores in monsoon weeks"). MLPs are biased toward smooth functions and blur them.
+2. **Many features are uninformative.** A tree simply never splits on a junk column. An MLP mixes every input into every hidden unit, so junk features add noise to every bend.
+3. **Features have meaning along their own axes.** "Price below ₹500" is meaningful; "0.7 × price + 0.3 × distance below 12" usually isn't. MLPs are rotation-invariant (rotate the inputs and an MLP can learn the same function), so they spend data learning which directions matter. Trees assume the axes matter, which is usually right for tables.
+
+</Depth>
+
+<Depth min={3}>
+
+**When the axes don't matter, the advantage flips.** If you randomly rotate a tabular dataset's features, tree performance drops sharply while MLP performance barely changes. Images and text are the extreme case: no single pixel or token position is meaningful on its own, which is exactly where neural networks dominate.
+
+**Extrapolation is a modelling choice, not a property of the data.** Neither shape is "right" outside the training range. For time series, the usual answer is to make the target stationary (ratio to last year, differences, a separate trend model) so that tomorrow's inputs look like yesterday's, and then either model will do.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Forecast week 7">
+
+Using the tree and the one-unit MLP from *By Hand*, forecast week 7.
+
+<Solution>
+
+Tree: week 7 ≥ 4.5 lands in the "weeks 5–6" leaf: **28.5**. MLP: $10 + 4(7 - 1) =$ **34**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Which shape?">
+
+For each, say whether boxes or bends are the more natural fit: (a) demand falling smoothly with price; (b) a delivery fee that jumps at a ₹2,000 basket value; (c) footfall rising with temperature until 35 °C, then dropping.
+
+<Solution>
+
+(a) **Bends**: smooth and monotone. (b) **Boxes**: a threshold at an exact value. (c) **Bends**, with one kink near 35 °C; a tree can approximate it with a few steps, but an MLP gets the shape with two units.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A remodel with two ReLUs">
+
+Write a one-hidden-layer network with two ReLU units that outputs 10 for weeks 1–3 and 30 for weeks 4–6 (exactly, at those integer weeks).
+
+<Solution>
+
+$\hat y = 10 + 20\,\text{ReLU}(w - 3) - 20\,\text{ReLU}(w - 4)$. For $w \le 3$ both units are off: 10. For $w \ge 4$: $10 + 20(w - 3) - 20(w - 4) = 30$. Between 3 and 4 it's a ramp. At integer weeks it's exact; at week 3.5 it predicts 20, which a tree would never do.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Count the boxes">
+
+A depth-3 tree on two features has at most how many leaves? How many leaves would a staircase need to follow a diagonal boundary across a 30 × 20 region with steps of 2 units?
+
+<Solution>
+
+Depth 3: at most $2^3 =$ **8** leaves. A diagonal boundary crossing 30 units in steps of 2 needs about 15 steps, so 15 or more boxes on each side of the line: roughly depth 5 or more, with fewer stores per box. A one-unit MLP draws that diagonal with one hyperplane.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Make the trees extrapolate">
+
+Your GBM forecasts flat sales for the festive weeks. Propose two ways to keep using trees but forecast growth.
+
+<Solution>
+
+(1) **Change the target**: model the ratio of this week's sales to the same week last year (or to a trend fitted by linear regression), so the trees predict a stationary quantity and the trend is added back afterwards. (2) **Change the leaves**: use linear models in the leaves (LightGBM's `linear_tree`), so each box contains a sloped line that continues beyond the data. A third option is to blend the GBM with a model that extrapolates (a linear trend or an MLP) for the horizon beyond the data.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Junk features">
+
+You add 50 columns of random noise to a 10-feature demand dataset. Predict what happens to a GBM's test error and to an MLP's, and why.
+
+<Solution>
+
+The GBM barely changes: its splits are chosen by gain, and noise columns rarely win a split (with enough data). The MLP gets noticeably worse: every hidden unit receives all 60 inputs, so each weight on a noise column adds variance, and it needs more data or stronger regularization to learn that those weights should be zero. This is one of the three reasons trees dominate tabular data.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Both models on the six weeks, forecasting beyond the data, then the diagonal vs threshold surfaces with scikit-learn. Expected: the tree forecasts 28.5 for weeks 8 and 10; the network keeps rising; the tree wins on thresholds and the MLP on the diagonal.
+
+<PyRunner title="Boxes vs bends with scikit-learn" code={`
+import warnings
+import numpy as np
+from sklearn.exceptions import ConvergenceWarning
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+weeks = np.arange(1, 7, dtype=float).reshape(-1, 1)
+sales = np.array([10, 14, 19, 22, 27, 30], dtype=float)
+future = np.array([[8.0], [10.0]])
+
+tree = DecisionTreeRegressor(max_depth=2).fit(weeks, sales)
+print("tree leaves on weeks 1-6:", tree.predict(weeks))
+print("tree forecast weeks 8, 10:", tree.predict(future))
+
+w = np.polyfit(weeks.ravel(), sales, 1)
+print(f"least-squares slope {w[0]:.2f}; a one-unit ReLU net extends it: weeks 8, 10 ->", np.round(np.polyval(w, future.ravel()), 1))
+
+rng = np.random.default_rng(1)
+def stores(n, kind):
+    X = np.column_stack([10 + 30 * rng.random(n), 20 * rng.random(n)])
+    a, d = X[:, 0], X[:, 1]
+    f = 20 + 2 * a - 3 * d if kind == "diagonal" else 40 + 30 * (a > 25) + 20 * (d < 8)
+    return X, f + rng.normal(0, 5, n)
+
+for kind in ["diagonal", "thresholds"]:
+    Xtr, ytr = stores(100, kind)
+    Xte, yte = stores(500, kind)
+    t = DecisionTreeRegressor(max_depth=4).fit(Xtr, ytr)
+    m = make_pipeline(StandardScaler(), MLPRegressor(hidden_layer_sizes=(8,), max_iter=5000, random_state=0)).fit(Xtr, ytr)
+    rmse = lambda model: np.sqrt(((model.predict(Xte) - yte)**2).mean())
+    print(f"{kind:10s}: tree (depth 4) test RMSE {rmse(t):5.1f}   MLP (8 units) {rmse(m):5.1f}   noise 5.0")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Default to GBMs for tables**, and reach for MLPs when the inputs are images, text, sequences or high-cardinality IDs that benefit from embeddings.
+- **Hybrids are common in retail forecasting.** A trend or seasonal baseline (linear, exponential smoothing) handles the extrapolation; a GBM models the residual effects of promotions, prices and events. Two-tower and transformer models produce embeddings that a GBM then uses as features.
+- **Sanity-check the edges.** Before shipping any forecast model, plot its predictions for inputs slightly beyond the training range (next year's prices, a bigger new store). Flat or runaway predictions there are a warning, whatever the validation score.
+- **Monotone constraints exist for both.** LightGBM and XGBoost support them directly; for networks, use constrained architectures or penalties. Pricing teams will ask.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why can't tree-based models extrapolate?">
+
+Each leaf predicts an average of training targets, and every input beyond the training range falls into an edge leaf, so predictions are bounded by the training targets and constant beyond the last split. Boosting sums trees, which keeps this property. Fixes: make the target stationary, use linear leaves, or blend with a model that extrapolates.
+
+</QA>
+
+<QA q="When would you choose a neural network over XGBoost for a retail problem?">
+
+When the signal is in unstructured or high-dimensional inputs (product images, titles, reviews, browsing sequences), when there are many high-cardinality IDs where embeddings share strength, when you need end-to-end training with another neural component, or for very large datasets with smooth structure. For a standard table of numeric and low-cardinality features, I'd start with a GBM.
+
+</QA>
+
+<QA q="What decision boundary does a decision tree produce compared with an MLP?">
+
+A tree's boundary is made of axis-aligned segments (a staircase for diagonal boundaries); its prediction is constant within each box. An MLP with ReLUs produces piecewise-linear functions whose region boundaries are hyperplanes at any angle, so diagonal and smooth boundaries are natural, while sharp axis-aligned thresholds are approximated by steep ramps.
+
+</QA>
+
+<Trap>
+
+**"Gradient boosting fixes the tree's extrapolation problem, because it adds many trees."** A sum of piecewise-constant functions is still piecewise constant, and every tree is flat beyond the data. Boosting reduces bias inside the data range; outside it, the forecast is still flat.
+
+</Trap>
+
+</Section>

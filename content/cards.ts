@@ -56,6 +56,36 @@ export const cards: Flashcard[] = [
   { id: "ml-4", lesson: "mle-peak", front: "Which loss gives a 90th-percentile forecast?", back: "Pinball (quantile) loss with τ = 0.9: under-predictions cost 0.9 per unit, over-predictions 0.1." },
   { id: "ml-5", lesson: "mle-peak", front: "Why is Tweedie a common objective for daily SKU sales?", back: "It's a Poisson number of gamma-sized purchases: a point mass at zero plus a continuous spread, with a log link that keeps forecasts positive." },
   { id: "ml-6", lesson: "mle-peak", front: "You report WAPE. Which point forecast minimizes it, and why does that matter for slow movers?", back: "The median (WAPE is scaled absolute error). On intermittent SKUs the median can be 0, so a WAPE-optimal model may forecast zero." },
+
+  // Model Lab: gradient boosting
+  { id: "gb-1", lesson: "gradient-boosting", front: "For a general loss, what does each boosting tree fit, and how are its leaf values set?", back: "It fits the pseudo-residuals −∂L/∂F. Each leaf then gets the best constant step for that loss: mean (squared), median (absolute), quantile (pinball) or Newton step −G/(H + λ)." },
+  { id: "gb-2", lesson: "gradient-boosting", front: "Pseudo-residual for absolute-error loss, and why it makes boosting robust.", back: "sign(y − F): ±1. A huge outlier pulls exactly as hard as a small miss." },
+  { id: "gb-3", lesson: "gradient-boosting", front: "XGBoost leaf value and split gain.", back: "w* = −G/(H + λ). Gain = ½[G_L²/(H_L + λ) + G_R²/(H_R + λ) − (G_L + G_R)²/(H_L + H_R + λ)] − γ." },
+  { id: "gb-4", lesson: "gradient-boosting", front: "Gradient and hessian of log loss with respect to the raw score.", back: "g = p − y, h = p(1 − p)." },
+  { id: "gb-5", lesson: "gradient-boosting", front: "Why does a Poisson boosting step multiply predictions instead of adding to them?", back: "The raw score is log(rate), so adding ηw to it multiplies the rate by e^(ηw)." },
+  { id: "gb-6", lesson: "gradient-boosting", front: "λ vs γ in XGBoost.", back: "λ shrinks every leaf value toward 0 (L2). γ is a minimum gain a split must exceed, so it prunes whole splits." },
+
+  // Model Lab: XGBoost vs LightGBM vs CatBoost
+  { id: "xl-1", lesson: "xgb-lgbm-catboost", front: "Level-wise vs leaf-wise tree growth.", back: "Level-wise (XGBoost default) splits every node at a depth before going deeper. Leaf-wise (LightGBM) always splits the leaf with the largest gain, giving deeper, lopsided trees that fit faster and can overfit small data." },
+  { id: "xl-2", lesson: "xgb-lgbm-catboost", front: "What does GOSS do, and why is it unbiased?", back: "Keeps the top a share of rows by |gradient|, samples b of the rest and up-weights them by (1 − a)/b, so the expected gradient sums are unchanged." },
+  { id: "xl-3", lesson: "xgb-lgbm-catboost", front: "Why does naive target encoding leak?", back: "Each row's encoding includes its own target. For rare categories the encoding nearly equals the label, so the feature looks predictive only in training." },
+  { id: "xl-4", lesson: "xgb-lgbm-catboost", front: "CatBoost's ordered target statistic for a row.", back: "In a random order, (sum of earlier same-category targets + a·prior) / (earlier count + a). A row never sees its own target." },
+  { id: "xl-5", lesson: "xgb-lgbm-catboost", front: "How do XGBoost and LightGBM handle missing values?", back: "At each split they try sending missing rows left and right and keep the direction with the higher gain (a learned default direction)." },
+  { id: "xl-6", lesson: "xgb-lgbm-catboost", front: "Main tree-size knob in LightGBM vs XGBoost.", back: "LightGBM: num_leaves (keep below 2^max_depth). XGBoost: max_depth." },
+
+  // Model Lab: MLP
+  { id: "mp-1", lesson: "mlp", front: "What is a single ReLU neuron, in terms of models you know?", back: "A linear regression w·x + b followed by a bend: zero on one side of the line w·x + b = 0, linear on the other." },
+  { id: "mp-2", lesson: "mlp", front: "Where does the unit ReLU(wx + b) bend?", back: "At x = −b/w. Each hidden unit adds one kink to a one-input network." },
+  { id: "mp-3", lesson: "mlp", front: "Backprop for an output weight v₁ in ŷ = v₁h₁ + v₂h₂ + c with loss ½(ŷ − y)².", back: "∂L/∂v₁ = (ŷ − y)·h₁. Error signal times the input that weight multiplied." },
+  { id: "mp-4", lesson: "mlp", front: "What does ReLU do to the gradient in the backward pass?", back: "Passes it unchanged where the unit was on (z > 0) and blocks it (0) where it was off. A unit off for every row never learns: a dead ReLU." },
+  { id: "mp-5", lesson: "mlp", front: "Why must MLP inputs be standardized?", back: "Gradients scale with input size, so one learning rate can't suit a price in rupees and a bias; He initialization also assumes unit-variance inputs." },
+  { id: "mp-6", lesson: "mlp", front: "How does a ReLU MLP extrapolate beyond the training range?", back: "Linearly: past the last kink every unit is permanently on or off, so the output is a fixed straight line." },
+
+  // Tree vs MLP
+  { id: "tm-1", lesson: "tree-vs-mlp", front: "Shape of a tree's prediction vs a ReLU MLP's.", back: "Tree: constant within axis-aligned boxes. ReLU MLP: linear within regions bounded by hyperplanes at any angle." },
+  { id: "tm-2", lesson: "tree-vs-mlp", front: "Which model suits thresholds and jumps, and which suits smooth diagonal effects?", back: "Thresholds and jumps: trees. Smooth, oblique effects: MLPs." },
+  { id: "tm-3", lesson: "tree-vs-mlp", front: "Three reasons tree ensembles beat MLPs on typical tabular data (Grinsztajn et al., 2022).", back: "Irregular targets (MLPs over-smooth), uninformative features (MLPs mix them in), and meaningful feature axes (MLPs are rotation-invariant)." },
+  { id: "tm-4", lesson: "tree-vs-mlp", front: "Does boosting fix trees' inability to extrapolate?", back: "No. A sum of piecewise-constant trees is still piecewise constant and flat beyond the data. Fix it by detrending the target or using linear leaves." },
 ];
 
 export function cardsForLesson(slug: string): Flashcard[] {

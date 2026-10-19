@@ -7,12 +7,16 @@ import { PyRunner } from "@/components/lesson/PyRunner";
 import { Section } from "@/components/lesson/Section";
 import { Step, Steps } from "@/components/lesson/Steps";
 import { BoostingByHand, BoostingOverfit } from "@/components/viz/BoostingByHand";
+import { GossDemo, HistogramSplit, LevelVsLeaf, TargetLeakage } from "@/components/viz/BoostingInternals";
+import { GBMFunctionSpace, GBMKnobs } from "@/components/viz/BoostingLab";
 import { CIRepeat } from "@/components/viz/CIRepeat";
 import { CountingWorlds, FraudSimulation } from "@/components/viz/CountingWorlds";
 import { FailureLab } from "@/components/viz/FailureLab";
 import { CollinearCloud, RidgeLassoGeometry } from "@/components/viz/LinearKnobs";
 import { LinRegPlayground } from "@/components/viz/LinRegPlayground";
 import { LossMirror, LossSimulation } from "@/components/viz/LossMirror";
+import { BackpropStep, MLPTrainer, ReluKinks } from "@/components/viz/MLPLab";
+import { BoxesVsBends } from "@/components/viz/TreeVsMLP";
 import { BaggingDemo, ImpurityCurves, TreeDepthPlayground, TreeSplitByHand } from "@/components/viz/TreePlayground";
 import { LikelihoodDial, LikelihoodSimulation } from "@/components/viz/LikelihoodDial";
 
@@ -69,6 +73,16 @@ const components: MDXComponents = {
   BaggingDemo,
   LossMirror,
   LossSimulation,
+  GBMFunctionSpace,
+  GBMKnobs,
+  HistogramSplit,
+  GossDemo,
+  LevelVsLeaf,
+  TargetLeakage,
+  ReluKinks,
+  BackpropStep,
+  MLPTrainer,
+  BoxesVsBends,
 };
 
 export function useMDXComponents(): MDXComponents {

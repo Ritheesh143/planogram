@@ -77,6 +77,7 @@ export function backward(layers: Layer[], x: number[], y: number): { grads: Grad
   return { grads: { dW, db }, pred };
 }
 
+/** `loss` is the training MSE before each epoch's update, in the target's units². */
 export type TrainResult = { model: MLP; loss: number[] };
 
 export function trainMLP(X: number[][], y: number[], opts: MLPOptions = {}): TrainResult {
@@ -112,7 +113,8 @@ export function trainMLP(X: number[][], y: number[], opts: MLPOptions = {}): Tra
       grads.dW.forEach((W, l) => W.forEach((row, j) => row.forEach((g, k) => (gW[l][j][k] += g / n))));
       grads.db.forEach((bs, l) => bs.forEach((g, j) => (gb[l][j] += g / n)));
     }
-    loss.push(total / n);
+    // Report mean squared error in the target's own units, so runs with and without scaling compare.
+    loss.push((total / n) * ySd * ySd);
     layers.forEach((layer, l) => {
       const step = (g: number, mm: number[], vv: number[], k: number) => {
         if (optimizer === "sgd") return lr * g;

@@ -11,6 +11,10 @@ const lessons: [string, string][] = [
   ["/models/linear-regression", "lasso, alpha=6:  b = -5.00"],
   ["/models/decision-tree", "root: tier < 1.5, gain 5880.00"],
   ["/learn/bayes/mle-peak", "Bernoulli NLL at p=0.4: 3.365"],
+  ["/models/gradient-boosting", "xgboost, lambda=3:    [24.5 24.5 24.5 31.5 31.5 31.5]"],
+  ["/models/xgb-lgbm-catboost", "missing rows go left"],
+  ["/models/mlp", "after one step: prediction 9.714, loss 0.0409"],
+  ["/learn/models/tree-vs-mlp", "tree forecast weeks 8, 10: [28.5 28.5]"],
 ];
 
 for (const [path, expected] of lessons) {

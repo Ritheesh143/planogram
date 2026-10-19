@@ -9,4 +9,8 @@ export const lessonBodies: Record<string, () => Promise<{ default: ComponentType
   "mle-peak": () => import("./lessons/bayes/mle-peak.mdx"),
   "linear-regression": () => import("./models/linear-regression.mdx"),
   "decision-tree": () => import("./models/decision-tree.mdx"),
+  "gradient-boosting": () => import("./models/gradient-boosting.mdx"),
+  "xgb-lgbm-catboost": () => import("./models/xgb-lgbm-catboost.mdx"),
+  mlp: () => import("./models/mlp.mdx"),
+  "tree-vs-mlp": () => import("./lessons/models/tree-vs-mlp.mdx"),
 };

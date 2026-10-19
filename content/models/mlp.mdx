@@ -1,0 +1,371 @@
+<Section id="origin">
+
+In 1958 Rosenblatt's **perceptron** learned to separate patterns by adjusting the weights of a single linear unit. In 1969 Minsky and Papert showed that one layer can't even learn XOR ("exactly one of two promos is running"), and interest collapsed. The fix was known in principle: stack layers with a bend between them. What was missing was a way to train the hidden layers. **Backpropagation** (popularized by Rumelhart, Hinton and Williams in 1986) supplied it: the chain rule, applied layer by layer. Later, **ReLU** activations (around 2010) and the **Adam** optimizer (2014) made deep stacks practical.
+
+**What it fixed:** a linear model can't bend, and a tree can only make steps. A multilayer perceptron learns **its own features**, smooth bends and combinations of inputs, and because it's differentiable end to end it can be plugged into bigger systems: embeddings for SKUs, image and text encoders, transformers.
+
+At Bolt & Beam the question is a cordless drill whose demand **changes character with price**: mass-market buyers are very price-sensitive up to about ₹4,000, while above that the buyers are tradespeople who barely react.
+
+<KeyIdea>
+
+**A neuron is a linear regression followed by a bend: ReLU(w·x + b) is zero on one side of a line and linear on the other.** Adding neurons adds bends, so a one-hidden-layer network draws any curve as joined straight pieces. Backpropagation is the chain rule, used to work out how each weight should change.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**One neuron.** Inputs: price in ₹100s and a promo flag. Weights $w = (-8, 15)$, bias $b = 100$:
+
+$$
+z = 100 - 8\cdot\text{price} + 15\cdot\text{promo}, \qquad \text{output} = \text{ReLU}(z) = \max(0, z)
+$$
+
+At ₹600 with no promo: $z = 52$, output **52**. At ₹1,300: $z = -4$, output **0**: the neuron is *off*. Before the ReLU, this is exactly the linear regression from the Linear Regression page.
+
+</Step>
+<Step>
+
+**Two neurons make a kinked curve.** Price $x$ in ₹ thousands. Take hidden units $h_1 = \text{ReLU}(x)$ and $h_2 = \text{ReLU}(x - 4)$, and output $\hat y = 60 - 12h_1 + 9h_2$:
+
+| Price | ₹2k | ₹4k | ₹6k |
+|---|---|---|---|
+| $h_1$ | 2 | 4 | 6 |
+| $h_2$ | 0 | 0 | 2 |
+| $\hat y = 60 - 12h_1 + 9h_2$ | **36** | **12** | **6** |
+
+Below ₹4k the slope is −12 drills per ₹1k; above it, $-12 + 9 = -3$. Unit 2 is the bend: it switches on at $x = 4$, where its input $x - 4$ crosses zero. In general a unit $\text{ReLU}(wx + b)$ bends at $x = -b/w$.
+
+</Step>
+<Step>
+
+**A forward pass through a tiny network.** One input, two ReLU units, one output. With $x = 2$ and target $y = 10$:
+
+| | Weight | Bias | Pre-activation $z$ | $h = \text{ReLU}(z)$ |
+|---|---|---|---|---|
+| Unit 1 | $w_1 = 1$ | $b_1 = 0$ | $1 \times 2 + 0 = 2$ | 2 |
+| Unit 2 | $w_2 = -1$ | $b_2 = 3$ | $-1 \times 2 + 3 = 1$ | 1 |
+
+Output weights $v_1 = 3$, $v_2 = 2$, bias $c = 1$: $\hat y = 3(2) + 2(1) + 1 =$ **9**. Loss $\tfrac12(\hat y - y)^2 = \tfrac12(9 - 10)^2 =$ **0.5**.
+
+</Step>
+<Step>
+
+**Backward: the chain rule, one link at a time.** Start at the loss: $\delta = \partial L/\partial\hat y = \hat y - y = -1$.
+
+- **Output weights:** $\hat y = v_1h_1 + v_2h_2 + c$, so $\partial L/\partial v_1 = \delta h_1 = -2$, $\partial L/\partial v_2 = \delta h_2 = -1$, $\partial L/\partial c = \delta = -1$.
+- **Into the hidden units:** $\partial L/\partial h_1 = \delta v_1 = -3$ and $\partial L/\partial h_2 = \delta v_2 = -2$.
+- **Through the ReLUs:** both were on ($z \gt 0$), so ReLU passes the gradient unchanged: $\partial L/\partial z_1 = -3$, $\partial L/\partial z_2 = -2$. (A unit that was off would pass 0.)
+- **Input weights:** $z_1 = w_1x + b_1$, so $\partial L/\partial w_1 = -3 \times x = -6$ and $\partial L/\partial b_1 = -3$. Likewise $\partial L/\partial w_2 = -2 \times 2 = -4$ and $\partial L/\partial b_2 = -2$.
+
+Every gradient is negative: increasing every weight would raise the prediction toward 10.
+
+</Step>
+<Step>
+
+**Take a step** of size 0.01 against each gradient: $v_1 = 3.02$, $v_2 = 2.01$, $c = 1.01$, $w_1 = 1.06$, $b_1 = 0.03$, $w_2 = -0.96$, $b_2 = 3.02$. A new forward pass gives $z_1 = 2.15$, $z_2 = 1.10$ and $\hat y = 3.02(2.15) + 2.01(1.10) + 1.01 \approx$ **9.714**. The loss falls from 0.5 to **0.041**.
+
+With a step of 0.05 instead, the prediction jumps to **12.65** and the loss *rises* to 3.51: the step overshot. Choosing the learning rate is the first practical problem of training.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="The drill's demand changes slope at one price. Where should a hidden unit put its bend?" options={["₹2,000", "₹4,000", "₹6,000"]} answer={1}>
+
+**₹4,000.** Below it demand falls 12 drills per ₹1,000; above it only 3. A unit with its kink at ₹4k and a slope change of +9 turns the steep line into the flat one.
+
+</Predict>
+
+<ReluKinks />
+
+**Try this:**
+
+1. Set unit 1's kink to ₹4k and its slope change to +9. The squared error falls to about 106, which is the noise in the data. You've found the true curve by hand.
+2. Now make unit 2 bend somewhere else as well. Extra bends can only chase noise in these 30 weeks.
+3. Press **Let gradient descent fit 3 units**. Starting from random weights, training finds a curve with about the same error (104), using its spare units for small wiggles.
+4. Look at the right edge. Beyond the last kink, a ReLU network continues in a straight line forever. That's how MLPs extrapolate.
+
+</Section>
+
+<Section id="formula">
+
+**The forward pass in table form.** For an input vector $x$, a hidden layer computes $h = \text{ReLU}(W_1x + b_1)$ (one row of $W_1$ per hidden unit), and the output is $\hat y = W_2h + b_2$. More layers repeat the same pattern.
+
+**The backward pass** works from the loss backward, layer by layer. Writing $\delta^{(\ell)} = \partial L/\partial z^{(\ell)}$:
+
+$$
+\delta^{(\text{out})} = \hat y - y, \qquad
+\delta^{(\ell)} = \big(W_{\ell+1}^\top \delta^{(\ell+1)}\big) \odot \mathbb 1[z^{(\ell)} \gt 0], \qquad
+\frac{\partial L}{\partial W_\ell} = \delta^{(\ell)}\,\big(h^{(\ell-1)}\big)^\top
+$$
+
+That's the four bullets of *By Hand*, for every unit at once. One backward pass costs about two forward passes, whatever the number of weights. That is why networks with billions of weights can be trained.
+
+<BackpropStep />
+
+<Depth min={2}>
+
+**Why ReLU.** The old activations, sigmoid and tanh, flatten out for large inputs, so their derivatives are near zero there. Multiply many of those together across layers and the gradient vanishes. ReLU's derivative is exactly 1 wherever the unit is on, so gradients pass through deep stacks intact. The cost: a unit whose input is negative for every row passes **no** gradient and stops learning (a "dead ReLU").
+
+**Initialization.** If each layer's outputs are much bigger or smaller than its inputs, signals explode or vanish after a few layers. He initialization draws weights with variance $2/\text{fan-in}$, which keeps the variance of ReLU activations steady from layer to layer, **assuming the inputs have unit variance**. Feed it prices in rupees and that assumption breaks on the first layer.
+
+**Optimizers.** Plain SGD: $\theta \leftarrow \theta - \eta g$. Momentum keeps a running average of past gradients (the *geometric decay* thread again). Adam keeps running averages of $g$ and $g^2$ and divides one by the square root of the other, so each weight effectively gets its own step size.
+
+**Weight decay is a prior.** Adding $\tfrac{\lambda}{2}\lVert W\rVert^2$ to the loss is ridge regression for networks: the MAP estimate under a Gaussian prior on the weights.
+
+</Depth>
+
+<Depth min={3}>
+
+**Universal approximation.** A network with one hidden layer and enough units can approximate any continuous function on a bounded region as closely as you like (Cybenko, 1989; Hornik, 1991; for ReLU, by stacking bends). The theorem says nothing about how many units are needed or whether gradient descent will find the weights.
+
+**Counting pieces.** With one input, $k$ ReLU units give a continuous piecewise-linear function with at most $k$ kinks. With $d$ inputs, each unit's kink is a hyperplane, and the pieces are regions cut by those hyperplanes, which is why MLP boundaries are **oblique** while a tree's are axis-aligned.
+
+**The loss surface is not convex.** Different random initializations reach different weights. In practice, for over-parameterized networks most minima found by SGD generalize similarly, but run-to-run variance is real, which is why production teams average several seeds.
+
+</Depth>
+
+</Section>
+
+<Section id="knobs">
+
+<MLPTrainer />
+
+What each knob does here (30 training weeks, 1,500 epochs, results on 200 new weeks; the noise is 2 drills):
+
+| Setting | Test error | What happened |
+|---|---|---|
+| 16 units, Adam, lr 0.01, standardized | **2.15** | The baseline: close to the noise floor |
+| 1 hidden unit | 4.58 | One bend can't make "steep, then gently falling" |
+| 2 hidden units | 2.13 | Enough bends for this curve |
+| Two layers of 16 | 2.41 | Training error 0.93: it started memorizing 30 weeks |
+| Weight decay 0.1 | 3.59 | Too much shrinkage flattens the curve |
+| **No standardization**, Adam | 19.67 | Prices in rupees saturate the first layer |
+| **No standardization**, plain SGD | diverges | Gradients for the price weight are ~1,000× too large |
+
+- **Width** (hidden units): more bends available.
+- **Depth** (layers): bends of bends, much more expressive, and much easier to overfit on small data.
+- **Learning rate and optimizer:** Adam forgives a poorly chosen rate more than SGD does, but not unscaled inputs.
+- **Weight decay, dropout, early stopping:** the brakes. Early stopping on a validation set is the most reliable on tabular data.
+- **Standardize every input**, and usually the target too. For an MLP this is not optional.
+
+</Section>
+
+<Section id="failure">
+
+<FailureLab focus="mlp" start="small" />
+
+**Where an MLP breaks:**
+
+| Situation | What goes wrong | The fix |
+|---|---|---|
+| Small tabular data | Hundreds of weights for a few rows: it memorizes | Use a linear model or GBM; or strong weight decay, early stopping and seed ensembles |
+| Unscaled inputs | Training stalls or diverges | Standardize inputs (and the target) |
+| Extrapolation | Continues linearly past the last kink, and can go negative | A positive output link (softplus, exp) and features that make the future look like the past |
+| Monotone business rules | Can rise with price in places | Monotone architectures or a penalty, or a model with constraints |
+| Thresholds and jumps | Smooth ramps instead of steps | Give it the indicator feature, or use trees |
+| High-cardinality IDs | One-hot SKU or store columns are huge and sparse | Learned **embeddings**, where MLPs shine |
+
+**Where it wins:** smooth, curved and oblique effects (it scored best in *Diminishing returns* and *Promo × price interaction*), and any problem with images, text or learned embeddings, where trees have nothing to split on.
+
+</Section>
+
+<Section id="build">
+
+The hand-worked backprop step in NumPy, then a small network trained from scratch on the drill data, then scikit-learn's `MLPRegressor` with and without scaling. Expected: prediction 9 then 9.714 after one step; scaling makes the difference between a good fit and a poor one.
+
+<PyRunner title="Backprop by hand, then a network from scratch" code={`
+import warnings
+import numpy as np
+from sklearn.exceptions import ConvergenceWarning
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+relu = lambda z: np.maximum(0, z)
+
+# The 1-2-1 network from By Hand
+x, y = 2.0, 10.0
+W1, b1 = np.array([1.0, -1.0]), np.array([0.0, 3.0])
+v, c = np.array([3.0, 2.0]), 1.0
+z = W1 * x + b1; h = relu(z); yhat = v @ h + c
+delta = yhat - y
+grads = {"v": delta * h, "c": float(delta), "W1": delta * v * (z > 0) * x, "b1": delta * v * (z > 0)}
+print("forward:", yhat, " loss:", 0.5 * delta**2)
+print("gradients:", {k: np.round(g, 3).tolist() if np.ndim(g) else g for k, g in grads.items()})
+lr = 0.01
+W1, b1, v, c = W1 - lr * grads["W1"], b1 - lr * grads["b1"], v - lr * grads["v"], c - lr * grads["c"]
+yhat = v @ relu(W1 * x + b1) + c
+print(f"after one step: prediction {yhat:.3f}, loss {0.5 * (yhat - y)**2:.4f}")
+
+# A 16-unit network trained from scratch on 30 weeks of drill demand
+rng = np.random.default_rng(41)
+price = np.linspace(1, 7, 30)
+demand = 60 - 12 * price + 9 * np.maximum(0, price - 4) + rng.normal(0, 2, 30)
+X = ((price - price.mean()) / price.std()).reshape(-1, 1)
+t = (demand - demand.mean()) / demand.std()
+W1 = rng.normal(0, np.sqrt(2), (16, 1)); b1 = np.zeros(16)
+W2 = rng.normal(0, np.sqrt(2 / 16), 16); b2 = 0.0
+for epoch in range(3000):
+    Z = X @ W1.T + b1; Hh = relu(Z); out = Hh @ W2 + b2
+    d = (out - t) / len(t)                      # dLoss/dout for mean of 0.5*(out - t)^2
+    gW2 = Hh.T @ d; gb2 = d.sum()
+    dZ = np.outer(d, W2) * (Z > 0)
+    gW1 = dZ.T @ X; gb1 = dZ.sum(0)
+    for p, g in [(W1, gW1), (b1, gb1), (W2, gW2)]:
+        p -= 0.05 * g
+    b2 -= 0.05 * gb2
+pred = (relu(X @ W1.T + b1) @ W2 + b2) * demand.std() + demand.mean()
+print(f"from scratch: train RMSE {np.sqrt(((pred - demand)**2).mean()):.2f} drills")
+
+# scikit-learn, with prices in rupees
+Xr = (price * 1000).reshape(-1, 1)
+raw = MLPRegressor(hidden_layer_sizes=(16,), max_iter=3000, random_state=0).fit(Xr, demand)
+scaled = make_pipeline(StandardScaler(), MLPRegressor(hidden_layer_sizes=(16,), max_iter=3000, random_state=0)).fit(Xr, demand)
+for name, m in [("raw rupees", raw), ("standardized", scaled)]:
+    print(f"sklearn, {name:12s}: train RMSE {np.sqrt(((m.predict(Xr) - demand)**2).mean()):.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **On plain tabular retail data, GBMs usually beat MLPs** for less effort. MLPs earn their place when the inputs aren't a neat table: product images, titles and descriptions, sequences of a customer's visits, or many high-cardinality IDs that benefit from **embeddings**.
+- **Embeddings are the bridge.** A layer that maps each SKU or store ID to a learned vector lets the network share information between similar items. These vectors feed search, recommendations and the next lessons (word2vec, two-tower retrieval).
+- **Tabular MLP recipe:** standardize numeric features, embed categoricals, use a modest width, weight decay and dropout, early stopping on a time-based validation set, and average 3–5 seeds.
+- **Calibration and monitoring:** check that predicted demand is unbiased by segment; networks can drift quietly when an input's scale changes upstream (prices re-stated in paise, a new store with an unseen ID).
+- **Serving:** export to ONNX or TorchScript. A small MLP scores millions of rows per second on a CPU; large ones want batching or a GPU.
+
+</Section>
+
+<Section id="leads">
+
+<Lineage
+  self="Multilayer perceptron"
+  from={[
+    { label: "Linear regression", slug: "linear-regression", note: "Each layer is a regression before the bend" },
+    { label: "The perceptron", note: "A single learned linear unit (1958)" },
+  ]}
+  to={[
+    { label: "Tree vs MLP", slug: "tree-vs-mlp", note: "Boxes vs bends on the same data" },
+    { label: "Backprop visualized", slug: "dl-backprop", note: "The chain rule through deeper networks" },
+    { label: "The optimizer race", slug: "dl-optimizers", note: "SGD, momentum and Adam on one loss surface" },
+    { label: "Embeddings", slug: "dl-embeddings", note: "Products and stores as learned vectors" },
+    { label: "Attention and transformers", slug: "dl-attention", note: "MLPs plus a way to mix information across positions" },
+  ]}
+/>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Is the neuron on?">
+
+For the neuron $z = 100 - 8\cdot\text{price} + 15\cdot\text{promo}$ (price in ₹100s), compute the output at ₹900 with a promo, and at ₹1,500 with a promo.
+
+<Solution>
+
+₹900: $100 - 72 + 15 = 43$, output **43**. ₹1,500: $100 - 120 + 15 = -5$, output **0** (off).
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Where is the kink?">
+
+A hidden unit computes $\text{ReLU}(2x - 10)$. At what $x$ does it bend, and which side is "on"?
+
+<Solution>
+
+It bends where $2x - 10 = 0$, at **$x = 5$**. Since the weight is positive, it's on for $x \gt 5$ and off below.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Count the weights">
+
+A network has 10 inputs, two hidden layers of 32 units and one output. How many parameters does it have?
+
+<Solution>
+
+Layer 1: $10 \times 32 + 32 = 352$. Layer 2: $32 \times 32 + 32 = 1{,}056$. Output: $32 + 1 = 33$. Total **1,441**: about 48 parameters for every row of a 30-week training set.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="A dead unit">
+
+In the *By Hand* network, change $b_2$ from 3 to 1. Redo the forward pass for $x = 2$ and say which gradients become zero.
+
+<Solution>
+
+$z_2 = -2 + 1 = -1$, so $h_2 = 0$ and the unit is off. $\hat y = 3(2) + 2(0) + 1 = 7$, $\delta = -3$. The gradients for $v_2$ ($\delta h_2$), $w_2$ and $b_2$ (through the ReLU, which passes 0 when off) are all **zero**. If unit 2 is off for every row, it never recovers: a dead ReLU.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Why MLPs extrapolate in straight lines">
+
+Show that a one-input network with one hidden ReLU layer is a continuous, piecewise-linear function of $x$, and that for $x$ beyond its last kink it is exactly linear.
+
+<Solution>
+
+Each unit $\text{ReLU}(w_jx + b_j)$ is continuous and linear on each side of $x_j = -b_j/w_j$. The output $\sum_j v_j\,\text{ReLU}(w_jx + b_j) + c$ is a sum of continuous piecewise-linear functions, so it's continuous and piecewise linear, with kinks only at the $x_j$. To the right of the largest $x_j$, every unit is either always on (contributing $v_jw_jx + v_jb_j$) or always off (contributing 0), so the output is a fixed straight line. No new kinks can appear in data the network never saw.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Why rupees break SGD">
+
+Prices run from ₹1,000 to ₹7,000. For the first-layer weight on price, $\partial L/\partial w = \delta \cdot x$; for its bias, $\partial L/\partial b = \delta$. Why does one learning rate fail for both, and why does standardizing fix it?
+
+<Solution>
+
+The weight's gradient is about 1,000–7,000 times the bias's. A learning rate small enough to keep the weight's steps stable makes the bias (and every downstream unit) learn thousands of times too slowly; one large enough for the bias makes the weight's steps explode. Standardizing puts $x$ around ±1, so both gradients have similar sizes and one rate suits all. He initialization also assumes unit-variance inputs; with rupees, the first layer's pre-activations are thousands of times too big from the start.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain backpropagation as if to a smart non-specialist.">
+
+The prediction is a chain of simple steps: multiply, add, bend. To learn, we need to know how a small change in each weight changes the error. The chain rule says: multiply the local sensitivities along the path from the weight to the error. Backprop computes those products once, starting from the error and moving backward layer by layer, reusing each layer's result for the layer before it. That makes the cost about twice a forward pass, whatever the number of weights.
+
+</QA>
+
+<QA q="Why ReLU instead of sigmoid in hidden layers?">
+
+Sigmoid saturates: for large positive or negative inputs its derivative is near zero, and products of many small derivatives make gradients vanish in deep networks. ReLU's derivative is 1 when active, so gradients flow; it's also cheap to compute and gives sparse activations. Downsides: dead units with zero gradient. Leaky ReLU, GELU and SiLU soften that.
+
+</QA>
+
+<QA q="Why do gradient-boosted trees usually beat MLPs on tabular data?">
+
+Tabular targets are often irregular (thresholds, interactions on specific features), many features are uninformative, and the features' meaning depends on their axis (price is price, not a rotation of price and distance). Trees handle all three naturally. MLPs are biased toward smooth functions, are rotation-invariant in a way that makes ignoring junk features harder, and need more data and tuning. MLPs win when the input is images, text, sequences, or rich embeddings.
+
+</QA>
+
+<QA q="Your network's training loss is NaN after a few hundred steps. What do you check?">
+
+Learning rate (too high), unscaled inputs or targets, log of zero or division by zero in the loss, exploding gradients (add gradient clipping), and bad data (infinities, missing values encoded as huge numbers). Plot the loss and gradient norms over steps to see where it blows up.
+
+</QA>
+
+<Trap>
+
+**"A neural network learns the right scale on its own, so scaling the inputs is optional."** It can in principle, but plain gradient descent uses one step size for all weights and initialization assumes unit-variance inputs. On the drill data with prices in rupees, plain SGD diverged and Adam reached 19.67 drills of test error instead of 2.15.
+
+</Trap>
+
+</Section>
