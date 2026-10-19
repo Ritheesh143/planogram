@@ -1,0 +1,356 @@
+<Section id="floor">
+
+The Kharadi store sold **0, 2 and 1** cordless drills on three slow weekdays. The replenishment system needs one number: **λ, the average drills sold per day**. It drives the reorder point and the safety stock.
+
+A colleague says: *"λ = 1 has a much higher likelihood than λ = 5."*
+
+What does that sentence actually claim? **Likelihood** is one of the most important words in data science:
+- Maximum likelihood estimation uses it.
+- Almost every loss function you've trained with (MSE, cross-entropy, LightGBM's `poisson` and `tweedie` objectives) is built from it.
+- Bayes' theorem multiplies by it.
+
+This lesson pins it down with a dial.
+
+<KeyIdea>
+
+**Probability:** fix the parameter, then ask how probable different *data* are. *"If λ = 1, how often would a day sell 2 drills?"*
+
+**Likelihood:** fix the data you actually saw, then ask how well different *parameters* explain it. *"Given that we saw 0, 2, 1, how well does λ = 1 explain that, compared with λ = 5?"*
+
+It's the same formula read in two directions.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The **Poisson model** says that if the store averages λ drills per day, the chance of selling exactly $k$ in a day is
+
+$$
+P(k \mid \lambda) = \frac{\lambda^k e^{-\lambda}}{k!}
+$$
+
+(Take this formula on trust for now. *Where Poisson Comes From* derives it from customers arriving at the counter.)
+
+<Steps>
+<Step>
+
+**A probability question, with λ fixed at 1.** Compute each day separately:
+
+| Day | Sold $k$ | $P(k \mid \lambda = 1)$ |
+|---|---|---|
+| 1 | 0 | $e^{-1} = 0.368$ |
+| 2 | 2 | $\tfrac{1}{2} e^{-1} = 0.184$ |
+| 3 | 1 | $e^{-1} = 0.368$ |
+
+</Step>
+<Step>
+
+**The whole 3-day pattern.** Days are independent, so multiply:
+
+$$
+0.368 \times 0.184 \times 0.368 = 0.0249
+$$
+
+If λ were 1, you'd see exactly this 0, 2, 1 sequence about **2.5% of the time**.
+
+</Step>
+<Step>
+
+**Same data, now try λ = 5.**
+
+$P(0) = e^{-5} = 0.0067$, $P(2) = 12.5\, e^{-5} = 0.0842$, $P(1) = 5\, e^{-5} = 0.0337$.
+
+Product: $0.0067 \times 0.0842 \times 0.0337 = 0.000019$.
+
+</Step>
+<Step>
+
+**Compare.** $0.0249 / 0.000019 \approx 1{,}300$.
+
+The data are about **1,300 times more probable under λ = 1 than under λ = 5**. That, and only that, is what *"λ = 1 has a higher likelihood"* means. It says nothing about the probability that λ = 1 is *true*. That would need a prior, which is Bayes.
+
+</Step>
+<Step>
+
+**Turn the dial in steps.** Do the same product for more values of λ:
+
+| λ | 0.5 | 1.0 | 1.5 | 2.0 | 5.0 |
+|---|---|---|---|---|---|
+| Likelihood $L(\lambda)$ | 0.0139 | **0.0249** | 0.0188 | 0.0099 | 0.000019 |
+
+It rises, peaks at **λ = 1**, then falls. Plot these points and you have the **likelihood curve**. Its peak is the **maximum likelihood estimate (MLE)**. Notice that 1 = (0 + 2 + 1) / 3, the plain average.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Change day 3 from 1 drill to 7 drills, so the data are 0, 2, 7. Where will the peak of the likelihood curve move?" options={["Stays at 1", "To 3", "To 7"]} answer={1}>
+
+The peak moves to the average: (0 + 2 + 7) / 3 = 3. For a Poisson model, the MLE of λ is always the sample mean. The formula section proves this with one derivative.
+
+</Predict>
+
+<LikelihoodDial />
+
+**Try these:**
+
+1. Drag λ slowly from 0.5 to 3. On the left, watch the three orange bars (the observed days) rise and fall. On the right, the orange dot rides along the likelihood curve. The dot's height is the product of the three bars.
+2. The left bars always sum to 1, because they're probabilities of the possible days. The right curve's area is about 0.037. **A likelihood curve is not a probability distribution over λ.**
+3. Change the data with the +/− buttons and watch the peak jump to the new average.
+4. Switch to **log-likelihood**. The curve changes shape, but the peak stays at the same λ, because the log is an increasing function.
+
+</Section>
+
+<Section id="simulate">
+
+Likelihood isn't magic. For any λ you can **simulate** thousands of 3-day windows and count how often one comes out exactly 0, 2, 1. That share *is* the likelihood. The formula is just a shortcut for this simulation.
+
+<LikelihoodSimulation />
+
+The simulated shares match the formula to about three decimal places. Brute force and algebra agree.
+
+</Section>
+
+<Section id="formula">
+
+**Step 1: the likelihood is a product.** For data $k_1, \dots, k_n$:
+
+$$
+L(\lambda) = \prod_{i=1}^{n} \frac{\lambda^{k_i} e^{-\lambda}}{k_i!}
+$$
+
+**Step 2: take logs to turn the product into a sum.** Logs turn × into +, and the peak stays in the same place:
+
+$$
+\ell(\lambda) = \log L(\lambda) = \sum_{i=1}^{n} \big( k_i \log\lambda - \lambda - \log k_i! \big) = \Big(\sum_i k_i\Big)\log\lambda - n\lambda - \text{const}
+$$
+
+**Step 3: find the peak by setting the derivative to zero.**
+
+$$
+\frac{d\ell}{d\lambda} = \frac{\sum_i k_i}{\lambda} - n = 0 \quad\Rightarrow\quad \hat\lambda = \frac{\sum_i k_i}{n} = \bar k
+$$
+
+The second derivative is $-\sum k_i / \lambda^2 \lt 0$, so this is a maximum. **The Poisson MLE is the average.** For 0, 2, 1 that's 1.
+
+<Depth min={2} label="Loss functions are negative log-likelihoods">
+
+## Your loss functions, unmasked
+
+Training a model means *minimizing a loss*. Most standard losses are just **minus a log-likelihood**, so minimizing them is maximum likelihood.
+
+**Gaussian noise gives MSE.** If $y = f(x) + \varepsilon$ with $\varepsilon \sim N(0, \sigma^2)$, then
+
+$$
+-\log L = \sum_i \frac{(y_i - f(x_i))^2}{2\sigma^2} + \text{const}
+$$
+
+Minimizing this over $f$ is minimizing squared error. **Choosing MSE is quietly assuming Gaussian, constant-variance noise.**
+
+**Bernoulli outcomes give cross-entropy.** If a visitor buys with probability $p$:
+
+$$
+-\log L = -\sum_i \big[ y_i \log p_i + (1-y_i)\log(1-p_i) \big]
+$$
+
+That's **log loss**, the binary cross-entropy every classifier and every LLM is trained on.
+
+**Poisson counts give Poisson deviance.** That's LightGBM's `objective="poisson"`, built for counts like units sold. A SKU selling 200 a day and one selling 2 a day get noise that scales with their level, instead of MSE's single fixed variance.
+
+</Depth>
+
+<Depth min={3} label="Curvature is certainty">
+
+## How sure is the MLE?
+
+The sharpness of the log-likelihood's peak measures how much the data pin λ down. The curvature at the peak is the **Fisher information**:
+
+$$
+I(\hat\lambda) = -\ell''(\hat\lambda) = \frac{\sum k_i}{\hat\lambda^2} = \frac{n}{\hat\lambda}
+\qquad\Rightarrow\qquad
+SE(\hat\lambda) \approx \frac{1}{\sqrt{I}} = \sqrt{\frac{\hat\lambda}{n}}
+$$
+
+With 3 days, $SE = \sqrt{1/3} = 0.58$, which is very uncertain. With 30 days at the same average, $SE = 0.18$. The curve gets about √10 times narrower. The Build It code shows this.
+
+The values of λ whose log-likelihood is within 1.92 of the peak form an approximate 95% **likelihood interval**. The 1.92 is half of 3.84, the 95% point of a χ² distribution with one degree of freedom.
+
+</Depth>
+
+**Bridge to Bayes:** the Bayesian aisle multiplies this curve by a prior and rescales the result so its area is 1. That's the posterior.
+
+$$
+\text{posterior}(\lambda) \propto L(\lambda) \times \text{prior}(\lambda)
+$$
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="One probability">
+
+If λ = 2 drills per day, what's the probability of selling exactly 3 tomorrow?
+
+<Solution>
+
+$P(3 \mid 2) = 2^3 e^{-2} / 3! = 8 \times 0.1353 / 6 = $ **0.180**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="One MLE">
+
+Four days of sales: 4, 6, 5, 5. What is the Poisson MLE of λ?
+
+<Solution>
+
+The average: 20 / 4 = **5**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Likelihood ratio">
+
+Two days of sales: 3 and 5. How many times more likely is λ = 4 than λ = 2?
+
+<Solution>
+
+$L(\lambda) \propto \lambda^{3+5} e^{-2\lambda} = \lambda^8 e^{-2\lambda}$ (the $k!$ terms cancel in a ratio).
+
+$$
+\frac{L(4)}{L(2)} = \Big(\frac{4}{2}\Big)^8 e^{-2(4-2)} = 256 \times e^{-4} = 256 \times 0.0183 \approx 4.7
+$$
+
+So λ = 4 is about **4.7×** more likely. The MLE is (3 + 5) / 2 = 4.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Which sentence is right?">
+
+Data 0, 2, 1. Which statements are correct?
+(a) "λ = 1 is the most probable value of λ."
+(b) "λ = 1 makes the observed sales more probable than any other λ does."
+(c) "The likelihood curve shows the probability of each λ."
+
+<Solution>
+
+Only **(b)**. Statement (a) needs a prior; without one, there's no probability *of* λ. Statement (c) is wrong because the curve doesn't even integrate to 1.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Cross-entropy from scratch">
+
+Out of $n$ visitors to the paint aisle, $k$ buy. Write the Bernoulli log-likelihood for the purchase probability $p$, find the MLE, and show that the negative log-likelihood per visitor is the binary cross-entropy.
+
+<Solution>
+
+$\ell(p) = k \log p + (n-k)\log(1-p)$. The derivative is $k/p - (n-k)/(1-p) = 0$, which gives $\hat p = k/n$.
+
+Per visitor $i$ with outcome $y_i \in \{0, 1\}$:
+
+$$
+-\tfrac{1}{n}\ell = -\tfrac1n \sum_i \big[y_i\log p + (1-y_i)\log(1-p)\big]
+$$
+
+That's exactly binary cross-entropy. A classifier makes $p$ depend on features, $p_i = \sigma(w^\top x_i)$, but the loss is the same likelihood.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Stockouts censor demand">
+
+On day 2 the store had only **2** drills on the shelf and sold out. True demand was *at least* 2. Write that day's likelihood term. Treating the day as "demand = 2" pushes $\hat\lambda$ in which direction?
+
+<Solution>
+
+The day contributes $P(D \ge 2 \mid \lambda) = 1 - e^{-\lambda}(1 + \lambda)$ instead of $P(D = 2 \mid \lambda)$. That term **keeps increasing** with λ (more demand makes a sell-out likelier), so it pulls the MLE **up**. Treating sales as demand biases λ **down**, and the store under-orders, which causes more stockouts. This is the core of the *Demand ≠ Sales* lesson in the forecasting signature.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Find the MLE three ways (grid, optimizer, formula). Then compare how narrow the plausible range gets with 3 days vs 30 days of data.
+
+<PyRunner title="MLE three ways" code={`
+import numpy as np
+from scipy.stats import poisson
+from scipy.optimize import minimize_scalar
+
+sales = np.array([0, 2, 1])
+
+grid = np.linspace(0.05, 6, 600)
+lik = np.array([poisson.pmf(sales, lam).prod() for lam in grid])
+loglik = np.array([poisson.logpmf(sales, lam).sum() for lam in grid])
+print("grid MLE from likelihood:     ", round(grid[lik.argmax()], 3))
+print("grid MLE from log-likelihood: ", round(grid[loglik.argmax()], 3))
+
+neg_ll = lambda lam: -poisson.logpmf(sales, lam).sum()
+res = minimize_scalar(neg_ll, bounds=(1e-6, 20), method="bounded")
+print("optimizer MLE:                ", round(res.x, 4))
+print("sample mean:                  ", sales.mean())
+
+# More data, same average -> a narrower likelihood (more certainty)
+rng = np.random.default_rng(3)
+month = rng.poisson(1.0, size=30)
+for name, data in [("3 days", sales), ("30 days", month)]:
+    ll = np.array([poisson.logpmf(data, lam).sum() for lam in grid])
+    inside = grid[ll > ll.max() - 1.92]   # approx. 95% likelihood interval
+    print(f"{name:>7}: MLE {data.mean():.2f}, plausible lambda from {inside.min():.2f} to {inside.max():.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+**Where likelihood shows up in production retail systems:**
+
+- **Choosing a loss means choosing a noise model.** For unit sales, MSE treats an error of 5 the same on a 2-a-day SKU and a 500-a-day SKU. Poisson and Tweedie objectives (LightGBM, XGBoost) model counts, many zeros and level-dependent noise. Many M5 forecasting winners used Tweedie for exactly this reason.
+- **Censored likelihoods for stockouts.** Demand-forecasting systems that train on raw sales learn the shelf capacity, not the demand. Flag stockout days and use $P(D \ge \text{sales})$ for them, or drop or impute them.
+- **Numerical stability.** Never multiply thousands of probabilities, because they underflow to 0. Always sum log-probabilities, and use log-sum-exp when you need to add probabilities in log space.
+- **Model comparison.** The held-out log-likelihood ("log score") is the standard metric for probabilistic forecasts. AIC and BIC are log-likelihoods penalized for the number of parameters.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What's the difference between probability and likelihood?">
+
+Probability fixes the parameters and describes how likely different outcomes are, and it sums to 1 over outcomes. Likelihood fixes the observed data and treats the same formula as a function of the parameters. It measures how well each parameter value explains the data and does not sum to 1. Give the example: P(sales = 2 | λ = 1) vs L(λ | sales = 0, 2, 1).
+
+</QA>
+
+<QA q="Derive the MLE of a Poisson rate.">
+
+Write $\ell(\lambda) = \sum k_i \log\lambda - n\lambda - \text{const}$, differentiate to get $\sum k_i/\lambda - n$, set it to 0 to get $\hat\lambda = \bar k$, and check that the second derivative is negative. Then add that the SE is $\sqrt{\hat\lambda / n}$.
+
+</QA>
+
+<QA q="Why is MSE the default regression loss, and when is it the wrong choice?">
+
+It's the negative log-likelihood under Gaussian noise with constant variance. It's wrong when the noise isn't like that. For counts with many zeros, use Poisson or Tweedie. For heavy-tailed errors or outliers, use Huber or absolute error. For a target spanning orders of magnitude, use a log transform or a multiplicative model. When you need quantiles (service levels), use pinball loss.
+
+</QA>
+
+<QA q="Why maximize the log-likelihood instead of the likelihood?">
+
+The log is increasing, so it has the same maximizer. It turns products into sums, which are easier to differentiate and numerically stable (no underflow). And for exponential-family models it often makes the problem concave.
+
+</QA>
+
+<Trap>
+
+**"The MLE is the most probable parameter value."** Without a prior, there's no probability *of* a parameter. The MLE is the parameter under which **the data** are most probable. If you add a prior and take the peak of the posterior, you get the MAP estimate, which is a different thing.
+
+</Trap>
+
+</Section>

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  pageExtensions: ["ts", "tsx", "md", "mdx"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -14,4 +15,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Plugins are passed by name so Turbopack can serialize them.
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-gfm", "remark-math"],
+    rehypePlugins: [["rehype-katex", { strict: false, throwOnError: false }]],
+  },
+});
+
+export default withMDX(nextConfig);

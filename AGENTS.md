@@ -1,3 +1,30 @@
+# Planogram
+
+A visual, first-principles learning site for retail math, data science, ML engineering and
+agentic AI. Lessons are MDX with interactive React visuals; learner progress lives only in the
+browser's localStorage.
+
+## Commands
+
+- `npm run dev` / `npm run build` / `npm start`
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest), `npm run test:e2e` (Playwright;
+  set `PYODIDE_E2E=1` to also run the in-browser Python checks), `npm run test:py` (generator)
+- `npm run data:sample` regenerates `public/data/boltbeam-sample.json`
+
+## Layout
+
+- `content/curriculum.ts`: aisles, lessons, prerequisites, Golden Threads, sprint weeks
+- `content/lessons/**.mdx` + `content/registry.ts`: lesson bodies; `content/cards.ts`: flashcards;
+  `content/checks.ts`: Floor Check questions and misconceptions
+- `components/lesson/`: the lesson template; `components/viz/`: interactive visuals (`kit.tsx`
+  holds the shared chart helpers); `lib/sim/`: the math behind the visuals (tested in `tests/`)
+- `python/boltbeam/`: seeded synthetic retailer with planted ground truth, tested in `python/tests/`
+
+To add or rewrite a lesson, follow `.claude/skills/new-lesson/SKILL.md`.
+
+Never add real company data, client names or the learner's private notes (`/private/` is
+gitignored).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

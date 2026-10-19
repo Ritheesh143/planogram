@@ -1,0 +1,325 @@
+<Section id="floor">
+
+Bolt & Beam tried a new endcap display for cordless drills in 20 stores. The analyst's report says:
+
+> **Sales lift: 6.1%. 95% confidence interval: [2.3%, 9.9%].**
+
+In the review meeting, the VP asks: *"So there's a 95% chance the real lift is between 2.3% and 9.9%?"* The analyst nods.
+
+That nod is wrong, and most working data scientists would have nodded too. This lesson shows **what the 95% is actually attached to**, by running the same experiment a hundred times.
+
+<KeyIdea>
+
+In the experiment, **the true lift is fixed** and **your sample of stores is random**. Run it again and you get different stores, a different average and a different interval. The 95% describes how often this *recipe* for building intervals catches the truth. It does not describe any single interval.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Use a tiny version with 5 stores, so every number fits on paper. Pretend you're the only person in the world who knows the true lift: **5%**.
+
+<Steps>
+<Step>
+
+**Experiment 1.** The measured lifts in five stores are **4, 9, −2, 12, 7** (%).
+
+Average: (4 + 9 − 2 + 12 + 7) / 5 = 30 / 5 = **6.0**.
+
+</Step>
+<Step>
+
+**How spread out are the stores?** Deviations from 6: −2, 3, −8, 6, 1. Squares: 4, 9, 64, 36, 1, which sum to 114.
+
+Sample variance = 114 / (5 − 1) = 28.5, so the standard deviation is $s = \sqrt{28.5} = 5.34$.
+
+</Step>
+<Step>
+
+**How uncertain is the average?** An average of 5 stores wobbles less than one store does. Its **standard error** is
+
+$$
+SE = \frac{s}{\sqrt{n}} = \frac{5.34}{\sqrt 5} = 2.39
+$$
+
+(The formula section shows why it's $\sqrt n$.)
+
+</Step>
+<Step>
+
+**Build the interval.** For 95% with 5 stores, the multiplier is $t = 2.78$ (a bit bigger than 1.96 because we estimated $s$ from only 5 stores).
+
+$$
+6.0 \pm 2.78 \times 2.39 = 6.0 \pm 6.6 \;\Rightarrow\; [-0.6,\; 12.6]
+$$
+
+Does it contain the true 5%? **Yes.**
+
+</Step>
+<Step>
+
+**Run the world again: Experiment 2.** Five different store-weeks: **1, 3, 10, 2, 4**.
+
+Average 4.0, $s = 3.54$, $SE = 1.58$, interval $4.0 \pm 4.4 = [-0.4,\; 8.4]$.
+
+Contains 5%? **Yes.**
+
+</Step>
+<Step>
+
+**Experiment 3.** Five more: **9, 14, 6, 11, 10**.
+
+Average 10.0, $s = 2.92$, $SE = 1.30$, interval $10.0 \pm 3.6 = [6.4,\; 13.6]$.
+
+Contains 5%? **No.** These stores happened to be strong. The recipe was the same, but this interval misses.
+
+</Step>
+<Step>
+
+**What changed between experiments?** Not the truth, which stayed 5% every time. The **intervals** moved, because the stores were random. Repeat this thousands of times and about 95% of the intervals will catch the 5%. That long-run catch rate is the "95%".
+
+In real life you only ever see **one** of these intervals, and you can't tell whether yours is one of the catchers or one of the misses.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="If you raise the confidence level from 95% to 99%, what happens to the intervals?" options={["They get narrower", "They stay the same", "They get wider"]} answer={2}>
+
+To catch the truth more often, the net has to be wider. Higher confidence buys a wider interval. The only way to get *narrower and* confident is more data.
+
+</Predict>
+
+<CIRepeat />
+
+**Try these:**
+
+1. Count the red intervals. They aren't "bad experiments". The analyst who ran them did nothing wrong and just got unlucky stores.
+2. Move **Stores per experiment** from 20 to 80. The intervals get about **half** as wide (4× the data gives ½ the width). Coverage stays near 95%.
+3. Drop to **5 stores** and tick **Use the normal multiplier**. Coverage falls below 95%, because 1.96 is too optimistic when the spread is estimated from 5 stores. The t multiplier fixes that.
+4. Hover over the top row, "your one real experiment". It's the only one you'd ever see.
+
+</Section>
+
+<Section id="simulate">
+
+Click **Run 1,000 more and just count** in the chart above five or six times. Watch the **running total**: it wanders at first, then settles near the confidence level you chose.
+
+Now change the level to 80% and repeat. The running total settles near 80%. **The confidence level is a promise about the long-run catch rate of the recipe**, and simulation is how you check that a recipe keeps its promise.
+
+</Section>
+
+<Section id="formula">
+
+**Step 1: why the average wobbles less than a single store.** Let each store's measured lift have spread (standard deviation) $\sigma$. For *independent* stores, **variances add**:
+
+$$
+\operatorname{Var}(x_1 + \dots + x_n) = n\sigma^2
+$$
+
+The average divides that sum by $n$, and dividing a quantity by $n$ divides its variance by $n^2$:
+
+$$
+\operatorname{Var}(\bar x) = \frac{n\sigma^2}{n^2} = \frac{\sigma^2}{n} \quad\Rightarrow\quad SE(\bar x) = \frac{\sigma}{\sqrt n}
+$$
+
+That's where $\sqrt n$ comes from: 4× the stores gives ½ the standard error.
+
+**Step 2: where the average lands.** With enough stores, $\bar x$ is approximately normal around the true lift $\mu$. Then in 95% of experiments:
+
+$$
+\mu - 1.96\,SE \;\le\; \bar x \;\le\; \mu + 1.96\,SE
+$$
+
+**Step 3: flip it around.** Rearrange each inequality to isolate $\mu$:
+
+$$
+\bar x - 1.96\,SE \;\le\; \mu \;\le\; \bar x + 1.96\,SE \quad \text{in 95\% of experiments}
+$$
+
+Read carefully: the random things here are $\bar x$ and $SE$, the **endpoints**. $\mu$ never moves. The 95% belongs to the endpoints landing around $\mu$, which is exactly what the 100 lines showed.
+
+**Step 4: the recipe you use.** We don't know $\sigma$, so we use the sample $s$ and a slightly bigger multiplier from the t distribution:
+
+$$
+\bar x \pm t_{0.975,\,n-1} \cdot \frac{s}{\sqrt n}
+$$
+
+For a **test vs control** comparison (endcap stores vs normal stores), the variances of the two averages add:
+
+$$
+(\bar x_T - \bar x_C) \pm 1.96 \sqrt{\frac{s_T^2}{n_T} + \frac{s_C^2}{n_C}}
+$$
+
+## Which sentences are right?
+
+| Sentence | Verdict |
+|---|---|
+| "This interval came from a method that captures the true lift in 95% of experiments." | ✓ Correct |
+| "Lifts inside the interval are values our data can't rule out at the 5% level." | ✓ Correct |
+| "There's a 95% probability the true lift is in [2.3%, 9.9%]." | ✗ In this framework the true lift isn't random, so this interval either contains it or not |
+| "95% of stores had a lift between 2.3% and 9.9%." | ✗ That describes the spread of stores, which is much wider |
+| "If we rerun, there's a 95% chance the new average lands in this interval." | ✗ It's closer to 83%, because both averages wobble |
+
+<Depth min={2} label="So how *do* you get 'a 95% chance the lift is in here'?">
+
+## The Bayesian credible interval
+
+The VP's sentence, *"95% probability the true lift is between…"*, treats the lift itself as uncertain. That's a **Bayesian** statement, and it needs a **prior** (what you believed before the experiment). Combine prior and data with Bayes' theorem (Keystone 1) and you get a posterior distribution for the lift. Its middle 95% is a **credible interval**.
+
+With a flat prior and normal data, the credible interval comes out numerically almost identical to the confidence interval. The interpretation is different, though, and with an informative prior (say, past endcap tests rarely show lifts above 8%) the two intervals differ. You'll build this in the Bayesian aisle.
+
+</Depth>
+
+<Depth min={3} label="Why the t multiplier, and the 83% replication fact">
+
+## Why t, and how much it matters
+
+With 5 stores, $s$ itself is noisy. Sometimes it comes out small, and then a $1.96 \cdot s/\sqrt n$ interval is too narrow. The ratio $(\bar x - \mu)/(s/\sqrt n)$ follows a **t distribution with $n-1$ degrees of freedom**, which has fatter tails than the normal. Its 97.5% point is 2.78 for 4 degrees of freedom, 2.09 for 19, and it approaches 1.96 as $n$ grows. Using 1.96 with 5 stores gives roughly 88% coverage instead of 95%. You saw this with the checkbox.
+
+## The replication fact
+
+The chance that a replication's average lands inside the original 95% CI is about **83%**, not 95%. Both the original and the new average wobble around $\mu$. Their difference has variance $2\sigma^2/n$, so $P(|\bar x_2 - \bar x_1| \le 1.96\,\sigma/\sqrt n) = P(|Z| \le 1.96/\sqrt 2) \approx 0.834$.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="How many misses?">
+
+Your team runs 200 independent experiments a year, each reported with a 95% CI. About how many intervals miss the true effect?
+
+<Solution>
+
+5% of 200 = **10**, give or take about 3 (binomial standard deviation $\sqrt{200 \times 0.05 \times 0.95} \approx 3.1$). You won't know which 10.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="More stores">
+
+With 20 stores, the 95% CI for lift is 8 points wide. Roughly how wide is it with 80 stores?
+
+<Solution>
+
+Width ∝ $1/\sqrt n$. Going from 20 to 80 stores multiplies $n$ by 4, so the width is divided by $\sqrt 4 = 2$, giving about **4 points**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A CI by hand">
+
+Four stores show lifts of 3, 7, 5, 9 (%). Build a 95% CI. The t multiplier for 3 degrees of freedom is 3.18.
+
+<Solution>
+
+- Mean = 24 / 4 = **6**.
+- Deviations −3, 1, −1, 3. Squares sum to 9 + 1 + 1 + 9 = 20. Variance = 20 / 3 = 6.67, so $s = 2.58$.
+- $SE = 2.58 / \sqrt 4 = 1.29$.
+- Interval: $6 \pm 3.18 \times 1.29 = 6 \pm 4.1$, which is **[1.9%, 10.1%]**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Test vs control">
+
+30 endcap stores average 5.2% growth (sd 8). 30 control stores average 1.0% (sd 7). Give a 95% CI for the endcap effect.
+
+<Solution>
+
+- Difference = 5.2 − 1.0 = **4.2**.
+- $SE = \sqrt{64/30 + 49/30} = \sqrt{3.77} = 1.94$.
+- $4.2 \pm 1.96 \times 1.94 = 4.2 \pm 3.8$, which is **[0.4%, 8.0%]**. It excludes zero, but only just.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Planning the test">
+
+Store-level lift has a standard deviation of about 8 points. Leadership wants the 95% CI to be no wider than ±2 points. How many stores do you need?
+
+<Solution>
+
+Solve $1.96 \times 8 / \sqrt n \le 2$, so $\sqrt n \ge 7.84$ and $n \ge 61.5$. You need **62 stores**. Halving the margin to ±1 would need about 4× as many (246). Precision is expensive.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Check coverage with 20,000 simulated experiments per setting, and see where the 1.96 shortcut breaks down.
+
+<PyRunner title="Coverage by simulation" code={`
+import numpy as np
+from scipy import stats
+
+rng = np.random.default_rng(0)
+true_lift, noise_sd = 5.0, 8.0
+
+def coverage(n_stores, n_experiments=20_000, use_t=True):
+    lifts = rng.normal(true_lift, noise_sd, size=(n_experiments, n_stores))
+    means = lifts.mean(axis=1)
+    se = lifts.std(axis=1, ddof=1) / np.sqrt(n_stores)
+    mult = stats.t.ppf(0.975, n_stores - 1) if use_t else 1.96
+    lo, hi = means - mult * se, means + mult * se
+    return np.mean((lo <= true_lift) & (true_lift <= hi))
+
+for n in [3, 5, 10, 20, 80]:
+    print(f"{n:>3} stores   t-interval: {coverage(n):.3f}    1.96 shortcut: {coverage(n, use_t=False):.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+**How experiments go wrong at retail scale:**
+
+- **Randomize stores, analyse stores.** If you randomize by store but analyse by transaction, you pretend to have millions of independent data points. The CI is far too narrow. Cluster your standard errors at the level you randomized.
+- **Peeking.** Checking a running test every day and stopping when the CI excludes zero inflates false positives badly. Fix the duration in advance or use sequential methods.
+- **Many tests at once.** Run 50 endcap tests at 95% and expect about 2–3 "significant" results from noise alone. Adjust (Bonferroni, false discovery rate) or pre-register the main metric.
+- **Variance reduction.** Each store's pre-period sales predict its test-period sales. Subtracting that predictable part (CUPED) shrinks $s$, and the CI shrinks with it, often by 30–50%. That's the cheapest way to "buy stores".
+- **Report the interval, not just the p-value.** "+4.2% [0.4, 8.0]" tells the business both the size and the uncertainty. "p = 0.03" hides both.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain a 95% confidence interval to a non-technical VP in one or two sentences.">
+
+"If we ran this test many times with different stores, intervals built this way would contain the true effect about 95% of the time. This one is our best range, and anything inside it is consistent with the data." Avoid saying "95% probability the true value is inside", or say clearly that this needs a Bayesian analysis.
+
+</QA>
+
+<QA q="The 95% CI for lift is [−1%, 7%]. Should we roll out the endcap?">
+
+It isn't statistically significant at 5%, but that doesn't mean "no effect": most of the interval is positive. Ask: what does rollout cost, what's the smallest lift worth acting on, and was the test powered to detect it? Options are to extend the test, add stores, use CUPED, or roll out if it's cheap and reversible. A good answer treats the CI as a decision input, not a pass/fail stamp.
+
+</QA>
+
+<QA q="Why does the CI shrink with √n rather than n?">
+
+Variances of independent observations add, so the variance of a sum grows like $n$ and the variance of the mean like $1/n$. The standard deviation is the square root, so the standard error goes like $1/\sqrt n$.
+
+</QA>
+
+<QA q="What's the difference between a confidence interval and a prediction interval?">
+
+A confidence interval covers a **parameter**, like the average lift. A prediction interval covers a **new observation**, like next week's lift in one store. The prediction interval must include store-to-store noise, so it's much wider: roughly $\pm 1.96\sqrt{s^2 + s^2/n}$ instead of $\pm 1.96\,s/\sqrt n$.
+
+</QA>
+
+<Trap>
+
+**"The two CIs overlap, so the difference isn't significant."** Not necessarily. Two 95% CIs can overlap a little while the difference is still significant, because the SE of a difference is $\sqrt{SE_1^2 + SE_2^2}$, smaller than $SE_1 + SE_2$. Compute a CI for the difference itself.
+
+</Trap>
+
+</Section>

@@ -1,0 +1,348 @@
+<Section id="floor">
+
+The returns desk at the Bolt & Beam store in Pune has a new fraud flag. The loss-prevention team's slide says:
+
+> **Catches 90% of fraudulent returns. Wrongly flags only 5% of genuine ones.**
+
+Priya, the store manager, reads it and decides: *"So when it flags a return, it's 90% likely to be fraud. Let's refuse every flagged return."*
+
+About **1 in 100** returns is actually fraudulent. Before Priya starts turning customers away, answer one question:
+
+**Of the returns that get flagged, what fraction are really fraud?**
+
+<KeyIdea>
+
+You already know how to do this. In the Floor Check, 200 of 1,000 shoppers bought paint and 50 of those also bought brushes, so you answered 50 out of 200 = 25%. You **restricted to a subgroup and counted inside it**. That is all of Bayes' theorem. The only new part is that today's subgroup is the flagged returns.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Don't use a formula yet. Imagine exactly **1,000 returns** and follow them one step at a time.
+
+<Steps>
+<Step>
+
+**Split by the truth.** 1% are fraud, so 1,000 × 0.01 = **10 fraudulent** returns and **990 genuine** ones.
+
+</Step>
+<Step>
+
+**Follow the 10 fraudulent returns.** The flag catches 90% of them: 10 × 0.9 = **9 flagged** (caught) and **1 missed**.
+
+</Step>
+<Step>
+
+**Follow the 990 genuine returns.** The flag wrongly fires on 5% of them: 990 × 0.05 = 49.5, call it **50 flagged** (false alarms), leaving **940 clear**.
+
+</Step>
+<Step>
+
+**Now stand where Priya stands.** She never sees the truth. She only sees flags. How many flags are there? 9 + 50 = **59**.
+
+</Step>
+<Step>
+
+**Restrict to the flagged subgroup and count the fraud inside it**, exactly like the paint buyers:
+
+$$
+\frac{\text{fraud and flagged}}{\text{all flagged}} = \frac{9}{9 + 50} = \frac{9}{59} \approx 15\%
+$$
+
+Only about **15%** of flagged returns are fraud. If Priya refuses all of them, she turns away about 50 honest customers for every 9 fraudsters she stops.
+
+</Step>
+<Step>
+
+**Where did "90%" come from, then?** Put the counts in a table:
+
+|  | Flagged | Not flagged | Total |
+|---|---|---|---|
+| **Fraud** | 9 | 1 | 10 |
+| **Genuine** | 50 | 940 | 990 |
+| **Total** | 59 | 941 | 1,000 |
+
+- The slide's **90%** reads **across the fraud row**: 9 out of 10. It answers *"if a return is fraud, how often is it flagged?"*
+- Priya's question reads **down the flagged column**: 9 out of 59. It answers *"if a return is flagged, how often is it fraud?"*
+
+Both use the same 9 in the numerator. Only the denominator changes, because you restricted to a different subgroup.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Suppose fraud becomes ten times more common (10% of returns) and the flag stays exactly the same. What share of flagged returns would be fraud?" options={["Still about 15%", "About 50%", "About 67%", "About 90%"]} answer={2}>
+
+Out of 1,000 returns: 100 fraud gives 90 caught, and 900 genuine gives 45 false alarms. That's 90 / (90 + 45) ≈ 67%. **The model didn't change, but its precision did.** Precision depends on how common fraud is, and that's why a model that works well in one store can disappoint in another.
+
+</Predict>
+
+<CountingWorlds />
+
+**Try these, and predict before you drag:**
+
+1. Press **Show only flagged returns**. That block of dots is Priya's whole world. Count the blue ones.
+2. Drag the **base rate down to 0.1%**. Almost every flag is now a false alarm, so the flag is close to useless.
+3. Push **sensitivity from 90% to 99%**. The answer barely moves. When fraud is rare, the **false-alarm rate** is what matters, because it acts on the huge genuine group.
+4. Set the **false-alarm rate to 0%**. Every flag is now fraud, whatever the base rate.
+
+</Section>
+
+<Section id="simulate">
+
+Real returns don't arrive in neat groups of 1,000. Each return is fraud or not at random, and the flag fires or not at random. Simulate that and see whether the answer survives.
+
+<FraudSimulation />
+
+With 100 returns, there may be only one or two fraud cases, so the estimate jumps around wildly. By 100,000 returns it settles on the Bayes answer. **Small samples are noisy**, which is the whole subject of the next Keystone.
+
+</Section>
+
+<Section id="formula">
+
+Everything below is the counting you just did, with each count divided by 1,000.
+
+**Step 1: the answer as a ratio of counts.**
+
+$$
+P(\text{fraud} \mid \text{flag}) = \frac{\#(\text{fraud and flag})}{\#(\text{flag})}
+$$
+
+Divide the top and bottom by the total (1,000). The ratio doesn't change, but the counts become probabilities:
+
+$$
+P(\text{fraud} \mid \text{flag}) = \frac{P(\text{fraud and flag})}{P(\text{flag})}
+$$
+
+**Step 2: the numerator, by following the fraud branch of the tree.** First be fraud (1%), then get flagged (90% of those):
+
+$$
+P(\text{fraud and flag}) = P(\text{fraud}) \times P(\text{flag} \mid \text{fraud}) = 0.01 \times 0.90 = 0.009
+$$
+
+That is the 9 out of 1,000.
+
+**Step 3: the denominator, by adding both flagged boxes.** A flag comes either from fraud or from a false alarm:
+
+$$
+P(\text{flag}) = \underbrace{0.01 \times 0.90}_{\text{caught: } 9} + \underbrace{0.99 \times 0.05}_{\text{false alarms: } 49.5} = 0.0585
+$$
+
+This "add up every way it can happen" step is the **law of total probability**.
+
+**Step 4: put it together.**
+
+$$
+P(\text{fraud} \mid \text{flag}) = \frac{0.009}{0.0585} = 0.1538
+$$
+
+Written for any events $A$ and $B$, this is **Bayes' theorem**:
+
+$$
+P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
+$$
+
+The parts have names you'll meet all through the Bayesian aisle:
+
+| Name | In this story | Value |
+|---|---|---|
+| **Prior** $P(A)$ | Base rate of fraud, before seeing the flag | 0.01 |
+| **Likelihood** $P(B \mid A)$ | How strongly fraud produces a flag | 0.90 |
+| **Evidence** $P(B)$ | How often a flag happens at all | 0.0585 |
+| **Posterior** $P(A \mid B)$ | Belief in fraud after seeing the flag | 0.154 |
+
+<Depth min={2} label="The odds shortcut that interviewers love">
+
+## The odds form: Bayes in your head
+
+Odds are "for : against". The prior odds of fraud are 10 : 990, which is **1 : 99**.
+
+The **likelihood ratio** says how much more often a flag happens under fraud than under genuine:
+
+$$
+\text{LR} = \frac{P(\text{flag} \mid \text{fraud})}{P(\text{flag} \mid \text{genuine})} = \frac{0.90}{0.05} = 18
+$$
+
+Bayes in odds form is one multiplication:
+
+$$
+\text{posterior odds} = \text{prior odds} \times \text{LR} = \frac{1}{99} \times 18 = \frac{18}{99}
+$$
+
+Odds of 18 : 99 mean 18 fraud for every 99 genuine, so the probability is 18 / (18 + 99) = 18/117 ≈ **15.4%**. That's the same answer, with no denominator to compute.
+
+</Depth>
+
+<Depth min={3} label="Updating twice, and the independence catch">
+
+## Today's posterior is tomorrow's prior
+
+A flagged return goes to a second, independent check with the same accuracy. If it flags again, multiply by the likelihood ratio again:
+
+$$
+\frac{18}{99} \times 18 = \frac{324}{99} \;\Rightarrow\; P = \frac{324}{324 + 99} \approx 76.6\%
+$$
+
+This is **sequential updating**, and it's how Bayesian models learn as data arrives.
+
+**The catch:** multiplying likelihood ratios assumes the two checks are **conditionally independent** given the truth. Two models trained on the same features make correlated mistakes. A genuine customer who looks odd to model 1 probably looks odd to model 2. Then the second flag carries much less information than LR = 18, and the 76.6% is overconfident. That's a real failure mode when people stack fraud rules.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Ladders and paint">
+
+Out of 2,000 customers, 400 buy a ladder and 600 buy paint. 120 customers buy both.
+
+1. What is P(paint | ladder)?
+2. What is P(ladder | paint)?
+
+<Solution>
+
+1. Restrict to ladder buyers: 120 / 400 = **30%**.
+2. Restrict to paint buyers: 120 / 600 = **20%**.
+
+The numerator (120) is the same in both. The subgroup you restrict to, the denominator, is what changes. That's exactly why P(A | B) ≠ P(B | A).
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="medium" title="The stockout alert">
+
+On 2% of SKU-days a shelf is truly empty. An alert fires on 95% of truly empty shelves and on 3% of shelves that are fine. An alert fires. What's the chance the shelf is really empty? Use 10,000 SKU-days.
+
+<Solution>
+
+- Truly empty: 10,000 × 0.02 = 200, so 200 × 0.95 = **190 alerts**.
+- Fine: 9,800, so 9,800 × 0.03 = **294 false alerts**.
+- Total alerts = 484, of which 190 are real: 190 / 484 ≈ **39%**.
+
+Most alerts are false even though the alert is "95% sensitive". Store staff will learn to ignore it unless it's tuned.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Odds in your head">
+
+Prior odds of fraud are 1 : 99. The first check has a likelihood ratio of 18. A second, independent check has LR = 6. Both flag. What's the probability of fraud?
+
+<Solution>
+
+Posterior odds = (1/99) × 18 × 6 = 108/99. Probability = 108 / (108 + 99) = 108/207 ≈ **52%**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="hard" title="What would it take?">
+
+Priya will only refuse flagged returns if at least **half** of them are fraud. The base rate stays 1% and sensitivity stays 90%. How low must the false-alarm rate $f$ be?
+
+<Solution>
+
+We need
+
+$$
+\frac{0.01 \times 0.9}{0.01 \times 0.9 + 0.99 f} \ge 0.5
+$$
+
+Multiply both sides by the denominator: $0.009 \ge 0.0045 + 0.495 f$, so $f \le 0.0045 / 0.495 \approx 0.0091$.
+
+The false-alarm rate must drop below about **0.9%**, more than five times better than today's 5%. Improving sensitivity can't get there. With rare events, precision is bought by cutting false alarms.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Same model, two stores">
+
+Store A has a fraud base rate of 0.5%. Store B (near a highway, lots of resellers) has 4%. Both use the same flag (90% sensitivity, 5% false alarms). Compute the precision P(fraud | flag) at each store. What does this say about reporting one "model precision" to leadership?
+
+<Solution>
+
+- **Store A:** 0.0045 / (0.0045 + 0.995 × 0.05) = 0.0045 / 0.05425 ≈ **8.3%**.
+- **Store B:** 0.036 / (0.036 + 0.96 × 0.05) = 0.036 / 0.084 ≈ **42.9%**.
+
+The same model is five times more "precise" in Store B. Precision is a property of the **model plus the population**, not the model alone. Report sensitivity and false-alarm rate, the model's own properties, and compute precision per store or region.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Simulate 100,000 returns with NumPy, then check the simulation against the formula. Change the base rates in the last loop to see how precision moves.
+
+<PyRunner title="Bayes by simulation" code={`
+import numpy as np
+
+rng = np.random.default_rng(42)
+n = 100_000
+base, sens, false_alarm = 0.01, 0.90, 0.05
+
+is_fraud = rng.random(n) < base
+flag_prob = np.where(is_fraud, sens, false_alarm)
+flagged = rng.random(n) < flag_prob
+
+print("returns flagged:     ", flagged.sum())
+print("fraud among flagged: ", (is_fraud & flagged).sum())
+print("simulated P(fraud | flag):", round((is_fraud & flagged).sum() / flagged.sum(), 4))
+
+def bayes(base, sens, false_alarm):
+    p_flag = sens * base + false_alarm * (1 - base)
+    return sens * base / p_flag
+
+print("formula   P(fraud | flag):", round(bayes(base, sens, false_alarm), 4))
+
+# Same model, different stores
+for b in [0.002, 0.01, 0.05, 0.2]:
+    print(f"base rate {b:6.1%} -> precision {bayes(b, sens, false_alarm):6.1%}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+**Fraud, risk and alerting systems live and die by this lesson.**
+
+- **Pick thresholds by cost, not accuracy.** Refuse a return only when the expected fraud loss beats the expected cost of insulting an honest customer: $P(\text{fraud} \mid \text{score}) \times \text{loss} > (1 - P) \times \text{cost of a false alarm}$. That needs a calibrated probability, not just a ranking.
+- **Calibrate your scores.** A model score of 0.8 is only usable in Bayes' theorem if 80% of returns scored 0.8 are really fraud. Check this with a reliability plot. Fix it with Platt scaling or isotonic regression.
+- **Correct for training resampling.** If you trained on a balanced 50/50 sample but production fraud is 1%, the model's probabilities are inflated. Multiply the model's odds by the ratio of real prior odds to training prior odds (here (1/99) / (1/1) = 1/99) to get honest probabilities back.
+- **Watch the base rate, not just the model.** When fraud prevalence changes (festive season, a new region), precision changes even if the model never drifts. Monitor prevalence alongside the model's own metrics.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="A screening test is 99% accurate. Someone tests positive. What's the chance they have the condition?">
+
+**It depends on the base rate, which the question leaves out.** Say so first, then show how to compute it. With a 1-in-1,000 base rate and a 1% false-positive rate, out of 100,000 people: 100 have it and 99 test positive, while 99,900 don't and 999 test positive. So 99 / (99 + 999) ≈ **9%**. Interviewers want to see you reach for counts, not a memorized formula.
+
+</QA>
+
+<QA q="Our fraud model has 90% recall and a 5% false-positive rate, but store managers say it's wrong most of the time. Who's right?">
+
+Both. Recall and false-positive rate describe the model on each class. Managers experience **precision**, P(fraud | flag), which at a 1% base rate is about 15%. To fix it, raise the threshold (trading recall for precision), add features that cut false positives, or route flags to a cheap secondary check instead of an outright refusal.
+
+</QA>
+
+<QA q="You trained a classifier on a 50/50 downsampled dataset. In production the positive rate is 1%. How do you fix the predicted probabilities?">
+
+Convert each predicted probability to odds, multiply by (production prior odds) / (training prior odds) = (1/99) / (1/1), and convert back. That's a direct use of the odds form of Bayes: the likelihood ratio the model learned is fine, and only the prior was wrong.
+
+</QA>
+
+<Trap>
+
+**The prosecutor's fallacy:** treating P(evidence | innocent) as if it were P(innocent | evidence). "Only 5% of genuine returns get flagged, so a flagged return is 95% likely to be fraud" makes exactly this mistake. Always ask: *which subgroup am I restricting to?*
+
+</Trap>
+
+</Section>

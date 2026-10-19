@@ -1,0 +1,369 @@
+<Section id="floor">
+
+You train LightGBM every week. It wins on almost every tabular retail problem: demand, conversion, returns. But when an interviewer asks *"what exactly does the second tree learn?"*, the honest answer is often "something about errors?"
+
+Six Bolt & Beam stores, one feature, one target:
+
+| Store | Size (thousand sq ft) | Cordless drills sold per week |
+|---|---|---|
+| A | 20 | 10 |
+| B | 30 | 18 |
+| C | 40 | 14 |
+| D | 55 | 34 |
+| E | 70 | 40 |
+| F | 90 | 52 |
+
+You'll build a gradient-boosted model on these six rows with **pen and paper**, two trees deep, and get the same numbers scikit-learn does.
+
+<KeyIdea>
+
+**Each new tree is trained to predict the mistakes the model is still making.** Start with a dumb guess, compute what's left over (the residuals), fit a small tree to those leftovers, add a fraction of it, and repeat. The "gradient" in gradient boosting is just a precise name for "what's left over".
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+We'll use the smallest possible tree, a **stump** (one split, two leaves), and a learning rate of **0.5**.
+
+<Steps>
+<Step>
+
+**Round 0: start with a constant.** The single number that minimizes squared error is the **mean**: (10 + 18 + 14 + 34 + 40 + 52) / 6 = 168 / 6 = **28**. Predict 28 for every store.
+
+| Store | A | B | C | D | E | F |
+|---|---|---|---|---|---|---|
+| Actual | 10 | 18 | 14 | 34 | 40 | 52 |
+| Prediction | 28 | 28 | 28 | 28 | 28 | 28 |
+| **Residual** = actual − prediction | **−18** | **−10** | **−14** | **6** | **12** | **24** |
+
+Total squared error: 324 + 100 + 196 + 36 + 144 + 576 = **1,376**.
+
+</Step>
+<Step>
+
+**Tree 1 must predict the residuals**, not the sales. A stump picks one split on store size, then predicts the **average residual** on each side. Try every gap between neighbouring stores:
+
+| Split at | Left residuals | Right residuals | Left mean | Right mean | Squared error |
+|---|---|---|---|---|---|
+| 25 | −18 | −10, −14, 6, 12, 24 | −18 | 3.6 | 987.2 |
+| 35 | −18, −10 | −14, 6, 12, 24 | −14 | 7 | 788 |
+| **47.5** | **−18, −10, −14** | **6, 12, 24** | **−14** | **14** | **200** ✓ |
+| 62.5 | −18, −10, −14, 6 | 12, 24 | −9 | 18 | 404 |
+| 80 | first five | 24 | −4.8 | 24 | 684.8 |
+
+The best split is at **47.5**: small stores get **−14**, big stores get **+14**.
+
+</Step>
+<Step>
+
+**Add a fraction of tree 1.** New prediction = old prediction + 0.5 × tree output:
+
+- Small stores (A, B, C): 28 + 0.5 × (−14) = **21**
+- Big stores (D, E, F): 28 + 0.5 × 14 = **35**
+
+New residuals: 10 − 21 = **−11**, 18 − 21 = **−3**, 14 − 21 = **−7**, 34 − 35 = **−1**, 40 − 35 = **5**, 52 − 35 = **17**.
+
+Squared error: 121 + 9 + 49 + 1 + 25 + 289 = **494**, down from 1,376.
+
+</Step>
+<Step>
+
+**Tree 2 fits the *new* residuals** (−11, −3, −7, −1, 5, 17):
+
+| Split at | 25 | 35 | 47.5 | **62.5** | 80 |
+|---|---|---|---|---|---|
+| Squared error | 348.8 | 347 | 200 | **131** ✓ | 147.2 |
+
+Best: **62.5**. Stores A–D get the mean of (−11, −3, −7, −1) = **−5.5**, and E–F get the mean of (5, 17) = **+11**.
+
+Tree 2 found what tree 1 missed: **the two biggest stores were still under-predicted.**
+
+</Step>
+<Step>
+
+**Add half of tree 2:**
+
+| Store | A | B | C | D | E | F |
+|---|---|---|---|---|---|---|
+| After tree 1 | 21 | 21 | 21 | 35 | 35 | 35 |
+| + 0.5 × tree 2 | −2.75 | −2.75 | −2.75 | −2.75 | +5.5 | +5.5 |
+| **Prediction** | **18.25** | **18.25** | **18.25** | **32.25** | **40.5** | **40.5** |
+| Residual | −8.25 | −0.25 | −4.25 | 1.75 | −0.5 | 11.5 |
+
+Squared error: **221.75**. In two small trees it fell from 1,376 to 221.75.
+
+</Step>
+<Step>
+
+**The finished model is a sum:**
+
+$$
+\hat y(x) = 28 + 0.5\cdot \text{tree}_1(x) + 0.5\cdot \text{tree}_2(x)
+$$
+
+A new 60k sq ft store: 28 + 0.5 × 14 + 0.5 × (−5.5) = 28 + 7 − 2.75 = **32.25** drills per week.
+
+That is gradient boosting. LightGBM does exactly this with deeper trees, thousands of rounds, millions of rows, and clever tricks to search splits fast.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Set the learning rate to 1.0. After round 1, how many different predicted values will the six stores have?" options={["1", "2", "6"]} answer={1}>
+
+Two. A stump has two leaves, so after round 1 every store gets either "small-store" or "big-store" prediction. With a learning rate of 1 those are 28 − 14 = 14 and 28 + 14 = 42. Each extra stump can add one more step to the staircase.
+
+</Predict>
+
+<BoostingByHand />
+
+**Try these:**
+
+1. Step through rounds 1 → 3. In the right chart, check that each tree fits the **blue residual dots**, not the sales. Read the split table and confirm it matches your hand calculation.
+2. Compare learning rate **1.0** with **0.1**. At 1.0 the error drops fast and the staircase jumps. At 0.1 it creeps. After 15 rounds, which one fits the six stores more tightly?
+3. Push to round 15 at learning rate 1.0. The staircase now threads almost every point. On six stores that looks impressive. On real data it's **memorizing noise**, which the next section shows.
+
+</Section>
+
+<Section id="simulate">
+
+Fitting the training stores well isn't the goal. **Predicting stores you haven't seen** is. Here the same algorithm learns from 40 noisy stores and is scored on 400 new ones.
+
+<BoostingOverfit />
+
+**What to notice:**
+
+- The training error falls forever, because more trees can always explain more of those 40 stores, including their noise.
+- The test error falls, bottoms out, then **creeps back up**. That's overfitting.
+- A smaller learning rate reaches a lower or similar test minimum but needs more rounds. This is why practitioners use a learning rate around 0.03–0.1 with **early stopping** on a validation set.
+
+</Section>
+
+<Section id="formula">
+
+**Round 0: the best constant.** Minimize $\sum_i (y_i - c)^2$. The derivative is $-2\sum_i (y_i - c) = 0$, so $c = \bar y$. That's the 28.
+
+**Each round adds a small tree:**
+
+$$
+F_m(x) = F_{m-1}(x) + \eta\, h_m(x)
+$$
+
+where $\eta$ is the learning rate and $h_m$ is a tree fitted to the residuals $r_i = y_i - F_{m-1}(x_i)$.
+
+**Why residuals are a gradient.** Write the loss for one store as $L = \tfrac12 (y - F)^2$. Its derivative with respect to the *prediction* $F$ is
+
+$$
+\frac{\partial L}{\partial F} = -(y - F) \quad\Rightarrow\quad -\frac{\partial L}{\partial F} = y - F = \text{residual}
+$$
+
+So the residual is the **negative gradient**: the direction to nudge each prediction to reduce the loss fastest. Each tree takes a step downhill, and the learning rate is the step size. This is gradient descent, but the things being adjusted are the **predictions themselves**, and a tree is how you generalize those nudges to new stores.
+
+<Depth min={2} label="Other losses: pseudo-residuals">
+
+## Any loss, same recipe
+
+For a loss other than squared error, the tree fits the **pseudo-residual** $-\partial L / \partial F$ instead:
+
+| Loss | Use case | Pseudo-residual $-\partial L/\partial F$ |
+|---|---|---|
+| Squared error $\tfrac12(y-F)^2$ | Default regression | $y - F$ |
+| Absolute error $\lvert y-F\rvert$ | Robust to outliers | $\operatorname{sign}(y - F)$ |
+| Quantile (pinball), level $\tau$ | Service-level forecasts | $\tau$ if $y \gt F$, else $\tau - 1$ |
+| Poisson, log link ($\mu = e^F$) | Unit sales | $y - e^{F}$ |
+
+The absolute-error residual is only ±1, so one giant outlier pulls exactly as hard as a small miss. That's why it's robust. The quantile residual pushes up with weight $\tau$ and down with weight $1 - \tau$, so the model settles where a fraction $\tau$ of points lie below it. That's a quantile forecast.
+
+</Depth>
+
+<Depth min={3} label="XGBoost's second-order step">
+
+## XGBoost: gradient *and* curvature
+
+XGBoost expands the loss around the current prediction to second order. For each row, let $g_i = \partial L/\partial F$ (gradient) and $h_i = \partial^2 L/\partial F^2$ (curvature). For a leaf containing rows $I$, with $G = \sum_{i\in I} g_i$ and $H = \sum_{i \in I} h_i$, the best leaf value and the score of a split are
+
+$$
+w^* = -\frac{G}{H + \lambda},
+\qquad
+\text{Gain} = \frac12\left[\frac{G_L^2}{H_L+\lambda} + \frac{G_R^2}{H_R+\lambda} - \frac{(G_L+G_R)^2}{H_L+H_R+\lambda}\right] - \gamma
+$$
+
+**Check it on tree 1.** For squared error, $g_i = F - y = -r_i$ and $h_i = 1$.
+- Left leaf: residuals −18, −10, −14, so $G_L = 42$, $H_L = 3$.
+- With $\lambda = 0$: $w^* = -42/3 = -14$, exactly the left mean you computed.
+- Gain $= \tfrac12[42^2/3 + 42^2/3 - 0] = 588$, which is half the drop in squared error (1,376 − 200 = 1,176), because of the ½ in the loss.
+
+**What $\lambda$ does:** it adds pseudo-rows to every leaf's denominator, shrinking leaf values toward 0. That's a prior pulling leaves toward "no correction", the same idea as ridge regression and Bayesian shrinkage.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="One update">
+
+A store's current prediction is 100. The learning rate is 0.1, and the new tree outputs 20 for this store. What's the new prediction?
+
+<Solution>
+
+100 + 0.1 × 20 = **102**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Round zero">
+
+Three stores sold 3, 5 and 10 units. What does a squared-error GBM predict at round 0, and what are the residuals?
+
+<Solution>
+
+The mean is **6**. Residuals: **−3, −1, 4**. They always sum to 0 around the mean.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Your own first stump">
+
+Four stores: x = 1, 2, 3, 4 and y = 2, 4, 10, 12. Find round 0, the residuals, the best stump and the predictions after one round with a learning rate of 0.5.
+
+<Solution>
+
+- Mean = 7. Residuals: −5, −3, 3, 5.
+- Split candidates:
+  - At 1.5: left (−5), right mean 1.67, error 34.67.
+  - At 2.5: left mean −4, right mean 4, error 1 + 1 + 1 + 1 = **4**.
+  - At 3.5: error 34.67.
+- Best split: **2.5**, leaves −4 and +4.
+- Predictions: 7 − 2 = **5, 5**, and 7 + 2 = **9, 9**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Outlier store">
+
+Store F's sales are mis-keyed as 520 instead of 52. Under squared error, what's its residual at round 0, and what does tree 1 do? What would the pseudo-residual be under absolute error?
+
+<Solution>
+
+- The mean becomes (168 − 52 + 520) / 6 = 106, so F's residual is **414**, dwarfing everything else. Tree 1 will almost certainly isolate F (split at 80) and spend the whole round on one bad row.
+- Under absolute error, the pseudo-residual is **sign(414) = +1**, the same pull as any other under-predicted store. That's why robust losses resist bad data.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="XGBoost's λ">
+
+Recompute tree 1's left leaf value with XGBoost's regularization λ = 3. What happens to the prediction for store A after round 1 (learning rate 0.5)?
+
+<Solution>
+
+$w^* = -G/(H + \lambda) = -42/(3 + 3) = $ **−7** (instead of −14). Store A becomes 28 + 0.5 × (−7) = **24.5** instead of 21. λ shrinks every leaf toward zero. It matters most for leaves with few rows (small $H$), which is where overfitting lives.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Boosting a quantile">
+
+You want the 90th-percentile forecast for safety stock. Under pinball loss at τ = 0.9, what pseudo-residual does an under-predicted store get, and an over-predicted one? Argue where the boosted prediction settles.
+
+<Solution>
+
+Under-predicted ($y \gt F$): **+0.9**. Over-predicted: **−0.1**. Trees keep pushing predictions up while more than 10% of stores are above the prediction, because the +0.9 pulls outweigh the −0.1 pulls. The balance point is where 90% of stores lie below the prediction (0.9 × 10% = 0.1 × 90%), which is the **90th percentile**.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The same two rounds from scratch in NumPy, then checked against scikit-learn's `GradientBoostingRegressor` with stumps. The predictions should match yours: 18.25, 18.25, 18.25, 32.25, 40.5, 40.5.
+
+<PyRunner title="Boosting from scratch vs scikit-learn" code={`
+import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
+
+x = np.array([20, 30, 40, 55, 70, 90], dtype=float)
+y = np.array([10, 18, 14, 34, 40, 52], dtype=float)
+
+def fit_stump(x, r):
+    best = None
+    xs = np.unique(x)
+    for t in (xs[:-1] + xs[1:]) / 2:
+        left, right = r[x < t], r[x >= t]
+        sse = ((left - left.mean())**2).sum() + ((right - right.mean())**2).sum()
+        if best is None or sse < best[0]:
+            best = (sse, t, left.mean(), right.mean())
+    return best[1:]
+
+def boost(x, y, rounds, lr):
+    pred = np.full_like(y, y.mean())
+    for m in range(rounds):
+        r = y - pred                      # residuals = negative gradient of squared error
+        t, lv, rv = fit_stump(x, r)
+        pred = pred + lr * np.where(x < t, lv, rv)
+        print(f"tree {m+1}: split at {t}, leaves {lv:+.2f} / {rv:+.2f}, squared error {((y - pred)**2).sum():.2f}")
+    return pred
+
+pred = boost(x, y, rounds=2, lr=0.5)
+
+sk = GradientBoostingRegressor(n_estimators=2, learning_rate=0.5, max_depth=1)
+sk.fit(x.reshape(-1, 1), y)
+print("from scratch :", pred)
+print("scikit-learn :", sk.predict(x.reshape(-1, 1)))
+`} />
+
+</Section>
+
+<Section id="production">
+
+**From six rows to LightGBM on 50 million SKU-store-days:**
+
+- **Histogram splits.** Instead of trying every gap (millions of them), features are bucketed into about 255 bins once. The split search then scans bins, which is the main reason LightGBM and XGBoost's `hist` mode are fast.
+- **Leaf-wise growth.** LightGBM grows the leaf with the biggest gain next, not level by level. That's powerful but can overfit small data, so limit `num_leaves` and `min_data_in_leaf`.
+- **The objective is a likelihood.** Use `poisson` or `tweedie` for unit sales and `quantile` for service-level forecasts. That's Keystone 3 put to work.
+- **Early stopping on a time-based validation set.** Hold out the most recent weeks, not a random sample, or the model peeks at the future.
+- **Trees can't extrapolate.** Beyond the largest store or the latest trend in training, every tree returns its edge leaf, so forecasts go flat. Detrend the target, model growth separately, or use a linear base. The Model Lab's *Tree vs MLP* lesson shows this.
+- **Monotone constraints.** Force "price up means demand down" with `monotone_constraints`, so the model can't learn noise that contradicts economics.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain gradient boosting from scratch.">
+
+Start with a constant prediction (the mean). Compute residuals, fit a small tree to them, and add a shrunken version of that tree to the model. Repeat. Each tree corrects what the ensemble still gets wrong. Then generalize: for any differentiable loss, fit the negative gradient (pseudo-residuals). Mention the learning rate and early stopping. Walking through two rounds on a tiny example, like this lesson, is very convincing in interviews.
+
+</QA>
+
+<QA q="Why is it called *gradient* boosting?">
+
+Each tree fits $-\partial L/\partial F$, the negative gradient of the loss with respect to the current predictions. Adding the tree is a gradient-descent step in function space, with the learning rate as the step size. For squared error this gradient is exactly the residual.
+
+</QA>
+
+<QA q="Learning rate vs number of trees: what's the trade-off?">
+
+A smaller learning rate takes smaller steps, so it needs more trees but usually generalizes better, because each tree's noise is diluted (shrinkage). In practice, pick a small rate (0.03–0.1) and let early stopping choose the number of trees.
+
+</QA>
+
+<QA q="Random forest vs gradient boosting: how do they differ, and when would you pick each?">
+
+A random forest averages many **deep, independent** trees trained on bootstrap samples. It reduces **variance**, is hard to overfit and needs little tuning. Boosting adds many **shallow, sequential** trees, each correcting the last. It reduces **bias** and usually wins on accuracy, but needs tuning and early stopping. Use random forest as a robust baseline; use GBM when you need the last few percent.
+
+</QA>
+
+<Trap>
+
+**"Each new tree up-weights the rows the last tree got wrong."** That's **AdaBoost**, a different algorithm that re-weights samples. Gradient boosting doesn't re-weight rows. It changes the **target** each tree learns, to the current residuals or gradients.
+
+</Trap>
+
+</Section>

@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Planogram
 
-## Getting Started
+**The math behind the store, one aisle at a time.** Planogram is a visual, first-principles
+learning site for retail mathematics, data science, ML engineering and agentic AI. In retail, a
+planogram is the map of where every product sits on a shelf. Here it's the map of where every
+idea sits.
 
-First, run the development server:
+Every lesson starts on the shop floor of **Bolt & Beam**, a fictional Indian home-improvement
+chain. You work the idea by hand with real numbers, play with an interactive visual, simulate it,
+and only then write the formula: **Concrete → Pictorial → Simulation → Formula**.
+
+## What's in this milestone (M1)
+
+- **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also
+  common screening questions in senior data science interviews:
+  1. *Counting Worlds:* Bayes' theorem as counting (is this return fraud?)
+  2. *Run the A/B Test 100 Times:* what a 95% confidence interval really promises
+  3. *The Likelihood Dial:* probability vs likelihood, MLE, and why losses are log-likelihoods
+  4. *Boosting by Hand:* gradient boosting on six stores, checked against scikit-learn
+- **A ten-section lesson template.** Floor Problem → By Hand → See It → Simulate → Formula →
+  Pen and Paper → Build It (Python runs in the browser via Pyodide) → In Production →
+  Interview Lens → Threads and Recall. An L1/L2/L3 depth toggle hides or reveals derivations
+  and proofs.
+- **Store map home page.** Aisles are tracks and bays are lessons, shaded by mastery. It covers
+  about 80 lessons, from probability through Bayesian modelling, the Model Lab, retail signature
+  projects (forecasting, cannibalization and halo, Bayesian MMM, embedding search), deep learning,
+  agents, MLE and interview prep.
+- **Floor Check.** A diagnostic quiz where every wrong option is tagged with the misconception it
+  reveals and links to the lesson that fixes it.
+- **Spaced-repetition review.** Uses FSRS (`ts-fsrs`) over each lesson's flashcards.
+- **Bolt & Beam generator** (`python/boltbeam`). A seeded synthetic retailer with **planted
+  ground truth**, so lessons can compare your estimate with the real answer:
+  - own- and cross-price elasticities (substitutes and complements)
+  - media adstock and saturation
+  - Diwali and monsoon seasonality
+  - stockouts that censor demand
+  - a returns fraud flag
+
+Progress, flashcard schedules and Floor Check history are stored **only in your browser**.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Test it
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run typecheck && npm run lint
+npm test               # vitest: curriculum structure, simulations vs closed forms, scoring, SRS
+npm run test:py        # pytest: generator determinism and recoverability of planted truths
+npm run build && npm run test:e2e          # Playwright against the production build
+PYODIDE_E2E=1 npx playwright test e2e/pyodide.spec.ts   # runs every lesson's Python in the browser
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The Python tests need `numpy`, `pandas` and `pytest` (`pip install -r python/requirements.txt`).
 
-## Learn More
+## Generate data
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run data:sample    # small JSON extract used by the site (committed)
+npm run data:full      # full CSV tables + truth.json in data/boltbeam (gitignored)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The site is static apart from client-side state, so it deploys to Vercel with no configuration.
+Import the repository and keep the defaults.
 
-## Deploy on Vercel
+## Roadmap
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Milestone | Scope |
+|---|---|
+| M2 | Model Lab (linear regression, decision tree, gradient boosting incl. XGBoost vs LightGBM vs CatBoost, MLP), Model Arena and Failure Matrix, Bayes rungs 2–9, Math Toolkit, Plan page, Concept Graph |
+| M3 | AI layer (Claude-powered tutor, Feynman grader, mock interviewer with Project Grill) |
+| M4+ | Weekly lesson batches in sprint order: MCMC → forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+New lessons follow [`.claude/skills/new-lesson/SKILL.md`](.claude/skills/new-lesson/SKILL.md).
+
+## Data and naming
+
+Bolt & Beam is fictional. The site contains no real company data or branding. Personal notes
+belong in `/private/`, which is gitignored.

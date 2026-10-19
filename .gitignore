@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated datasets (regenerate with: cd python && python -m boltbeam --out ../data/boltbeam)
+/data/
+__pycache__/
+.pytest_cache/
+
+# Private notes: never commit
+/private/
+
+# Playwright
+/test-results/
+/playwright-report/
