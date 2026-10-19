@@ -11,11 +11,19 @@ import { GossDemo, HistogramSplit, LevelVsLeaf, TargetLeakage } from "@/componen
 import { GBMFunctionSpace, GBMKnobs } from "@/components/viz/BoostingLab";
 import { CIRepeat } from "@/components/viz/CIRepeat";
 import { CountingWorlds, FraudSimulation } from "@/components/viz/CountingWorlds";
+import { BetaUpdater, EndcapSimulation } from "@/components/viz/BetaBinomial";
 import { FailureLab } from "@/components/viz/FailureLab";
+import { GammaPoissonUpdater, PoolSimulation } from "@/components/viz/GammaPoisson";
+import { LiftPrior, PriorPredictive, RepeatWorld, WashOut } from "@/components/viz/PriorPredictive";
 import { ArenaCosts, FailureMatrix } from "@/components/viz/FailureMatrix";
 import { CollinearCloud, RidgeLassoGeometry } from "@/components/viz/LinearKnobs";
 import { LinRegPlayground } from "@/components/viz/LinRegPlayground";
 import { LossMirror, LossSimulation } from "@/components/viz/LossMirror";
+import { PlausibleLines, SlopeCoverage } from "@/components/viz/BayesLinReg";
+import { PoolingPlot, PoolingStudy, TauGrid } from "@/components/viz/Pooling";
+import { NewStoreShrinkage, ShrinkageScatter, ShrinkageSimulation } from "@/components/viz/Shrinkage";
+import { BarRules, BasketPlane, BasketSearch, MonteCarloArea, PriceScenarios, StoreTable, ThinBars } from "@/components/viz/MathToolkit";
+import { PosteriorGrid, WorldRepeater } from "@/components/viz/PosteriorGrid";
 import { BackpropStep, MLPTrainer, ReluKinks } from "@/components/viz/MLPLab";
 import { BoxesVsBends } from "@/components/viz/TreeVsMLP";
 import { BaggingDemo, ImpurityCurves, TreeDepthPlayground, TreeSplitByHand } from "@/components/viz/TreePlayground";
@@ -86,6 +94,31 @@ const components: MDXComponents = {
   BoxesVsBends,
   FailureMatrix,
   ArenaCosts,
+  GammaPoissonUpdater,
+  PoolSimulation,
+  PriorPredictive,
+  WashOut,
+  RepeatWorld,
+  LiftPrior,
+  PosteriorGrid,
+  WorldRepeater,
+  BetaUpdater,
+  EndcapSimulation,
+  BarRules,
+  ThinBars,
+  MonteCarloArea,
+  BasketPlane,
+  BasketSearch,
+  StoreTable,
+  PriceScenarios,
+  NewStoreShrinkage,
+  ShrinkageScatter,
+  ShrinkageSimulation,
+  PlausibleLines,
+  SlopeCoverage,
+  PoolingPlot,
+  TauGrid,
+  PoolingStudy,
 };
 
 export function useMDXComponents(): MDXComponents {

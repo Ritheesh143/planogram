@@ -161,3 +161,122 @@ test("navigation: More menu on desktop, Menu on mobile", async ({ page }) => {
   await page.getByTestId("mobile-menu").locator("..").getByRole("link", { name: "Plan", exact: true }).click();
   await expect(page).toHaveURL(/\/plan/);
 });
+
+test("gamma-Poisson: three days give Gamma(5, 4); ten more days tighten it", async ({ page }) => {
+  await page.goto("/learn/bayes/gamma-poisson");
+  await expect(page.getByTestId("gp-post")).toHaveText("Gamma(5, 4)");
+  await expect(page.getByTestId("gp-mean")).toHaveText("1.25");
+  await expect(page.getByTestId("gp-interval")).toHaveText("0.49 to 2.29");
+  await expect(page.getByTestId("gp-p0")).toHaveText("0.328");
+  await expect(page.getByTestId("gp-pge3")).toHaveText("0.148");
+  await expect(page.getByTestId("gp-p95")).toHaveText("4");
+  for (let i = 0; i < 10; i++) await page.getByRole("button", { name: "Add a day selling 1" }).click();
+  await expect(page.getByTestId("gp-post")).toHaveText("Gamma(15, 14)");
+  await expect(page.getByTestId("gp-mean")).toHaveText("1.07");
+  await expect(page.getByTestId("gp-ratio")).toHaveText("1.88");
+  await setRange(page, "gp-k", 5);
+  await expect(page.getByTestId("gp-ratio")).toHaveText("1.00");
+});
+
+test("priors: the vague prior implies absurd stores; priors wash out", async ({ page }) => {
+  await page.goto("/learn/bayes/priors-defend");
+  await expect(page.getByTestId("pd-p95")).toHaveText("13.9 million");
+  await expect(page.getByTestId("pd-p99")).toHaveText("12.7 billion");
+  await expect(page.getByTestId("pd-absurd")).toHaveText("24.5%");
+  await page.getByRole("button", { name: /Weakly informative/ }).click();
+  await expect(page.getByTestId("pd-p95")).toHaveText("10.4");
+  await expect(page.getByTestId("pd-absurd")).toHaveText("essentially none");
+  await expect(page.getByTestId("pd-wash")).toHaveText("3.08, 1.56, 0.88");
+  await setRange(page, "pd-days", 90);
+  await expect(page.getByTestId("pd-wash")).toHaveText("1.76, 1.55, 1.44");
+  await expect(page.getByTestId("pd-world")).toHaveText("0.72");
+  await expect(page.getByTestId("pd-lift")).toHaveText("7.20%");
+});
+
+test("posterior grid: priors disagree, then the data win", async ({ page }) => {
+  await page.goto("/learn/bayes/posterior-grid");
+  await expect(page.getByTestId("pg-mean")).toHaveText("1.33");
+  await expect(page.getByTestId("pg-interval")).toHaveText("0.5 and 2.6");
+  await page.getByRole("radio", { name: /Manager's hunch/ }).click();
+  await expect(page.getByTestId("pg-mean")).toHaveText(/^2(\.00)?$/);
+  await setRange(page, "pg-extra", 27);
+  await expect(page.getByTestId("pg-mean")).toHaveText("1.42");
+  await expect(page.getByTestId("pg-coverage")).toHaveText("904 of 1,000", { timeout: 15_000 });
+  await page.getByRole("radio", { name: /Confident and wrong/ }).click();
+  await expect(page.getByTestId("pg-coverage")).toHaveText("67 of 1,000", { timeout: 15_000 });
+});
+
+test("beta-binomial: counts in, posterior out", async ({ page }) => {
+  await page.goto("/learn/bayes/beta-binomial");
+  await expect(page.getByTestId("bb-post")).toHaveText("Beta(5, 15)");
+  await expect(page.getByTestId("bb-mean")).toHaveText("0.250");
+  await expect(page.getByTestId("bb-interval")).toHaveText("0.110 to 0.419");
+  await page.getByRole("button", { name: "Next shopper buys" }).click();
+  await expect(page.getByTestId("bb-post")).toHaveText("Beta(6, 15)");
+  await page.getByRole("button", { name: "No shoppers yet" }).click();
+  await expect(page.getByTestId("bb-mean")).toHaveText("0.200");
+  await page.getByRole("button", { name: "Back to the 10 shoppers" }).click();
+  await setRange(page, "bb-strength", 5);
+  await expect(page.getByTestId("bb-post")).toHaveText("Beta(23, 87)");
+  await expect(page.getByTestId("bb-sim-raw")).toHaveText("9.2");
+  await expect(page.getByTestId("bb-sim-post")).toHaveText("6.7");
+  await expect(page.getByTestId("bb-sim-cover")).toHaveText("89.9%");
+});
+
+test("math toolkit: bars converge, cosine ignores contractors, tables multiply", async ({ page }) => {
+  await page.goto("/learn/foundations/integrals-thin-bars");
+  await expect(page.getByTestId("br-sum")).toHaveText("0.7500");
+  await expect(page.getByTestId("tb-prob")).toHaveText("0.7249");
+  await setRange(page, "tb-n", 5);
+  await expect(page.getByTestId("tb-prob")).toHaveText("0.7178");
+  await expect(page.getByTestId("mc-est")).toHaveText("0.8100");
+  await page.getByRole("button", { name: "Throw 900 more" }).click();
+  await expect(page.getByTestId("mc-est")).toHaveText("0.7785");
+  await page.goto("/learn/foundations/vectors-baskets");
+  await expect(page.getByTestId("bp-cos")).toHaveText("0.949");
+  await page.getByTestId("bp-contractor").check();
+  await expect(page.getByTestId("bp-dot")).toHaveText("18");
+  await expect(page.getByTestId("bp-cos")).toHaveText("0.949");
+  await expect(page.getByTestId("bs-dot-contractors")).toHaveText("10");
+  await expect(page.getByTestId("bs-cos-contractors")).toHaveText("0");
+  await page.goto("/learn/foundations/matrices-tables");
+  await expect(page.getByTestId("st-rev-0")).toHaveText("₹29,500");
+  await page.getByTestId("st-u-2-2").fill("10");
+  await expect(page.getByTestId("st-rev-2")).toHaveText("₹45,750");
+  await expect(page.getByTestId("ps-mean")).toHaveText("₹1,02,891");
+});
+
+test("shrinkage: two weeks get a third of the weight", async ({ page }) => {
+  await page.goto("/learn/bayes/shrinkage");
+  await expect(page.getByTestId("sh-weight")).toHaveText("33%");
+  await expect(page.getByTestId("sh-post")).toHaveText("43.33");
+  await setRange(page, "sh-weeks", 8);
+  await expect(page.getByTestId("sh-weight")).toHaveText("67%");
+  await expect(page.getByTestId("sh-post")).toHaveText("36.67");
+  await expect(page.getByTestId("sh-raw-sse")).toHaveText("3,574");
+  await expect(page.getByTestId("sh-shrunk-sse")).toHaveText("1,026");
+  await expect(page.getByTestId("sh-wins")).toHaveText("992 of 1,000");
+});
+
+test("Bayesian regression: the posterior slope is the ridge slope; wrong priors don't cover", async ({ page }) => {
+  await page.goto("/learn/bayes/bayes-linreg");
+  await expect(page.getByTestId("bl-mean")).toHaveText("-4.00");
+  await expect(page.getByTestId("bl-sd")).toHaveText("0.45");
+  await expect(page.getByTestId("bl-lambda")).toHaveText("10");
+  await page.getByRole("radio", { name: "flat (no prior)" }).click();
+  await expect(page.getByTestId("bl-mean")).toHaveText("-8.00");
+  await expect(page.getByTestId("bl-sd")).toHaveText("0.63");
+  await expect(page.getByTestId("bl-coverage")).toHaveText("90.3%");
+  await page.getByRole("radio", { name: "Confident prior, wrong world" }).click();
+  await expect(page.getByTestId("bl-coverage")).toHaveText("0.0%");
+});
+
+test("hierarchical pooling: partial pooling cuts the error by two-thirds", async ({ page }) => {
+  await page.goto("/learn/bayes/hierarchical-pooling");
+  await expect(page.getByTestId("hp-mse-none")).toHaveText("89.3");
+  await expect(page.getByTestId("hp-mse-complete")).toHaveText("81.3");
+  await expect(page.getByTestId("hp-mse-partial")).toHaveText("29.3");
+  await expect(page.getByTestId("hp-tau")).toHaveText("10.1");
+  await expect(page.getByTestId("hp-tau-peak")).toHaveText("8.9");
+  await expect(page.getByTestId("hp-study-partial")).toHaveText("37.3");
+});

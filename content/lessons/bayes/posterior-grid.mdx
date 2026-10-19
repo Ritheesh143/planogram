@@ -1,0 +1,302 @@
+<Section id="floor">
+
+A new Bolt & Beam store sold **0, 2 and 1** cordless drills on its first three days. The replenishment planner needs a daily rate to set the reorder point. In [The Likelihood Dial](/learn/foundations/likelihood-dial) you found that the likelihood peaks at **λ = 1**. But the planner's real questions are different: *How sure are we? Could the true rate be 2? Could it be 4?* And the area manager adds: *"Stores like this one usually sell about 3 a day."*
+
+The likelihood alone can't answer either question. It ranks values of λ but doesn't say how much to believe each one, and it has no place for the manager's experience. Bayes does both, and on a grid it needs nothing beyond multiplication and division.
+
+<KeyIdea>
+
+**A "parameter as a distribution" is just a list of possible values with how much you believe each one.** Write down the candidate rates (the worlds), give each a prior weight, multiply by how well each world explains the sales (the likelihood), and divide by the total. The result is the posterior: your updated belief in each rate. It's [Counting Worlds](/learn/foundations/counting-worlds) with rates instead of fraud flags.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**List the worlds.** Keep it small: the true daily rate is one of **λ = 0.5, 1, 2 or 4**. With no opinion yet, give each world the same prior weight, **0.25**. That table of four weights *is* the parameter as a distribution. Nothing more mysterious than that.
+
+</Step>
+<Step>
+
+**Score each world against the sales.** In a world with rate λ, the chance of selling 0, then 2, then 1 is the Poisson product from Keystone 3:
+
+$$
+P(0, 2, 1 \mid \lambda) = e^{-\lambda}\cdot\frac{e^{-\lambda}\lambda^2}{2}\cdot e^{-\lambda}\lambda = \frac{e^{-3\lambda}\lambda^3}{2}
+$$
+
+| World λ | 0.5 | 1 | 2 | 4 |
+|---|---|---|---|---|
+| Likelihood | 0.01395 | 0.02489 | 0.00992 | 0.00020 |
+
+</Step>
+<Step>
+
+**Multiply prior by likelihood, then divide by the total.**
+
+| World λ | Prior | × Likelihood | = Product | ÷ Total = **Posterior** |
+|---|---|---|---|---|
+| 0.5 | 0.25 | 0.01395 | 0.00349 | **0.285** |
+| 1 | 0.25 | 0.02489 | 0.00622 | **0.509** |
+| 2 | 0.25 | 0.00992 | 0.00248 | **0.203** |
+| 4 | 0.25 | 0.00020 | 0.00005 | **0.004** |
+| **Total** | 1 | | **0.01224** | 1 |
+
+After three days: about a 51% belief that the rate is 1, 29% that it's 0.5, 20% that it's 2, and almost no belief left in 4. The posterior mean, $0.5(0.285) + 1(0.509) + 2(0.203) + 4(0.004)$, is **1.07** drills a day.
+
+Dividing by the total is the same move as "9 of the 59 flagged returns" in Counting Worlds: restrict to what actually happened, then ask what share each world has.
+
+</Step>
+<Step>
+
+**Now use the manager's experience.** "Stores like this usually sell about 3 a day" becomes a prior that puts more weight on the higher rates: **0.1, 0.1, 0.4, 0.4**. Same likelihoods, same arithmetic:
+
+| World λ | 0.5 | 1 | 2 | 4 |
+|---|---|---|---|---|
+| Hunch prior | 0.1 | 0.1 | 0.4 | 0.4 |
+| Posterior | 0.176 | 0.314 | **0.500** | 0.010 |
+
+The data still crush λ = 4 (from 0.4 down to 0.01), but λ = 2 now leads and the posterior mean rises to **1.44**. The prior moved the answer, and it did so in the open, as a written-down assumption anyone can challenge.
+
+</Step>
+<Step>
+
+**One day at a time gives the same answer.** Start from the flat prior and update after each day, using yesterday's posterior as today's prior:
+
+| After | λ = 0.5 | λ = 1 | λ = 2 | λ = 4 |
+|---|---|---|---|---|
+| Day 1 (sold 0) | 0.538 | 0.326 | 0.120 | 0.016 |
+| Day 2 (sold 2) | 0.301 | 0.442 | 0.239 | 0.018 |
+| Day 3 (sold 1) | **0.285** | **0.509** | **0.203** | **0.004** |
+
+Exactly the all-at-once posterior. Learning from a stream of daily sales is just repeating the same multiply-and-divide.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Use the manager's hunch (about 3 a day) and all 30 days of sales, which average 1.27 a day. Where does the posterior mean land?" options={["About 3: the hunch wins", "About 1.4: close to the data", "Exactly 1.27: the data average"]} answer={1}>
+
+**About 1.4** (1.42). Thirty days of evidence overwhelm a prior that was only a hunch, but not completely: the posterior sits slightly above the data average, pulled up by what similar stores sell. With 3 days it was 2.00; with 30 it's 1.42.
+
+</Predict>
+
+<PosteriorGrid />
+
+**Try this:**
+
+1. With the **flat** prior and the first three days, the posterior has exactly the likelihood's shape: mean **1.33**, and 90% of the belief between **0.5 and 2.6**. With no prior opinion, the posterior is the likelihood, rescaled to add up to 1.
+2. Switch to the **manager's hunch**: the mean jumps to **2.00** (90% between 1.2 and 3). Switch to the **skeptic**: **1.00** (between 0.6 and 1.5). Three people, three days of data, three different beliefs.
+3. Slide **extra days** all the way to 27. The three posteriors converge: means of **1.30** (flat), **1.42** (hunch) and **1.21** (skeptic), each with a much narrower spread.
+4. Watch the middle chart as you add days. The likelihood bars get narrower and taller: data become more decisive than any reasonable prior.
+
+</Section>
+
+<Section id="simulate">
+
+A credible interval claims "there's a 90% chance the rate is in here". Does that claim hold up? Repeat the world: 1,000 stores, each with its own true rate drawn from how rates really vary across the chain. Each store sells for a few days, and an analyst builds a 90% interval from those sales.
+
+<WorldRepeater />
+
+- When the analyst's prior **matches** how rates vary across stores, **904 of 1,000** intervals contain the true rate. "90% sure" means right about 90% of the time.
+- A **flat** prior does almost as well here (**911**), because the data dominate a vague prior quickly.
+- A **confident, wrong** prior ("about 4 a day, and I'm sure") catches the truth in only **67** of 1,000 stores. Even with 30 days per store it manages only **177**. A strong prior is a strong claim, and if it's wrong, it takes a lot of data to undo.
+
+Compare Keystone 2's confidence interval, whose 95% was a promise about the *procedure* whatever the true value. A credible interval's 90% is a promise averaged over the worlds your prior describes, so its honesty depends on the prior.
+
+</Section>
+
+<Section id="formula">
+
+The grid recipe, written for any set of hypotheses $\lambda_1, \dots, \lambda_m$:
+
+$$
+P(\lambda_j \mid \text{data}) = \frac{P(\text{data} \mid \lambda_j)\;P(\lambda_j)}{\sum_{i=1}^m P(\text{data} \mid \lambda_i)\;P(\lambda_i)}
+$$
+
+- $P(\lambda_j)$ is the **prior**: the bars before the data.
+- $P(\text{data} \mid \lambda_j)$ is the **likelihood**: Keystone 3's dial, read at each grid point.
+- The denominator, called the **evidence**, is the total of the products. It doesn't depend on $j$; it only rescales the bars so they add up to 1.
+- The **posterior mean** is $\sum_j \lambda_j\,P(\lambda_j \mid \text{data})$, and a **90% credible interval** runs from where the running total of posterior bars reaches 5% to where it reaches 95%.
+
+Make the grid finer and finer and the bars become a smooth curve and the sum in the denominator becomes an integral. That's the only reason integrals appear in Bayesian formulas: they are this sum, with infinitely thin bars.
+
+<Depth min={2}>
+
+**The flat-prior posterior has a name.** With a flat prior, the posterior is proportional to the likelihood, $e^{-3\lambda}\lambda^3$. A curve of the form $\lambda^{\alpha - 1}e^{-\beta\lambda}$ is a **Gamma(α, β)** shape, here with $\alpha = 4$ and $\beta = 3$. Its mean is $\alpha/\beta = 4/3 \approx 1.33$ and its 90% interval is 0.46 to 2.58, which the 60-bar grid reproduces as 1.33 and 0.5 to 2.6. Rung 5, [Gamma–Poisson](/learn/bayes/gamma-poisson), turns this into a formula.
+
+**Why one-at-a-time equals all-at-once.** After day 1 the belief is proportional to $P(\lambda)\,P(y_1 \mid \lambda)$. Using that as the prior for day 2 gives $P(\lambda)\,P(y_1 \mid \lambda)\,P(y_2 \mid \lambda)$, and so on. Because the days are independent given λ, the product of daily likelihoods is the joint likelihood, so the order and grouping of the data don't matter.
+
+**Why the posterior mean isn't the MLE.** With a flat prior, the peak of the posterior is the MLE (λ = 1), but the posterior *mean* is 1.33, because the posterior has a long right tail: rates above 2 are still possible after three days, and they pull the average up.
+
+</Depth>
+
+<Depth min={3}>
+
+**The grid doesn't scale.** One parameter on 60 points is 60 likelihood evaluations. A model with a rate for each of 40 stores on the same grid would need $60^{40}$ points, far more than there are atoms in the universe. That's why real Bayesian models keep a *sample* of plausible values instead of a grid: [Why We Sample](/learn/bayes/why-sample) and [MCMC](/learn/bayes/mcmc-walker).
+
+**Zero is forever.** If the prior gives a world zero weight, no amount of data can revive it, because zero times any likelihood is zero (Cromwell's rule). Priors should rule out only what is truly impossible, such as negative sales rates.
+
+**"Flat" depends on the scale.** A prior that's flat for λ is not flat for $\log\lambda$ or for $1/\lambda$ (days between sales). There is no prior that is uninformative on every scale at once, which is why rung 6 talks about *weakly informative* priors instead.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Two worlds, one day">
+
+Only two worlds: λ = 1 or λ = 2, equally likely beforehand. The store sells 2 drills on one day. What's the posterior probability of λ = 2?
+
+<Solution>
+
+Likelihoods: $P(2 \mid 1) = e^{-1}\cdot 1^2/2 \approx 0.184$ and $P(2 \mid 2) = e^{-2}\cdot 2^2/2 \approx 0.271$. Posterior for λ = 2: $0.271/(0.184 + 0.271) \approx$ **0.595**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A world ruled out in advance">
+
+A planner's prior gives λ = 4 a weight of exactly zero. Then the store sells 4, 5 and 3 drills. What's the posterior weight on λ = 4?
+
+<Solution>
+
+Still **zero**: 0 × any likelihood is 0. The data point straight at λ = 4, but the prior forbade it. Give every plausible world at least a little weight.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Check the hunch">
+
+Verify the hunch posterior from *By Hand*: compute the four products, the total, and the posterior mean.
+
+<Solution>
+
+Products: $0.1 \times 0.01395 = 0.001395$, $0.1 \times 0.02489 = 0.002489$, $0.4 \times 0.00992 = 0.003966$, $0.4 \times 0.00020 = 0.000079$. Total $0.007929$. Posterior: 0.176, 0.314, 0.500, 0.010. Mean: $0.5(0.176) + 1(0.314) + 2(0.500) + 4(0.010) \approx$ **1.44**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Day 4">
+
+Start from the flat-prior posterior after three days (0.285, 0.509, 0.203, 0.004). On day 4 the store sells 3. Update.
+
+<Solution>
+
+$P(3 \mid \lambda) = e^{-\lambda}\lambda^3/6$: 0.0126, 0.0613, 0.1804, 0.1954. Products (using the unrounded posterior): 0.00360, 0.03118, 0.03655, 0.00078; total 0.07211. Posterior: **0.050, 0.432, 0.507, 0.011**. One busy day moves the lead from λ = 1 to λ = 2.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Which sentence is allowed?">
+
+The flat-prior 90% credible interval is 0.5 to 2.6. Can you say "there's a 90% probability the true rate is between 0.5 and 2.6"? Could you say it about a 90% confidence interval?
+
+<Solution>
+
+For the **credible** interval, yes: given the prior and the model, the posterior puts 90% of its probability there. That sentence is exactly what a posterior is for. For a **confidence** interval, no: the true rate is fixed, and the 90% describes how often the interval-building procedure would catch it over repeated samples (Keystone 2). The Bayesian sentence is allowed because the prior turned the rate into something you hold beliefs about.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Does the denominator matter?">
+
+Show that the *ranking* of worlds and the ratio between any two posterior weights don't depend on the evidence (the total). When does the total matter?
+
+<Solution>
+
+$\dfrac{P(\lambda_i \mid \text{data})}{P(\lambda_j \mid \text{data})} = \dfrac{P(\lambda_i)}{P(\lambda_j)}\cdot\dfrac{P(\text{data} \mid \lambda_i)}{P(\text{data} \mid \lambda_j)}$: the total cancels. Posterior odds are prior odds times the likelihood ratio, as in the odds form of Counting Worlds. The total matters when you need actual probabilities (an interval, a mean, a decision threshold) and when comparing whole models: the evidence measures how well a model with its prior predicted the data.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The four-world table, day-by-day updating, and a fine grid compared with the Gamma curve it approaches. Expected: posteriors 0.285, 0.509, 0.203, 0.004 both ways, and a grid mean of 1.333 with a 90% interval of about 0.45 to 2.58, against the Gamma(4, 3) values 1.333 and 0.46 to 2.58.
+
+<PyRunner title="Bayes on a grid" code={`
+import numpy as np
+from scipy.stats import poisson, gamma
+
+sales = np.array([0, 2, 1])
+
+# Four hypotheses, equal prior belief
+lam = np.array([0.5, 1.0, 2.0, 4.0])
+prior = np.full(4, 0.25)
+like = np.array([poisson.pmf(sales, l).prod() for l in lam])
+post = prior * like / (prior * like).sum()
+for l, p, L, q in zip(lam, prior, like, post):
+    print(f"lambda {l:3.1f}: prior {p:.2f}  likelihood {L:.5f}  posterior {q:.3f}")
+
+# Day by day gives the same answer as all at once
+belief = prior.copy()
+for k in sales:
+    belief = belief * poisson.pmf(k, lam)
+    belief = belief / belief.sum()
+print("day by day:", belief.round(3), " all at once:", post.round(3))
+
+# A fine grid with a flat prior: thin bars approach the Gamma(4, rate 3) curve
+grid = np.arange(0.005, 8, 0.01)
+w = np.array([poisson.pmf(sales, l).prod() for l in grid])
+w = w / w.sum()
+cdf = w.cumsum()
+lo, hi = grid[np.searchsorted(cdf, 0.05)], grid[np.searchsorted(cdf, 0.95)]
+print(f"grid posterior: mean {(grid * w).sum():.3f}, 90% interval {lo:.2f} to {hi:.2f}")
+g = gamma(a=4, scale=1/3)
+print(f"Gamma(4, 3):    mean {g.mean():.3f}, 90% interval {g.ppf(0.05):.2f} to {g.ppf(0.95):.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Grids are a real tool, not just a teaching device.** For one or two parameters (a conversion rate, a store's demand rate, a lift), a grid of a few hundred points gives an exact-enough posterior in microseconds, with any prior you like and no sampler to tune.
+- **Work in logs.** With weeks of sales, likelihood products underflow to zero. Add log-likelihoods, subtract the largest, then exponentiate before normalizing, as the visual does.
+- **Make the grid cover the posterior.** If belief piles up against the edge of the grid, the edge is cutting off plausible values. Widen it.
+- **Priors come from the chain.** A new store's prior is how rates vary across similar existing stores. That's the bridge to [Shrinkage](/learn/bayes/shrinkage) and [Hierarchical Models](/learn/bayes/hierarchical-pooling), where the chain's data choose the prior.
+- **Decisions use the whole posterior.** A reorder point needs the chance of selling more than the stock on hand, which comes from averaging over the posterior, not from plugging in one "best" λ.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain Bayes' theorem with a concrete example.">
+
+Take a store's daily demand rate. List candidate rates and how plausible each seemed beforehand (the prior). For each, compute how likely the observed sales are (the likelihood). Multiply and renormalize to get the posterior. With a flat prior over 0.5, 1, 2 and 4 and sales of 0, 2, 1, the posterior is about 29%, 51%, 20% and 0.4%. Then mention that a different prior (a manager's experience) changes the answer, and that enough data overwhelm any reasonable prior.
+
+</QA>
+
+<QA q="What's the difference between a credible interval and a confidence interval?">
+
+A 90% credible interval contains 90% of the posterior probability: given the prior and model, there's a 90% probability the parameter is inside. A 90% confidence interval comes from a procedure that captures the fixed true value in 90% of repeated samples; it makes no probability statement about this particular interval. With weak priors and lots of data they're often numerically close, but they answer different questions.
+
+</QA>
+
+<QA q="Where would the prior come from in a retail setting?">
+
+From comparable entities: similar stores, the category's history, past launches, past experiments. Encode it so it's centred on what's typical and as wide as the real spread across those comparables, then check it by simulating data from it (rung 6). With hierarchical models the data choose the prior's centre and width across stores automatically.
+
+</QA>
+
+<QA q="Why don't we use grids for large Bayesian models?">
+
+The number of grid points grows exponentially with the number of parameters: 100 points per parameter is 100 for one parameter but $10^{20}$ for ten. Practical models represent the posterior with samples drawn by MCMC (or approximate it with variational inference), which cost roughly in proportion to the number of parameters.
+
+</QA>
+
+<Trap>
+
+**"A flat prior means the answer comes only from the data."** Flat on λ is not flat on log λ or on 1/λ, so "no opinion" depends on how you write the parameter. And the flat-prior posterior *mean* here is 1.33, not the MLE of 1: the prior's shape still shapes the summary. Every Bayesian answer has a prior; the honest move is to state it.
+
+</Trap>
+
+</Section>

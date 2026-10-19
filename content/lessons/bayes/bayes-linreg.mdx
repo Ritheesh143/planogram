@@ -1,0 +1,325 @@
+<Section id="floor">
+
+The pricing team wants the price effect for Bolt & Beam's emulsion paint. The five weeks from the [Linear Regression](/models/linear-regression) page give a slope of **−8 litres per ₹100**. But five weeks is very little, and two different questions are hiding behind "the slope":
+
+- **How sure are we?** Would −6 or −10 also fit? A single fitted line can't say.
+- **What did we already know?** The category team has run many price tests on other paints. Throwing that away and trusting five weeks seems wasteful; ignoring the five weeks seems worse.
+
+Bayesian linear regression answers both. Instead of one best line it gives a **distribution over slopes**: a crowd of plausible lines whose spread is the uncertainty. This is also exactly the engine inside a Bayesian media mix model, where the "slopes" are channel effects and the priors come from lift tests.
+
+<KeyIdea>
+
+**The slope is a distribution, not a number.** Prior × likelihood gives a posterior over slopes, and it's computed exactly like shrinkage on the previous rung: precisions add, and the estimate is a precision-weighted average of the data's slope and the prior's. Its peak is the **ridge** estimate with λ = σ²/τ², and its spread tells you how far to trust a forecast at a new price.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Five weeks of paint: price 4 to 8 (₹100s), litres 69, 58, 54, 42, 37.
+
+<Steps>
+<Step>
+
+**Center the prices** at their average, ₹600: $x - 6 = -2, -1, 0, 1, 2$. Average sales are $\bar y = 52$. From the Linear Regression page, $\sum(x - \bar x)^2 = 10$ and $\sum(x - \bar x)(y - \bar y) = -80$. With centered prices the slope and the level (52 at ₹600) can be worked out separately.
+
+</Step>
+<Step>
+
+**What the five weeks alone say about the slope.** Assume each week's sales scatter around the line with variance $\sigma^2 = 4$ (the residuals 1, −2, 2, −2, 1 have variance $14/3 \approx 4.7$, so 4 is reasonable). Then the likelihood of the slope is a bell curve centred on the least-squares slope **−8**, with variance
+
+$$
+\frac{\sigma^2}{\sum(x - \bar x)^2} = \frac{4}{10} = 0.4 \qquad (\text{sd } 0.63)
+$$
+
+</Step>
+<Step>
+
+**A prior.** A sceptical analyst believes the slope is near 0 ("price barely matters for paint"), with variance $\tau^2 = 0.4$. Deliberately strong: the prior is exactly as precise as the five weeks.
+
+</Step>
+<Step>
+
+**Precisions add, just like shrinkage:**
+
+| Source | Says the slope is | Variance | Precision |
+|---|---|---|---|
+| Prior | 0 | 0.4 | 2.5 |
+| Five weeks | −8 | 0.4 | 2.5 |
+| **Posterior** | | **0.2** | **5** |
+
+Posterior mean $= (2.5 \times (-8) + 2.5 \times 0)/5 =$ **−4**, posterior sd $\sqrt{0.2} \approx$ **0.45**. Equal precisions, so the posterior lands halfway.
+
+</Step>
+<Step>
+
+**It's ridge.** The Linear Regression page found the ridge slope $-80/(10 + \lambda)$. With $\lambda = \sigma^2/\tau^2 = 4/0.4 = 10$ that's $-80/20 =$ **−4**. The most probable slope under a Normal prior *is* the ridge slope.
+
+</Step>
+<Step>
+
+**Weaker priors, and none.** With $\tau^2 = 6.4$ ("somewhere within ±5"), precision $2.5 + 0.156$ gives a slope of **−7.53** (sd 0.61). With no prior at all (flat), it's the least-squares **−8** (sd 0.63). The data win as the prior loosens.
+
+</Step>
+<Step>
+
+**A 90% credible interval** is the middle 90% of the posterior: $-4 \pm 1.645 \times 0.447 =$ **[−4.74, −3.26]**. With the flat prior: **[−9.04, −6.96]**. Read it literally: *given this model and prior, there's a 90% probability the slope lies in this range.* (A confidence interval can't be read that way; see [Run the A/B Test 100 Times](/learn/foundations/ci-repeat).)
+
+</Step>
+<Step>
+
+**Forecast a week at ₹1,000** (centered price 4). The best guess is $52 + (-4)(4) =$ **36 litres**, and its uncertainty has three parts that add:
+
+$$
+\underbrace{4}_{\text{weekly noise}} + \underbrace{0.8}_{\text{level: } \sigma^2/5} + \underbrace{4^2 \times 0.2}_{\text{slope}} = 8 \qquad \text{sd } 2.83
+$$
+
+The slope term grows with the **square of the distance** from ₹600: at the average price it's zero, far away it dominates.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="With the flat prior, compare the 50 plausible lines at ₹600 and at ₹1,200. Where are they more spread out?" options={["At ₹600", "At ₹1,200", "Equally spread everywhere"]} answer={1}>
+
+**At ₹1,200.** All lines pass close to (₹600, 52), because the level there is pinned down by all five weeks. Different slopes fan out as you move away, so forecasts far from the data are the least certain.
+
+</Predict>
+
+<PlausibleLines />
+
+**Try this:**
+
+1. Start at $\tau^2 = 0.4$. On the right, the prior (blue) and the data (orange) are equally wide, and the posterior (green) sits halfway, at −4. On the left, all 50 lines are flatter than the dashed least-squares line.
+2. Loosen the prior step by step. The posterior slides toward −8 and the lines tilt to follow the data. With the flat prior the posterior *is* the likelihood.
+3. Tighten it to $\tau^2 = 0.1$. Now the prior dominates (slope −1.6), and the lines barely fall: a confident wrong prior overrules the data.
+4. Tick **90% band for a new week**. The band is narrowest near ₹600 and widens toward ₹200 and ₹1,200.
+
+</Section>
+
+<Section id="simulate">
+
+What does "90% probability" deliver in practice? Re-run the five-week world 2,000 times, compute the 90% credible interval each time, and count how often it contains the true slope.
+
+<SlopeCoverage />
+
+- **Prior matches the world** (true slopes are drawn from the same N(0, 0.4) the analyst uses): **90.3%** of intervals contain the truth. When the prior is right, Bayesian intervals are exactly as reliable as advertised.
+- **Confident prior, wrong world** (the true slope is −8, the prior still says "near 0 ± 0.63"): **0.0%**. Every interval sits around −4, far from −8. A strong prior that's wrong is worse than no prior.
+- **Flat prior** (true slope −8, no prior): **90.7%**, the same coverage as a classical confidence interval, because with no prior the two calculations coincide.
+
+The lesson isn't "priors are dangerous"; it's that a prior is a claim about the world, and it should be as strong as your evidence for it. An earlier rung, [Priors You Can Defend](/learn/bayes/priors-defend), is about exactly that.
+
+</Section>
+
+<Section id="formula">
+
+**One slope, centered price.** Likelihood $b \sim \mathcal N\!\left(\hat b_{\text{OLS}}, \sigma^2/S_{xx}\right)$, prior $b \sim \mathcal N(m_0, \tau^2)$:
+
+$$
+\text{precision} = \frac{S_{xx}}{\sigma^2} + \frac{1}{\tau^2},
+\qquad
+\mathbb E[b \mid y] = \frac{\frac{S_{xy}}{\sigma^2} + \frac{m_0}{\tau^2}}{\text{precision}}
+$$
+
+With $m_0 = 0$ this is $S_{xy}/(S_{xx} + \sigma^2/\tau^2)$: ridge with $\lambda = \sigma^2/\tau^2$.
+
+**Prediction at a new price** $x$:
+
+$$
+\hat y = \bar y + \mathbb E[b]\,(x - \bar x),
+\qquad
+\operatorname{Var} = \sigma^2 + \frac{\sigma^2}{n} + (x - \bar x)^2 \operatorname{Var}(b \mid y)
+$$
+
+<Depth min={2}>
+
+**Completing the square.** The log posterior is
+
+$$
+-\frac{1}{2\sigma^2}\sum_i \big(y_i - \bar y - b(x_i - \bar x)\big)^2 - \frac{(b - m_0)^2}{2\tau^2} + \text{const}
+$$
+
+Expanding the sum gives $-\frac{1}{2\sigma^2}\left(S_{xx}b^2 - 2S_{xy}b\right) + \text{const}$. Adding the prior's terms, the coefficient of $b^2$ is $-\tfrac12\left(S_{xx}/\sigma^2 + 1/\tau^2\right)$ (the precision) and the coefficient of $b$ is $S_{xy}/\sigma^2 + m_0/\tau^2$. A parabola $-\tfrac12 P b^2 + Q b$ peaks at $Q/P$, which is the formula above.
+
+**Many features.** With a feature table $X$ and prior $\beta \sim \mathcal N(0, \tau^2 I)$:
+
+$$
+\text{posterior precision} = \frac{X^\top X}{\sigma^2} + \frac{I}{\tau^2},
+\qquad
+\mathbb E[\beta \mid y] = \left(X^\top X + \lambda I\right)^{-1} X^\top y,\quad \lambda = \frac{\sigma^2}{\tau^2}
+$$
+
+The mean is the ridge solution; the posterior covariance (the inverse of the precision) is the extra information ridge throws away. Correlated features show up as correlated posterior draws: shelf and app price coefficients would trade off along a diagonal, as in the Linear Regression page's collinearity cloud.
+
+</Depth>
+
+<Depth min={3}>
+
+**Unknown noise.** Here σ² = 4 was assumed. Putting an inverse-gamma prior on σ² keeps the model conjugate (Normal–inverse-gamma), and the slope's posterior becomes a Student-t, wider when there's little data to estimate σ.
+
+**Beyond conjugacy.** A Bayesian MMM is this regression with transformed columns (adstock, Hill saturation) whose parameters enter nonlinearly, half-normal priors that keep media effects positive, and hierarchical priors across regions. There's no closed form, so the posterior is explored by sampling (MCMC, rung 11). The intuition doesn't change: priors pull, data push, and the posterior's spread is your uncertainty.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A looser prior">
+
+With $\tau^2 = 1.6$ (and σ² = 4), compute the posterior mean slope two ways: by precisions, and as a ridge slope.
+
+<Solution>
+
+Precisions: $2.5 + 1/1.6 = 3.125$; mean $= (-80/4)/3.125 = -20/3.125 =$ **−6.4**. Ridge: $\lambda = 4/1.6 = 2.5$, slope $-80/(10 + 2.5) =$ **−6.4**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="The flat-prior interval">
+
+Give the 90% credible interval for the slope with no prior.
+
+<Solution>
+
+Mean −8, sd $\sqrt{0.4} = 0.632$: $-8 \pm 1.645 \times 0.632 =$ **[−9.04, −6.96]**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A prior from past price tests">
+
+Past tests on similar paints suggest a slope around −6, give or take 2 (prior $\mathcal N(-6, 4)$). What's the posterior?
+
+<Solution>
+
+Precision $2.5 + 1/4 = 2.75$. Mean $= (-20 + (-6)/4)/2.75 = -21.5/2.75 \approx$ **−7.82**, sd $\sqrt{1/2.75} \approx$ **0.60**. A sensible prior moves the estimate a little toward −6 and tightens it slightly; it doesn't fight the data.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Where forecasts are uncertain">
+
+With the τ² = 0.4 posterior, compare the predictive sd for a week at ₹600 and at ₹1,000. Which term makes the difference?
+
+<Solution>
+
+₹600 (centered 0): $\sqrt{4 + 0.8 + 0} \approx$ **2.19**. ₹1,000 (centered 4): $\sqrt{4 + 0.8 + 16 \times 0.2} = \sqrt 8 \approx$ **2.83**. The slope term $(x - \bar x)^2\operatorname{Var}(b)$ is zero at the average price and grows with distance.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Derive the posterior">
+
+Show that with prior $b \sim \mathcal N(m_0, \tau^2)$ and centered data, the posterior precision is $S_{xx}/\sigma^2 + 1/\tau^2$.
+
+<Solution>
+
+The log likelihood is $-\frac{1}{2\sigma^2}\sum(y_i - \bar y - b x_i)^2$ with centered $x_i$. Its $b^2$ coefficient is $-\frac{1}{2\sigma^2}\sum x_i^2 = -\frac{S_{xx}}{2\sigma^2}$. The log prior adds $-\frac{1}{2\tau^2}$. The posterior's log density is a parabola whose $b^2$ coefficient is $-\tfrac12$ times its precision, so the precision is $S_{xx}/\sigma^2 + 1/\tau^2$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Ridge is MAP, in general">
+
+For features $X$ and prior $\beta \sim \mathcal N(0, \tau^2 I)$, show that the posterior mode minimizes $\lVert y - X\beta\rVert^2 + \lambda\lVert\beta\rVert^2$ with $\lambda = \sigma^2/\tau^2$.
+
+<Solution>
+
+$-\log p(\beta \mid y) = \frac{1}{2\sigma^2}\lVert y - X\beta\rVert^2 + \frac{1}{2\tau^2}\lVert\beta\rVert^2 + \text{const}$. Multiply by the positive constant $2\sigma^2$: $\lVert y - X\beta\rVert^2 + \frac{\sigma^2}{\tau^2}\lVert\beta\rVert^2$. Scaling doesn't move the minimum, so the mode is the ridge solution with $\lambda = \sigma^2/\tau^2$.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The posterior by formula for three priors, the same posterior computed on a grid of slopes, the ridge check, and a forecast at ₹1,000. Expected: slopes −4.00, −7.53 and −8.00; ridge −4.0; the grid gives mean −4.000 and sd 0.447; a week at ₹1,000 is 36 litres with predictive sd 2.83.
+
+<PyRunner title="Bayesian regression three ways" code={`
+import numpy as np
+from sklearn.linear_model import Ridge
+
+price = np.array([4, 5, 6, 7, 8.0])      # in rupees x 100
+litres = np.array([69, 58, 54, 42, 37.0])
+xc = price - price.mean()
+sigma2 = 4.0
+sxx = (xc ** 2).sum()
+sxy = (xc * (litres - litres.mean())).sum()
+
+for tau2 in [0.4, 6.4, np.inf]:
+    prec = sxx / sigma2 + (0 if np.isinf(tau2) else 1 / tau2)
+    mean, sd = (sxy / sigma2) / prec, np.sqrt(1 / prec)
+    print(f"tau2 = {tau2}: slope {mean:.2f}, sd {sd:.3f}, 90% interval [{mean - 1.645 * sd:.2f}, {mean + 1.645 * sd:.2f}]")
+
+ridge = Ridge(alpha=sigma2 / 0.4).fit(price.reshape(-1, 1), litres)
+print("ridge with alpha = sigma2 / tau2 = 10: slope", round(float(ridge.coef_[0]), 4))
+
+# The same posterior on a grid of 16,001 slopes: prior bars times likelihood bars, divided by the sum
+b = np.linspace(-12, 4, 16001)
+resid = litres[None, :] - litres.mean() - b[:, None] * xc[None, :]
+logpost = -(resid ** 2).sum(axis=1) / (2 * sigma2) - b ** 2 / (2 * 0.4)
+post = np.exp(logpost - logpost.max())
+post /= post.sum()
+gm = (b * post).sum()
+print(f"grid posterior: mean {gm:.3f}, sd {np.sqrt(((b - gm) ** 2 * post).sum()):.3f}")
+
+# 50 plausible lines and a prediction for a week at 1,000 rupees
+rng = np.random.default_rng(8)
+slopes = rng.normal(-4, np.sqrt(0.2), 50)
+print(f"50 plausible slopes run from {slopes.min():.2f} to {slopes.max():.2f}")
+xn = 10 - price.mean()
+print(f"a week at 1,000 rupees: {litres.mean() - 4 * xn:.0f} litres, predictive sd {np.sqrt(sigma2 + sigma2 / 5 + xn ** 2 * 0.2):.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Report the posterior, not just the point.** "Elasticity −0.9, 90% credible interval −1.2 to −0.6" lets pricing decide how bold to be. A ridge model would give only −0.9.
+- **Priors from experiments.** Past price or lift tests are the best source of priors: use their estimate as the prior mean and (a slightly inflated) standard error as the prior sd. This is how lift tests calibrate a Bayesian MMM.
+- **Positive and bounded effects.** Media effects can't be negative; price effects for normal goods can't be positive. Half-normal or truncated priors encode that, and stop noisy data from producing nonsense coefficients.
+- **Thousands of SKUs.** For per-SKU elasticities, conjugate Normal updates are fast enough to run nightly, with the prior centred on the category's elasticity (shrinkage across SKUs, rung 9).
+- **Check prior sensitivity.** Refit with a prior twice as wide. If the decision changes, the data aren't informative enough, and the prior is doing the work: say so.
+- **Tools.** PyMC, NumPyro and Stan for full models; PyMC-Marketing and Google's Meridian package this machinery for MMM.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain Bayesian linear regression to a stakeholder.">
+
+Instead of one best-fitting line, we keep every line that's consistent with the data and with what we knew beforehand, weighted by how plausible it is. The middle of that crowd is our estimate; its spread is our uncertainty. Forecasts near the prices we've seen are tight; forecasts at new prices are wider, honestly so.
+
+</QA>
+
+<QA q="What's the relationship between ridge regression and Bayesian regression?">
+
+Ridge is the posterior mode (MAP) of Bayesian linear regression with a zero-mean Gaussian prior on the coefficients, with λ = σ²/τ². Bayesian regression also gives the full posterior covariance, so you get credible intervals and predictive uncertainty that ridge doesn't provide.
+
+</QA>
+
+<QA q="How is a 90% credible interval different from a 90% confidence interval?">
+
+A credible interval is a probability statement about the parameter given the data and prior: 90% posterior probability it lies inside. A confidence interval is a statement about the procedure: 90% of intervals built this way would contain the fixed true value. With a flat prior in simple models the numbers coincide, as the simulation showed (90.7% coverage). With an informative prior they differ, and the credible interval is only as good as the prior.
+
+</QA>
+
+<QA q="How would you set priors for the coefficients in an MMM?">
+
+Use domain constraints (effects positive, saturation shapes plausible), priors from experiments (geo-lift or holdout tests give a mean and an uncertainty for a channel's ROI), and weakly informative priors elsewhere. Then run prior predictive checks (does the prior imply plausible sales?) and sensitivity analysis.
+
+</QA>
+
+<Trap>
+
+**"A Bayesian interval is always more trustworthy, because it uses more information."** Only if the extra information is right. In the simulation, a confident prior centred on the wrong slope produced intervals that contained the true slope **0%** of the time, while the flat prior covered 90.7%. A prior is a claim; it needs evidence like any other.
+
+</Trap>
+
+</Section>

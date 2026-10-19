@@ -1,5 +1,149 @@
 [
  {
+  "slug": "bayes-linreg",
+  "n": 1,
+  "level": "easy",
+  "title": "A looser prior"
+ },
+ {
+  "slug": "bayes-linreg",
+  "n": 2,
+  "level": "easy",
+  "title": "The flat-prior interval"
+ },
+ {
+  "slug": "bayes-linreg",
+  "n": 3,
+  "level": "medium",
+  "title": "A prior from past price tests"
+ },
+ {
+  "slug": "bayes-linreg",
+  "n": 4,
+  "level": "medium",
+  "title": "Where forecasts are uncertain"
+ },
+ {
+  "slug": "bayes-linreg",
+  "n": 5,
+  "level": "hard",
+  "title": "Derive the posterior"
+ },
+ {
+  "slug": "bayes-linreg",
+  "n": 6,
+  "level": "hard",
+  "title": "Ridge is MAP, in general"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 1,
+  "level": "easy",
+  "title": "A slow start"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 2,
+  "level": "easy",
+  "title": "Write a prior as counts"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 3,
+  "level": "medium",
+  "title": "Weights"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 4,
+  "level": "medium",
+  "title": "Same rate, more shoppers"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 5,
+  "level": "hard",
+  "title": "The best-rated product problem"
+ },
+ {
+  "slug": "beta-binomial",
+  "n": 6,
+  "level": "hard",
+  "title": "Is it better than 20%?"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 1,
+  "level": "easy",
+  "title": "A week of data"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 2,
+  "level": "easy",
+  "title": "Write a prior"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 3,
+  "level": "medium",
+  "title": "The weights"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 4,
+  "level": "medium",
+  "title": "Zero tomorrow"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 5,
+  "level": "hard",
+  "title": "Variance of the predictive"
+ },
+ {
+  "slug": "gamma-poisson",
+  "n": 6,
+  "level": "hard",
+  "title": "Read the chain's dispersion"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 1,
+  "level": "easy",
+  "title": "Pool one store"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 2,
+  "level": "easy",
+  "title": "Why complete pooling's error is τ²"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 3,
+  "level": "medium",
+  "title": "When the data say pool everything"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 4,
+  "level": "medium",
+  "title": "No pooling's error, predicted"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 5,
+  "level": "hard",
+  "title": "Same weight, two forms"
+ },
+ {
+  "slug": "hierarchical-pooling",
+  "n": 6,
+  "level": "hard",
+  "title": "A geo-level media mix model"
+ },
+ {
   "slug": "mle-peak",
   "n": 1,
   "level": "easy",
@@ -34,6 +178,114 @@
   "n": 6,
   "level": "hard",
   "title": "Poisson objective on over-dispersed sales"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 1,
+  "level": "easy",
+  "title": "Two worlds, one day"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 2,
+  "level": "easy",
+  "title": "A world ruled out in advance"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 3,
+  "level": "medium",
+  "title": "Check the hunch"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 4,
+  "level": "medium",
+  "title": "Day 4"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 5,
+  "level": "hard",
+  "title": "Which sentence is allowed?"
+ },
+ {
+  "slug": "posterior-grid",
+  "n": 6,
+  "level": "hard",
+  "title": "Does the denominator matter?"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 1,
+  "level": "easy",
+  "title": "Read a log-normal prior"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 2,
+  "level": "easy",
+  "title": "How much is it worth?"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 3,
+  "level": "medium",
+  "title": "Combine two tests"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 4,
+  "level": "medium",
+  "title": "A vague elasticity prior"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 5,
+  "level": "hard",
+  "title": "How fast it washes out"
+ },
+ {
+  "slug": "priors-defend",
+  "n": 6,
+  "level": "hard",
+  "title": "A prior that never washes out"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 1,
+  "level": "easy",
+  "title": "Four weeks"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 2,
+  "level": "easy",
+  "title": "A more varied chain"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 3,
+  "level": "medium",
+  "title": "A strong new store"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 4,
+  "level": "medium",
+  "title": "Who is the better store?"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 5,
+  "level": "hard",
+  "title": "Derive the weight"
+ },
+ {
+  "slug": "shrinkage",
+  "n": 6,
+  "level": "hard",
+  "title": "The penalty view"
  },
  {
   "slug": "ci-repeat",
@@ -96,6 +348,42 @@
   "title": "Same model, two stores"
  },
  {
+  "slug": "integrals-thin-bars",
+  "n": 1,
+  "level": "easy",
+  "title": "A flat line"
+ },
+ {
+  "slug": "integrals-thin-bars",
+  "n": 2,
+  "level": "easy",
+  "title": "Ten left bars"
+ },
+ {
+  "slug": "integrals-thin-bars",
+  "n": 3,
+  "level": "medium",
+  "title": "A flat basket-value curve"
+ },
+ {
+  "slug": "integrals-thin-bars",
+  "n": 4,
+  "level": "medium",
+  "title": "The upper tail from the table"
+ },
+ {
+  "slug": "integrals-thin-bars",
+  "n": 5,
+  "level": "hard",
+  "title": "Why left bars give (n − 1)/n"
+ },
+ {
+  "slug": "integrals-thin-bars",
+  "n": 6,
+  "level": "hard",
+  "title": "Making a shape into a density"
+ },
+ {
   "slug": "likelihood-dial",
   "n": 1,
   "level": "easy",
@@ -130,6 +418,78 @@
   "n": 6,
   "level": "hard",
   "title": "Stockouts censor demand"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 1,
+  "level": "easy",
+  "title": "A 2 × 2 table"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 2,
+  "level": "easy",
+  "title": "Which products exist?"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 3,
+  "level": "medium",
+  "title": "One entry of UᵀU"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 4,
+  "level": "medium",
+  "title": "A price change"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 5,
+  "level": "hard",
+  "title": "Two ways to the chain total"
+ },
+ {
+  "slug": "matrices-tables",
+  "n": 6,
+  "level": "hard",
+  "title": "A duplicated column"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 1,
+  "level": "easy",
+  "title": "A dot product"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 2,
+  "level": "easy",
+  "title": "A length"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 3,
+  "level": "medium",
+  "title": "Half the overlap"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 4,
+  "level": "medium",
+  "title": "A promotion as a dot product"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 5,
+  "level": "hard",
+  "title": "Distance from dot products"
+ },
+ {
+  "slug": "vectors-baskets",
+  "n": 6,
+  "level": "hard",
+  "title": "Complements look unrelated"
  },
  {
   "slug": "boosting-by-hand",

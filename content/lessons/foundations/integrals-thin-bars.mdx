@@ -1,0 +1,297 @@
+<Section id="floor">
+
+The endcap team asks a fair question: *"You say the new endcap's conversion rate is probably around 25%. What's the chance it's actually above 30%?"* You have a curve that says how plausible each rate is, from a past test. The answer is the **area** under that curve to the right of 30%.
+
+Every Bayesian lesson ahead (posteriors, credible intervals, expected values) asks for an area like this. Textbooks write it with the symbol ∫ and stop there. You already know everything needed: **an integral is a sum of very thin bars**, and you know sums.
+
+<KeyIdea>
+
+**An integral is Σ height × width over many thin bars.** Make the bars thinner and the sum settles on one number: that number is the integral. For a probability curve, that area *is* a probability, and Σ x × height × width is the average.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**A shape whose area you already know.** The line $f(x) = 2x$ from $x = 0$ to $x = 1$ makes a triangle with base 1 and height 2. Its area is $\tfrac12 \times 1 \times 2 = $ **1**. Now pretend you don't know the formula for a triangle and use bars instead.
+
+</Step>
+<Step>
+
+**Four bars of width 0.25.** A bar's area is height × width. Where do you measure the height?
+
+| Bar | 0–0.25 | 0.25–0.5 | 0.5–0.75 | 0.75–1 | Total area |
+|---|---|---|---|---|---|
+| Height at the **left** edge | 0 | 0.5 | 1 | 1.5 | $3 \times 0.25 =$ **0.75** |
+| Height at the **right** edge | 0.5 | 1 | 1.5 | 2 | $5 \times 0.25 =$ **1.25** |
+| Height in the **middle** | 0.25 | 0.75 | 1.25 | 1.75 | $4 \times 0.25 =$ **1.00** |
+
+Left edges undershoot, right edges overshoot, and the middle happens to be exact here.
+
+</Step>
+<Step>
+
+**Make the bars thinner.** With $n$ left-edge bars the total is $(n - 1)/n$, and with right edges $(n + 1)/n$. At 100 bars: **0.99** and **1.01**. The two sums squeeze together on 1 as the bars get thinner. That limit is what $\int_0^1 2x\,dx = 1$ means.
+
+</Step>
+<Step>
+
+**Now a retail curve.** From an earlier endcap test, the team's belief about the new endcap's conversion rate is the curve Beta(5, 15): most plausible around 22%, rarely above 45%. Cut $[0, 1]$ into 10 bars of width 0.1 and read each height at the middle:
+
+| Rate | 0.05 | 0.15 | 0.25 | 0.35 | 0.45 | 0.55 | 0.65 | 0.75–0.95 |
+|---|---|---|---|---|---|---|---|---|
+| Height | 0.177 | 3.025 | 4.047 | 2.097 | 0.553 | 0.074 | 0.004 | ≈ 0 |
+| Bar area | 0.0177 | 0.3025 | 0.4047 | 0.2097 | 0.0553 | 0.0074 | 0.0004 | ≈ 0 |
+
+The bar areas add up to **0.9977**: almost exactly 1. A probability curve always has total area 1, because the rate has to be *something*.
+
+Notice the heights: 4.047 is bigger than 1. A height is not a probability; only **height × width** is.
+
+</Step>
+<Step>
+
+**The chance the rate is at most 30%** is the area of the first three bars: $0.0177 + 0.3025 + 0.4047 =$ **0.7249**. The exact answer (with infinitely thin bars) is **0.7178**. So the chance it's *above* 30% is about $1 - 0.718 = 28\%$: that's the answer for the endcap team.
+
+</Step>
+<Step>
+
+**The average rate** weights each bar's middle by its area: $\sum x \times \text{height} \times \text{width}$:
+
+$$
+0.05(0.0177) + 0.15(0.3025) + 0.25(0.4047) + 0.35(0.2097) + 0.45(0.0553) + \dots \approx \mathbf{0.2500}
+$$
+
+That's exactly the Beta(5, 15) mean, $5/(5 + 15) = 0.25$, even with only 10 bars.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="With four bars under f(x) = 2x, which way of measuring the height gets the true area of 1 exactly?" options={["Left edge", "Right edge", "Middle"]} answer={2}>
+
+**The middle.** For a straight line, each middle-height bar loses a small triangle on one side and gains an identical one on the other. For curves the middle rule isn't exact, but it's still far more accurate than either edge.
+
+</Predict>
+
+<BarRules />
+
+<ThinBars />
+
+**Try this:**
+
+1. In the first chart, switch between left and right edges while raising the number of bars. Watch 0.75 and 1.25 close in on 1.
+2. In the endcap chart, slide the bars from 10 to 500. The probability settles from 0.7249 to 0.7178, and the total area from 0.9977 to 1.
+3. Move the cut-off to 0.2. Only about a third of the area is left of it (the exact value is 0.3267), even though 0.2 is close to the peak.
+4. Look at the vertical axis: the curve reaches about 4.2. Densities can exceed 1; areas under them can't.
+
+</Section>
+
+<Section id="simulate">
+
+Bars aren't the only way to measure an area. Throw darts at random into a box that contains the curve. The share of darts that land under the curve (and left of 0.3), times the box's area, estimates the area.
+
+<MonteCarloArea />
+
+- **100 darts** give 0.81: a rough guess.
+- **1,000 darts** give 0.7785; **10,000 darts** give 0.7146 (exact 0.7178).
+- The error shrinks like $1/\sqrt{n}$: 100 times more darts buy only 10 times more accuracy.
+
+In one dimension, bars win easily: 50 bars (0.7181) are already closer than 10,000 darts. But bars need $n^d$ boxes in $d$ dimensions, while darts don't care about dimension. A model with 50 parameters can't be integrated with bars; it can be integrated with random samples. That idea is the whole reason MCMC exists, in [Why We Sample](/learn/bayes/why-sample).
+
+</Section>
+
+<Section id="formula">
+
+**The integral is the limit of the bar sum.** Cut $[a, b]$ into $n$ bars of width $\Delta x = (b - a)/n$ with middles $x_1, \dots, x_n$:
+
+$$
+\int_a^b f(x)\,dx = \lim_{n \to \infty} \sum_{i=1}^{n} f(x_i)\,\Delta x
+$$
+
+The ∫ is a stretched S for "sum", and $dx$ is the bar width shrunk toward zero. Nothing else is new.
+
+**Three integrals you'll use constantly** for a probability density $p(x)$:
+
+$$
+\underbrace{\int p(x)\,dx = 1}_{\text{total probability}}
+\qquad
+\underbrace{P(X \le c) = \int_{-\infty}^{c} p(x)\,dx}_{\text{area to the left}}
+\qquad
+\underbrace{\mathbb E[X] = \int x\,p(x)\,dx}_{\text{the average}}
+$$
+
+<Depth min={2}>
+
+**The normalizing constant.** The Beta(5, 15) curve is $x^4(1 - x)^{14}$ divided by a constant $B(5, 15)$, chosen so the total area is 1. The shape is what carries information; the constant is just "divide by the total area". When you meet Bayes' theorem as *prior × likelihood ÷ evidence*, the evidence is exactly this: the total area under prior × likelihood. On a grid, it's the Σ you divide by in [A Grid of Hypotheses](/learn/bayes/posterior-grid); for Beta–Binomial it has a closed form ([Beta–Binomial](/learn/bayes/beta-binomial)).
+
+**The running sum is the CDF.** $F(c) = P(X \le c)$ adds bars from the left up to $c$. Adding one more thin bar raises it by $p(c)\,\Delta x$, so the slope of $F$ is the height of $p$: $F'(c) = p(c)$. That's the fundamental theorem of calculus, read in bars: **the derivative of the running area is the height**.
+
+**Areas from known antiderivatives.** For $f(x) = 2x$, the running area from 0 is $F(c) = c^2$ (check: its derivative is $2c$). The area from 0 to 1 is $F(1) - F(0) = 1$. Closed forms like this exist for simple curves; for most posteriors they don't, which is why we use bars or samples.
+
+</Depth>
+
+<Depth min={3}>
+
+**How fast each method converges.** For a smooth curve, edge rules have error proportional to $1/n$ and the middle rule to $1/n^2$: double the bars and the middle rule's error falls fourfold. Monte Carlo's error is proportional to $1/\sqrt n$ regardless of dimension. Grid methods in $d$ dimensions need $n^d$ evaluations for the same per-axis resolution: 100 bars per axis in 10 dimensions is $10^{20}$ evaluations.
+
+**Improper and infinite ranges.** An integral over $(-\infty, \infty)$ is the limit of integrals over $[-M, M]$. For a density, the tails must shrink fast enough for the total to be 1. The bar method still works in practice if you cut the range where the curve is negligible, as the endcap chart does above 0.7.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A flat line">
+
+A paint counter serves customers at a steady 3 per minute. Using 4 bars, what's the total served between minute 0 and minute 2 (the area under $f(x) = 3$ on $[0, 2]$)?
+
+<Solution>
+
+Every bar has height 3 and width 0.5: $4 \times 3 \times 0.5 =$ **6** customers. For a flat line any number of bars, measured anywhere, is exact.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Ten left bars">
+
+Estimate $\int_0^1 2x\,dx$ with 10 left-edge bars.
+
+<Solution>
+
+Heights $0, 0.2, 0.4, \dots, 1.8$ sum to 9, so the area is $9 \times 0.1 =$ **0.9**, which is $(n - 1)/n$ with $n = 10$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A flat basket-value curve">
+
+Basket values at a small Bolt & Beam store are equally likely anywhere between ₹0 and ₹2,000. What is the density's height? What's the chance a basket is worth ₹500–₹800, and what's the average basket?
+
+<Solution>
+
+Total area must be 1 over a width of 2,000, so the height is **1/2,000**. P(₹500–₹800) $= 300 \times 1/2000 =$ **0.15**. The average is $\int_0^{2000} x/2000\,dx = 2000/2 =$ **₹1,000**: the middle, as symmetry says.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="The upper tail from the table">
+
+Using the 10-bar table in *By Hand*, estimate the chance the endcap converts above 40%.
+
+<Solution>
+
+Add the bars whose middles are above 0.4: $0.0553 + 0.0074 + 0.0004 \approx$ **0.063**. The exact value is 0.0696; the bars are coarse where the curve is changing fast.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Why left bars give (n − 1)/n">
+
+Show that $n$ left-edge bars under $f(x) = 2x$ on $[0, 1]$ have total area $(n - 1)/n$.
+
+<Solution>
+
+Bar $i$ (for $i = 0, \dots, n - 1$) starts at $i/n$, so its height is $2i/n$ and its width $1/n$. Total: $\sum_{i=0}^{n-1} \frac{2i}{n}\cdot\frac{1}{n} = \frac{2}{n^2}\cdot\frac{(n - 1)n}{2} = \frac{n - 1}{n}$. As $n$ grows this goes to 1.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Making a shape into a density">
+
+Estimate the area under $h(x) = 6x(1 - x)$ on $[0, 1]$ with two middle-height bars. Then: the shape $k(x) = x(1 - x)$ has exactly one sixth of $h$'s area. What must you multiply $k$ by to make it a probability density?
+
+<Solution>
+
+Middles at 0.25 and 0.75 both have height $6(0.25)(0.75) = 1.125$, so two bars of width 0.5 give $1.125$ (the exact area is 1, so $h$ is already a density). $k$ has area $1/6$, so multiply by **6**: dividing a shape by its total area is all that "normalizing" means. Bayes' theorem does this to prior × likelihood.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Bars in NumPy for the line and the endcap curve, compared with SciPy's exact answer, then darts. Expected: 0.75, 1.25 and 1.00 with 4 bars; 0.7249 with 10 bars and 0.7178 with 500; the darts approach 0.7178 slowly.
+
+<PyRunner title="Integrals as thin bars, and as darts" code={`
+import numpy as np
+from scipy.stats import beta
+
+def bars(f, a, b, n, rule="mid"):
+    dx = (b - a) / n
+    shift = {"left": 0.0, "right": 1.0, "mid": 0.5}[rule]
+    x = a + (np.arange(n) + shift) * dx
+    return (f(x) * dx).sum()
+
+line = lambda x: 2 * x
+for n in [4, 100]:
+    print(f"2x, {n:3d} bars: left {bars(line, 0, 1, n, 'left'):.4f}  right {bars(line, 0, 1, n, 'right'):.4f}  middle {bars(line, 0, 1, n):.4f}")
+
+f = lambda x: beta.pdf(x, 5, 15)
+for n in [10, 500]:
+    area = bars(f, 0, 1, n)
+    below = bars(f, 0, 0.3, int(0.3 * n))
+    mean = bars(lambda x: x * f(x), 0, 1, n)
+    print(f"Beta(5,15), {n:3d} bars: total {area:.4f}  P(rate <= 0.3) {below:.4f}  mean {mean:.4f}")
+print(f"exact: P(rate <= 0.3) = {beta.cdf(0.3, 5, 15):.4f}, mean = {5 / 20:.4f}")
+
+rng = np.random.default_rng(12)
+for n in [100, 1000, 10000, 100000]:
+    x, y = rng.random(n), rng.random(n) * 4.5
+    est = ((x <= 0.3) & (y <= f(x))).mean() * 4.5
+    print(f"{n:6d} darts: {est:.4f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Expected values are integrals.** Expected weekly profit under uncertain demand, expected leftover stock at the end of a season, expected revenue from a price change: each is $\int (\text{outcome}) \times p(\text{demand})$. In practice you compute them as averages over simulated demand draws (darts), because demand models rarely have closed forms.
+- **Stockout risk is an area.** The chance demand exceeds the stock on the shelf is the area of the demand distribution above that stock level. Safety stock sets that area to the target (say 5%).
+- **Credible intervals are areas.** "90% sure the rate is between 0.12 and 0.40" means 90% of the posterior's area lies there.
+- **Libraries do the bars for you.** `scipy.integrate.quad` adapts the bar widths automatically; distribution objects (`scipy.stats.beta.cdf`) have the areas built in. In Bayesian modelling, PyMC and Stan estimate areas from posterior samples.
+- **Mind the dimension.** One or two uncertain quantities: grids are fine and transparent. Dozens (a hierarchical model, an MMM): only sampling scales.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is an integral, intuitively?">
+
+The total of many thin bars: height × width, added up, with the bars made so thin that the sum stops changing. Under a probability density the total is a probability; weighted by x it's an expected value.
+
+</QA>
+
+<QA q="Can a probability density be greater than 1?">
+
+Yes. A density's height isn't a probability; only an area under it is. Beta(5, 15) peaks above 4 because its probability is packed into a narrow range of rates. What must hold is that the total area is 1.
+
+</QA>
+
+<QA q="How would you estimate expected profit if demand is uncertain?">
+
+Write profit as a function of demand (e.g. price × min(demand, stock) − cost × stock), then average it over many simulated demand draws from the demand distribution. That average is a Monte Carlo estimate of the integral of profit × density; its error shrinks like 1/√(number of draws), so report it with a standard error.
+
+</QA>
+
+<QA q="Why do Bayesian methods use sampling instead of computing integrals directly?">
+
+Posteriors usually have many parameters. Grid or bar methods need a number of evaluations that grows exponentially with the number of parameters, while Monte Carlo's accuracy depends only on the number of samples. MCMC produces samples from the posterior without needing its normalizing constant.
+
+</QA>
+
+<Trap>
+
+**"The density at 0.25 is 4.05, so the chance the rate is 0.25 is 4.05."** A density value isn't a probability, and for a continuous quantity the chance of *exactly* 0.25 is zero. Probabilities come from areas: the chance the rate is between 0.2 and 0.3 is about 0.39.
+
+</Trap>
+
+</Section>

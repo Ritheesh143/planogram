@@ -1,0 +1,300 @@
+<Section id="floor">
+
+Bolt & Beam's analytics review. An analyst presents a Bayesian model of new-store drill sales and says the priors are "uninformative, so they don't affect anything": log of each store's daily rate ~ Normal(0, 10). The reviewer asks one question: **"Before seeing any data, what does your model think a store sells?"** Nobody in the room knows.
+
+Choosing priors is the step most people find hardest to defend, and the step reviewers attack first. The way out isn't to avoid priors. It's to **check what they imply, build them from evidence, and show how much they matter**.
+
+<KeyIdea>
+
+**Judge a prior by the data it predicts, not by how vague it looks.** Simulate sales from the prior alone (a prior predictive check). If it says some stores sell millions of drills a day, it isn't "uninformative", it's wrong. Good priors come from domain ranges and past experiments, and with enough data they wash out.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Translate the "vague" prior into drills.** If log λ ~ Normal(0, 10), then λ's median is $e^0 = 1$ drill a day, but its 95th percentile is
+
+$$
+e^{0 + 1.645 \times 10} = e^{16.45} \approx \text{13.9 million drills a day}
+$$
+
+and its 99th percentile is $e^{23.26} \approx$ **12.7 billion**. The prior says **about 1 store in 4 sells more than 1,000 drills a day**. That's not vague. It's a confident claim that absurd stores are common.
+
+</Step>
+<Step>
+
+**Write down what you actually know.** A Bolt & Beam store sells somewhere between half a drill and twenty drills a day, typically about 2. A **weakly informative** prior log λ ~ Normal(log 2, 1) says: median **2**, 95th percentile $2e^{1.645} \approx$ **10.4**, 99th percentile $2e^{2.326} \approx$ **20.5**, and essentially no stores above 1,000. It rules out the absurd and stays open about everything plausible.
+
+</Step>
+<Step>
+
+**That's a prior predictive check.** Draw a rate from the prior, draw sales from Poisson(rate), repeat thousands of times, and look at the sales. In formula form it's the sum of thin bars
+
+$$
+p(y) = \sum_{\lambda} p(y \mid \lambda)\,p(\lambda)\,\Delta\lambda
+$$
+
+the same mixture as the negative binomial in rung 5, with the prior in place of the posterior.
+
+</Step>
+<Step>
+
+**Build a prior from a past experiment.** Last year's endcap test measured a **6% lift**, 95% CI [2%, 10%]. The half-width of 4 points is about 2 standard errors, so the prior is **Normal(6, 2²)**. This year's small test says **12% ± 4**. Weight each by its precision (1 ÷ variance):
+
+| | Estimate | Variance | Precision | Weight |
+|---|---|---|---|---|
+| Last year (prior) | 6% | 4 | 0.25 | 0.25 ÷ 0.3125 = **0.8** |
+| This year (data) | 12% | 16 | 0.0625 | **0.2** |
+
+Posterior mean: $0.8 \times 6 + 0.2 \times 12 =$ **7.2%**. Posterior variance: $1/0.3125 = 3.2$, an sd of **1.79**. The noisy new test moves the estimate, but not to 12%.
+
+</Step>
+<Step>
+
+**Show the prior's influence: a sensitivity analysis.** Three analysts look at the same store (true rate 1.4 a day) with different gamma priors: an optimist (mean 5, worth 6 days), a defensible prior (mean 2, worth 2 days) and a pessimist (mean 0.5, worth 10 days).
+
+| Days of data | 0 | 7 | 30 | 90 |
+|---|---|---|---|---|
+| Optimist | 5.00 | 3.08 | 1.94 | 1.76 |
+| Defensible | 2.00 | 1.56 | 1.38 | 1.55 |
+| Pessimist | 0.50 | 0.88 | 1.13 | 1.44 |
+
+After a week they still disagree by a factor of 3.5; after 90 days they're within 0.32 of each other and of the data. **With little data the prior matters, so it had better be defensible.** With a lot of data it doesn't, and you can show that.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="A prior says log(daily drill sales) ~ Normal(0, 10). Roughly what share of stores does it say sell more than 1,000 drills a day?" options={["Essentially none", "About 1 in 4", "About half"]} answer={1}>
+
+**About 1 in 4 (24%).** log(1,000) ≈ 6.9, which is only 0.69 standard deviations above the prior's centre. A huge standard deviation on the log scale spreads belief over absurd values, which is the opposite of "no opinion".
+
+</Predict>
+
+<PriorPredictive />
+
+**Try this:**
+
+1. Start with the **"Vague"** preset and read the footer: 1 store in 20 above 13.9 million a day. Then click **Weakly informative**: the histogram now sits inside the plausible band and the 95th percentile is 10.4.
+2. Drag the spread from 10 down to 0.25. Somewhere around 1–1.5 the prior covers the plausible band without spilling into nonsense. That's how you choose a spread: by the sales it implies.
+3. Set the median to 10 with a spread of 0.25. This prior is confident and wrong for most stores. Prior predictive checks catch over-confidence as well as vagueness.
+
+<WashOut />
+
+4. Slide the days from 0 to 90 and watch the three analysts converge. Then look at day 3: the optimist is still above 3.8. Small data is where priors decide the answer.
+
+</Section>
+
+<Section id="simulate">
+
+Does a defensible prior actually make estimates better? Repeat the world: 2,000 new stores whose true rates come from the chain's real spread, each watched for a few days, and each estimated three ways.
+
+<RepeatWorld />
+
+| Days per store | 1 | 3 | 7 | 30 | 60 |
+|---|---|---|---|---|---|
+| Sample mean (no prior) | 1.51 | 0.87 | 0.56 | 0.27 | 0.19 |
+| Defensible prior | **0.99** | **0.72** | **0.53** | 0.27 | 0.19 |
+| Confidently wrong prior | 2.58 | 2.03 | 1.43 | 0.54 | 0.33 |
+
+With one to seven days, the defensible prior beats the raw average, by a third after a single day. By 30 days the two are identical: the prior has washed out. The confidently wrong prior is the worst of all three at every horizon and still about 1.7 times as bad at 60 days, because it was worth 6 days of fake data at the wrong level. **A bad prior is worse than no prior; a defensible prior is better than none.**
+
+</Section>
+
+<Section id="formula">
+
+**The prior predictive distribution** is what the model believes about data before seeing any:
+
+$$
+p(y) = \int p(y \mid \theta)\,p(\theta)\,d\theta
+$$
+
+You rarely compute it in closed form; you simulate it: draw θ from the prior, then y from the likelihood.
+
+**Log-normal facts** for a prior log λ ~ Normal(m, s):
+
+- median $e^m$; $p$-th percentile $e^{m + z_p s}$ (with $z_{0.95} = 1.645$, $z_{0.99} = 2.326$);
+- mean $e^{m + s^2/2}$, which for $s = 10$ is $e^{50} \approx 5 \times 10^{21}$ drills a day.
+
+**Priors from experiments** combine by precision. With a prior $\mathcal N(m_0, v_0)$ and a new estimate $\hat\theta$ with variance $v$:
+
+$$
+\text{posterior mean} = \frac{m_0/v_0 + \hat\theta/v}{1/v_0 + 1/v}, \qquad \text{posterior variance} = \frac{1}{1/v_0 + 1/v}
+$$
+
+<LiftPrior />
+
+**Why priors wash out.** The log-posterior is the log-prior plus a sum of log-likelihood terms, one per observation. The prior is one fixed term; the likelihood grows with every day of data. Eventually the sum dominates.
+
+<Depth min={2}>
+
+**How much data is a prior worth?** Conjugate priors can be read as pseudo-data: Gamma(α, β) is β days with α sales; Beta(a, b) is $a + b$ trials; a Normal prior with variance $v_0$ on a mean is worth $\sigma^2/v_0$ observations of noise variance $\sigma^2$. Saying "my prior is worth two days" is a defensible, checkable sentence. "My prior is uninformative" usually isn't.
+
+**Pick the scale that matches your knowledge.** Demand, prices and media effects live naturally on a log scale (multiplicative effects), so priors on log λ or on elasticities are easier to set from domain ranges: "a 10% price rise loses between 2% and 40% of volume" becomes an elasticity prior centred near −1.5.
+
+</Depth>
+
+<Depth min={3}>
+
+**Flat isn't neutral.** A flat prior on λ and a flat prior on log λ are different beliefs: one puts equal weight on 0–1 and 1–2 drills, the other on 0.1–1 and 1–10. "Uninformative" depends on the parametrization, which is why Jeffreys priors (invariant to reparametrization) exist, and why weakly informative priors are now the default advice (Gelman et al.).
+
+**When priors never wash out.** If the data can't separate two parameters, more data doesn't help. In media mix models, TV and digital often run together, so the likelihood pins down only their combined effect, and the split comes from the priors no matter how many weeks you add. That's where priors from lift tests and geo-experiments are indispensable, and where a sensitivity analysis is mandatory.
+
+**Improper priors.** A flat prior over all of λ > 0 doesn't integrate to 1. It can still give a proper posterior after data, but it can't be checked with a prior predictive simulation, which is one more reason to prefer proper, weakly informative priors.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Read a log-normal prior">
+
+A prior says log λ ~ Normal(log 3, 0.5). What are its median and 95th percentile for daily sales?
+
+<Solution>
+
+Median $e^{\log 3} =$ **3**. 95th percentile $3e^{1.645 \times 0.5} = 3e^{0.822} \approx$ **6.83** drills a day.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="How much is it worth?">
+
+The optimist's prior is Gamma(30, 6). How many days of data is it worth, and at what rate?
+
+<Solution>
+
+Rate β = **6 pseudo-days**, with 30 pseudo-sales: **5 a day**. It takes about a week of real data before the real days outweigh it.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Combine two tests">
+
+Last year's test: lift 4%, 95% CI [0%, 8%]. This year's: 10% with a standard error of 2. Combine them.
+
+<Solution>
+
+The prior's sd is about 2 (half-width 4 ≈ 2 sd), the same as this year's. Equal precision means equal weights: posterior mean $(4 + 10)/2 =$ **7%**, variance $1/(1/4 + 1/4) = 2$, sd **1.41**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="A vague elasticity prior">
+
+An analyst puts a Normal(0, 10²) prior on a price elasticity. What share of its mass is on elasticities beyond ±10? Propose a defensible alternative.
+
+<Solution>
+
+$P(\lvert e\rvert \gt 10) = 2(1 - \Phi(1)) \approx$ **32%**: a third of the prior on demand that changes tenfold for a 1% price move, or rises with price. A defensible prior: Normal(−1.5, 1), which puts most mass between −3.5 and 0.5 (elasticities of home-improvement goods are typically −0.5 to −3), and a prior predictive check of the implied volume changes.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="How fast it washes out">
+
+Two gamma priors, Gamma(30, 6) and Gamma(5, 10), see $n$ days averaging exactly 1.4 a day. Write the gap between their posterior means as a function of $n$ and evaluate it at $n = 90$.
+
+<Solution>
+
+$\frac{30 + 1.4n}{6 + n} - \frac{5 + 1.4n}{10 + n}$. At $n = 90$: $156/96 - 131/100 = 1.625 - 1.31 \approx$ **0.315**. As $n$ grows, each mean is $1.4 + (\alpha - 1.4\beta)/(\beta + n)$, so the gap shrinks like $1/n$: halving it takes roughly twice the data.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="A prior that never washes out">
+
+TV and digital spend always rise and fall together. Explain why their individual effects in an MMM depend on the priors even with five years of weekly data, and what evidence would fix it.
+
+<Solution>
+
+The likelihood depends (almost) only on the combined effect: any split with the same total fits the data equally well, so the posterior along the "split" direction is just the prior. More weeks of the same co-movement add no information about the split. Fixes: data in which they move independently (geo-experiments, holdout regions, a deliberate flighting test) or priors built from lift tests for each channel, with a sensitivity analysis showing how the ROI split moves with the priors.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+A prior predictive check in NumPy, the lift-test combination, and a repeated world comparing estimates. Expected output: the vague prior's 95th percentile in the millions with about a quarter of stores above 1,000 a day; the weak prior's 95th percentile near 10; posterior lift 7.20% ± 1.79; and the defensible prior beating the sample mean with 3 days of data.
+
+<PyRunner title="Prior predictive checks and priors from experiments" code={`
+import numpy as np
+from scipy import stats
+
+rng = np.random.default_rng(8)
+for name, m, s in [("vague  Normal(0, 10)", 0.0, 10.0), ("weak   Normal(log 2, 1)", np.log(2), 1.0)]:
+    lam = np.exp(rng.normal(m, s, 100000))
+    print(f"{name}: median {np.median(lam):8.2f}  95th pct {np.quantile(lam, 0.95):14,.1f}  share above 1,000/day {(lam > 1000).mean():.1%}")
+    print(f"   exact 95th pct {np.exp(m + stats.norm.ppf(0.95) * s):14,.1f}")
+
+prior_mean, prior_var = 6.0, 4.0
+new_est, new_var = 12.0, 16.0
+w = (1 / new_var) / (1 / prior_var + 1 / new_var)
+post_mean = w * new_est + (1 - w) * prior_mean
+post_sd = np.sqrt(1 / (1 / prior_var + 1 / new_var))
+print(f"lift: weight on new test {w:.2f}, posterior {post_mean:.2f}% +/- {post_sd:.2f}")
+
+stores, days = 20000, 3
+rate = np.exp(rng.normal(np.log(2), 0.5, stores))
+total = rng.poisson(rate * days)
+for name, a, b in [("sample mean", 0, 0), ("defensible Gamma(4, 2)", 4, 2), ("wrong Gamma(30, 6)", 30, 6)]:
+    est = (a + total) / (b + days)
+    print(f"{name:24s} RMSE after {days} days: {np.sqrt(((est - rate)**2).mean()):.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Every Bayesian model review should start with the prior predictive.** Plot simulated sales, ROIs or elasticities from the priors alone. If they include values the business would laugh at, fix the priors before fitting.
+- **Write priors as sentences with sources.** "Elasticity ~ Normal(−1.5, 1): category studies range from −0.5 to −3" or "TV ROI ~ log-normal centred on last year's geo-test". Reviewers can argue with a sentence; they can't argue with "uninformative".
+- **Calibrate MMMs with experiments.** Lift tests and geo-experiments enter as priors on channel effects, exactly like the endcap example. This is the main defence against collinear channels.
+- **Run sensitivity analyses** for the decisions that matter: refit with a wider and a narrower prior and report whether the budget recommendation changes. If it doesn't, say so; if it does, the data alone can't decide.
+- **Use hierarchical priors when there are many units** (stores, SKUs): learn the prior's centre and spread from the units themselves (rung 9) instead of setting them by hand.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How do you choose a prior, and how do you defend it?">
+
+Start from what's known: domain ranges, past studies, past experiments. Encode it on a natural scale (often log), as weakly informative rather than flat. Then check it with a prior predictive simulation: do the implied outcomes look like plausible data? Finally, show sensitivity: how much do the conclusions change under reasonable alternative priors?
+
+</QA>
+
+<QA q="Isn't a flat or very wide prior the safest, most objective choice?">
+
+No. A flat prior depends on the parametrization, and a very wide prior on a log scale puts most of its mass on absurd values (millions of units a day), which can distort results with small data and makes the sampler's job harder. Weakly informative priors that rule out the impossible are more objective in practice.
+
+</QA>
+
+<QA q="How do you use a past A/B test in a new analysis?">
+
+Turn its estimate and standard error into a prior (for example Normal(6%, 2%²)) and combine it with the new data by precision weighting, or use it as an informative prior in a Bayesian model. Discount it (widen the variance) if conditions changed. In MMM, lift tests are the standard way to calibrate channel effects.
+
+</QA>
+
+<QA q="When does the prior not matter?">
+
+When the data are informative about the parameter: many observations relative to the prior's pseudo-sample size, and a parameter the data can identify. Then posteriors under different reasonable priors converge. It still matters for small segments, new stores and SKUs, and for parameters the data can't separate (collinear media channels).
+
+</QA>
+
+<Trap>
+
+**"I used uninformative priors, so the results are driven by the data."** A Normal(0, 10) prior on log daily sales claims that one store in four sells over 1,000 drills a day. Wide on one scale is opinionated on another. Show the prior predictive instead of the word "uninformative".
+
+</Trap>
+
+</Section>

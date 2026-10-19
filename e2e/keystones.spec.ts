@@ -99,7 +99,7 @@ test("floor check scores and routes misconceptions", async ({ page }) => {
 });
 
 test("planned lessons render a placeholder", async ({ page }) => {
-  await page.goto("/learn/bayes/posterior-grid");
+  await page.goto("/learn/bayes/mcmc-walker");
   await expect(page.getByText(/This bay is still being stocked/)).toBeVisible();
   await page.goto("/models/gradient-boosting");
   await expect(page.getByRole("heading", { name: "Gradient Boosting, End to End" })).toBeVisible();

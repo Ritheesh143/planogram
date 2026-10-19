@@ -1,0 +1,296 @@
+<Section id="floor">
+
+Bolt & Beam opens a new store in Nashik. After three days its cordless drill has sold **0, 2 and 1**. The replenishment system needs a number today: how many drills does this store sell per day, and how many should sit on the shelf tomorrow?
+
+Three days is far too little to trust the average (1 a day) on its own. But you aren't starting from nothing: similar new stores sell **about 2 a day**. Rung 3 combined a prior and a likelihood on a grid of bars. This rung does the same job with two numbers you can update in your head, and then answers the question that actually matters for the shelf: **what will tomorrow look like?**
+
+<KeyIdea>
+
+**A gamma prior on a daily rate is fake history: α pseudo-sales over β pseudo-days.** Real data add to both: sales to sales, days to days. The forecast for tomorrow then mixes "Poisson luck" with "we're not sure of the rate", which is why it's wider than a Poisson. That extra width is the over-dispersion every retail demand series shows.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Write the prior as fake history.** "Similar stores sell about 2 a day, and I'd trust that like one day of data" becomes a **Gamma(2, 1)** prior: shape α = 2 pseudo-sales, rate β = 1 pseudo-day. Its mean is α/β = **2 drills a day**. Its 90% interval runs from **0.36 to 4.74**: wide, because one pseudo-day isn't much.
+
+</Step>
+<Step>
+
+**Add the real days.** Three days sold $0 + 2 + 1 = 3$ drills. Add sales to sales and days to days:
+
+$$
+\text{Gamma}(2 + 3,\; 1 + 3) = \text{Gamma}(5, 4)
+$$
+
+The posterior mean is $5/4 =$ **1.25 drills a day**, and the 90% interval is **0.49 to 2.29**.
+
+</Step>
+<Step>
+
+**Read 1.25 as a weighted average.** The prior is worth 1 day and the data 3 days, so the weights are 1/4 and 3/4:
+
+$$
+1.25 = \tfrac14 \times \underbrace{2}_{\text{prior mean}} + \tfrac34 \times \underbrace{1}_{\text{3-day average}}
+$$
+
+The estimate starts at the prior and walks toward the data as days accumulate. That is all "shrinkage" means.
+
+</Step>
+<Step>
+
+**Forecast tomorrow.** If we knew λ exactly, tomorrow would be Poisson(λ). We don't, so average the Poisson over our belief about λ. For zero sales this has a neat answer: $P(0) = (\beta/(\beta + 1))^\alpha = (4/5)^5 =$ **0.328**. The full predictive is the **negative binomial**:
+
+| Tomorrow | 0 | 1 | 2 | 3 or more |
+|---|---|---|---|---|
+| Predictive (negative binomial) | 0.328 | 0.328 | 0.197 | **0.148** |
+| Poisson at λ = 1.25 | 0.287 | 0.358 | 0.224 | 0.132 |
+
+$P(1) = 5 \times (4/5)^5 \times (1/5) = 0.328$ and $P(2) = 15 \times (4/5)^5 \times (1/5)^2 = 0.197$. The predictive puts **more weight on 0 and on 3+**: both tails are fatter.
+
+</Step>
+<Step>
+
+**Why it's wider.** The predictive mean is still 1.25, but its variance is $1.25 \times (1 + 1/4) =$ **1.5625**, against 1.25 for a Poisson. The extra **0.3125** is exactly the variance of our belief about λ ($5/4^2 = 0.3125$):
+
+$$
+\text{variance of tomorrow} = \underbrace{1.25}_{\text{Poisson luck}} + \underbrace{0.3125}_{\text{not knowing } \lambda}
+$$
+
+**On the shelf:** to have a 95% chance of not running out tomorrow, the predictive says stock **4 drills**; a Poisson at 1.25 says **3**.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="The prior says 2 a day; three days averaged 1 a day. Where does the posterior mean land?" options={["At 1, the data", "Between 1 and 2, closer to 1", "At 2, the prior"]} answer={1}>
+
+**Between, closer to 1: 1.25.** The prior counts as 1 day, the data as 3, so the data get three quarters of the weight.
+
+</Predict>
+
+<GammaPoissonUpdater />
+
+**Try this:**
+
+1. Add ten days that each sell 1. The posterior becomes Gamma(15, 14): mean **1.07**, 90% interval **0.66 to 1.56**. The prior's pull fades and the interval tightens.
+2. Reset, then set the prior to shape 20, rate 10. Same prior mean (2), but now worth 10 days. After the same three days the posterior is Gamma(23, 13) with mean **1.77**: a confident prior barely moves.
+3. Set shape 0.5, rate 0.5: a weak prior worth half a day. The posterior Gamma(3.5, 3.5) has mean **1.00**, almost exactly the data.
+4. Watch the right-hand chart as you add days: the predictive bars approach the Poisson bars, because the "not knowing λ" part of the variance shrinks while the Poisson luck stays.
+
+</Section>
+
+<Section id="simulate">
+
+One store with an uncertain rate gives a wider forecast. A **chain** of stores with genuinely different rates gives wider data. Here 40 stores each have their own true rate, drawn from a gamma distribution with mean 2, and each sells Poisson(its rate) for 90 days. Pool all 3,600 store-days:
+
+<PoolSimulation />
+
+- With identical stores, variance ÷ mean is **1.00**: plain Poisson.
+- With k = 2 (stores differ a lot), it's about **1.9**; the gamma-Poisson formula $1 + \text{mean}/k$ says 2. The pooled counts have more zeros and a longer right tail than any single Poisson.
+- Bolt & Beam's generator builds daily demand exactly this way, with gamma noise of dispersion 8, so its demand has variance $\mu + \mu^2/8$. Every demand model fitted to it sees over-dispersion.
+
+**Why the shelf cares:** safety stock computed from a Poisson assumes variance = mean. On over-dispersed demand it's systematically too small, and the service level you promised quietly isn't the one you get.
+
+</Section>
+
+<Section id="formula">
+
+**The prior.** Gamma(α, β) on λ has density proportional to $\lambda^{\alpha - 1}e^{-\beta\lambda}$, mean $\alpha/\beta$ and variance $\alpha/\beta^2$.
+
+**The likelihood** of $n$ days with counts $k_1, \dots, k_n$ under Poisson(λ) is proportional to $\prod_i e^{-\lambda}\lambda^{k_i} = \lambda^{\sum k_i}e^{-n\lambda}$.
+
+**Multiply** (Bayes: prior × likelihood):
+
+$$
+\lambda^{\alpha - 1}e^{-\beta\lambda}\cdot\lambda^{\sum k_i}e^{-n\lambda} = \lambda^{(\alpha + \sum k_i) - 1}e^{-(\beta + n)\lambda}
+$$
+
+That's the shape of another gamma: **Gamma(α + Σk, β + n)**. A prior whose posterior stays in the same family is called **conjugate**. No grid and no sampling needed: two additions.
+
+**The posterior mean as a weighted average:**
+
+$$
+\frac{\alpha + \sum k_i}{\beta + n} = \frac{\beta}{\beta + n}\cdot\frac{\alpha}{\beta} + \frac{n}{\beta + n}\cdot\bar k
+$$
+
+The prior's weight is $\beta/(\beta + n)$: its pseudo-days as a share of all days.
+
+<Depth min={2}>
+
+**The predictive is a gamma mixture of Poissons.** Average the Poisson over the posterior, as a sum of thin bars over λ:
+
+$$
+P(y = k) = \int_0^\infty \frac{e^{-\lambda}\lambda^k}{k!}\cdot\frac{\beta^\alpha}{\Gamma(\alpha)}\lambda^{\alpha - 1}e^{-\beta\lambda}\,d\lambda
+= \frac{\Gamma(k + \alpha)}{k!\,\Gamma(\alpha)}\left(\frac{\beta}{\beta + 1}\right)^{\alpha}\left(\frac{1}{\beta + 1}\right)^{k}
+$$
+
+The integral is another gamma integral, which is why it has a closed form. Setting $k = 0$ gives $(\beta/(\beta + 1))^\alpha$, the $(4/5)^5$ from *By Hand*.
+
+**Its variance by the law of total variance:** $\operatorname{Var}(y) = \mathbb E[\operatorname{Var}(y \mid \lambda)] + \operatorname{Var}(\mathbb E[y \mid \lambda]) = \mathbb E[\lambda] + \operatorname{Var}(\lambda) = \frac{\alpha}{\beta}\left(1 + \frac1\beta\right)$. The first term is Poisson luck; the second is uncertainty about the rate.
+
+</Depth>
+
+<Depth min={3}>
+
+**Where this goes next.** With many stores, α and β don't have to be guessed: estimate them from the chain (empirical Bayes), or put priors on them too (a hierarchical model, rung 9). The negative binomial with a log-linear mean is **NB regression**, and the Tweedie objective in LightGBM is its cousin for continuous-plus-zero sales.
+
+**Reference priors.** The Jeffreys prior for a Poisson rate is $\propto \lambda^{-1/2}$, the limit of Gamma(0.5, β → 0). It's improper (doesn't integrate to 1), but its posterior is proper after one day of data.
+
+**Streaming.** Because the update is two running sums, a conjugate model can update every store-SKU each night with no refitting: keep $\sum k$ and $n$, optionally with exponential forgetting so old days count less (the geometric-decay thread).
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A week of data">
+
+Prior Gamma(2, 1). The store sells 14 drills over 7 days. What's the posterior and its mean?
+
+<Solution>
+
+Gamma(2 + 14, 1 + 7) = **Gamma(16, 8)**, mean **2**. The data agreed with the prior, so the mean didn't move, but the belief is now much tighter.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Write a prior">
+
+A category manager says: "In my experience a new store sells about 3 a day, and I'd trust that like five days of data." Which gamma prior is that?
+
+<Solution>
+
+Five pseudo-days at 3 a day is 15 pseudo-sales: **Gamma(15, 5)**, mean 3.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="The weights">
+
+Prior Gamma(6, 3); nine days averaging 1 drill a day. Compute the posterior mean two ways.
+
+<Solution>
+
+Directly: Gamma(6 + 9, 3 + 9) = Gamma(15, 12), mean $15/12 =$ **1.25**. As a weighted average: the prior is worth 3 days and the data 9, so $\tfrac{3}{12}\times 2 + \tfrac{9}{12}\times 1 = 0.5 + 0.75 = 1.25$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Zero tomorrow">
+
+Using the Gamma(15, 12) posterior from Exercise 3, what's the probability of selling nothing tomorrow? Compare with a Poisson at the posterior mean.
+
+<Solution>
+
+$(12/13)^{15} \approx$ **0.301**. A Poisson at 1.25 gives $e^{-1.25} \approx 0.287$. Closer than with Gamma(5, 4) (0.328 vs 0.287), because twelve days of evidence leave less doubt about λ.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Variance of the predictive">
+
+Show that if $\lambda \sim \text{Gamma}(\alpha, \beta)$ and $y \mid \lambda \sim \text{Poisson}(\lambda)$, then $\operatorname{Var}(y) = \frac{\alpha}{\beta}(1 + \frac1\beta)$.
+
+<Solution>
+
+Law of total variance: $\operatorname{Var}(y) = \mathbb E[\operatorname{Var}(y\mid\lambda)] + \operatorname{Var}(\mathbb E[y\mid\lambda])$. For a Poisson both the conditional mean and variance are λ, so this is $\mathbb E[\lambda] + \operatorname{Var}(\lambda) = \alpha/\beta + \alpha/\beta^2 = \frac{\alpha}{\beta}(1 + \frac1\beta)$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Read the chain's dispersion">
+
+Across 40 stores, daily drill sales have mean 2 and variance 3.6. If each store is Poisson with a rate drawn from a gamma with mean 2 and shape k, what is k? What does it say about the stores?
+
+<Solution>
+
+Variance $= 2 + 2^2/k = 3.6$, so $4/k = 1.6$ and **k = 2.5**. The rates' standard deviation is $2/\sqrt{2.5} \approx 1.26$: stores differ a lot, and a model that treats them as one Poisson will under-state uncertainty, and safety stock, for every one of them.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The conjugate update and the negative binomial predictive with scipy, checked against brute-force simulation. Expected output: posterior Gamma(5, 4) with mean 1.25 and 90% interval 0.49–2.29; predictive P(0) = P(1) = 0.328 and P(3+) = 0.148; 95% stock 4 drills (3 for a Poisson).
+
+<PyRunner title="Gamma prior, Poisson sales, negative binomial tomorrow" code={`
+import numpy as np
+from scipy import stats
+
+alpha, beta = 2.0, 1.0
+days = np.array([0, 2, 1])
+a, b = alpha + days.sum(), beta + len(days)
+post = stats.gamma(a, scale=1 / b)
+lo, hi = post.ppf([0.05, 0.95])
+print(f"posterior Gamma({a:g}, {b:g}): mean {post.mean():.2f}, 90% interval {lo:.2f} to {hi:.2f}")
+
+pred = stats.nbinom(a, b / (b + 1))
+pois = stats.poisson(post.mean())
+print("P(0), P(1), P(2), P(3+)  predictive:", np.round([pred.pmf(0), pred.pmf(1), pred.pmf(2), pred.sf(2)], 3))
+print("                          poisson:   ", np.round([pois.pmf(0), pois.pmf(1), pois.pmf(2), pois.sf(2)], 3))
+print(f"predictive mean {pred.mean():.4f}, variance {pred.var():.4f}")
+print("stock for 95%: predictive", int(pred.ppf(0.95)), " poisson", int(pois.ppf(0.95)))
+
+rng = np.random.default_rng(0)
+lam = rng.gamma(a, 1 / b, 200000)
+y = rng.poisson(lam)
+print(f"simulated: P(0) = {(y == 0).mean():.3f}, variance {y.var():.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Cold-start forecasting.** New stores and new SKUs get a prior from similar ones (same category, city tier, price band), and real days update it. Conjugate updates are two counters per store-SKU, cheap enough to run nightly for millions of series.
+- **Choose α and β from data, not taste.** Fit them across existing stores (empirical Bayes: match the mean and the variance of their rates), or fit a hierarchical model. "Worth one day" should be a measured statement.
+- **Use the predictive for stock, not the mean.** Safety stock and reorder points come from quantiles of the negative binomial predictive. Plugging the mean into a Poisson under-stocks.
+- **Over-dispersion is the norm.** Store-SKU daily demand almost always has variance well above the mean. Check it before choosing a Poisson objective, and prefer negative binomial or Tweedie when it's large.
+- **Watch stockouts.** Days with a stockout show sales, not demand (rung "Demand ≠ sales"). Feeding censored days into the update biases the rate down.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What's a conjugate prior? Give a retail example.">
+
+A prior is conjugate to a likelihood when the posterior is in the same family, so updating is just changing parameters. For a Poisson rate (daily unit sales), the gamma is conjugate: Gamma(α, β) plus counts summing to S over n days gives Gamma(α + S, β + n). α and β read as pseudo-sales and pseudo-days.
+
+</QA>
+
+<QA q="Why is retail demand over-dispersed relative to a Poisson?">
+
+Because the rate itself varies: across stores, across days (weather, promotions, local events) and in our knowledge of it. A Poisson whose rate is gamma-distributed is negative binomial, with variance mean + mean²/k. The Poisson part is irreducible luck; the extra is rate heterogeneity or uncertainty.
+
+</QA>
+
+<QA q="A new SKU has three days of sales. How would you forecast it?">
+
+Borrow strength: build a prior from similar SKUs' rates (category, price band, launch curves), update it with the three days (gamma-Poisson or a hierarchical model), and forecast with the posterior predictive, which is wider than a Poisson because the rate is uncertain. As days accumulate the data take over.
+
+</QA>
+
+<QA q="What's the difference between the posterior predictive and plugging the posterior mean into the likelihood?">
+
+Plugging in the posterior mean ignores uncertainty about the parameter, so its intervals are too narrow. The posterior predictive averages the likelihood over the whole posterior. For gamma-Poisson the plug-in is a Poisson with variance = mean; the predictive is a negative binomial with variance mean × (1 + 1/β).
+
+</QA>
+
+<Trap>
+
+**"The posterior mean is 1.25, so tomorrow's sales are Poisson(1.25)."** That throws away the uncertainty about λ you just computed. The right forecast is the negative binomial predictive: same mean, 25% more variance here, and a 95% stock level of 4 drills instead of 3.
+
+</Trap>
+
+</Section>

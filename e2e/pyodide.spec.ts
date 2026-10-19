@@ -16,6 +16,16 @@ const lessons: [string, string][] = [
   ["/models/mlp", "after one step: prediction 9.714, loss 0.0409"],
   ["/learn/models/tree-vs-mlp", "tree forecast weeks 8, 10: [28.5 28.5]"],
   ["/models/model-arena", "bias -25.0%"],
+  ["/learn/foundations/integrals-thin-bars", "Beta(5,15), 500 bars: total 1.0000  P(rate <= 0.3) 0.7178  mean 0.2500"],
+  ["/learn/foundations/vectors-baskets", "cos(A,B) = 0.866  cos(A,D) = 0.866  cos(A,C) = 0.000"],
+  ["/learn/foundations/matrices-tables", "margins: [8600 9950 9800]"],
+  ["/learn/bayes/posterior-grid", "grid posterior: mean 1.333, 90% interval 0.45 to 2.58"],
+  ["/learn/bayes/beta-binomial", "posterior Beta(5, 15): mean 0.250, 90% interval 0.110 to 0.419"],
+  ["/learn/bayes/gamma-poisson", "posterior Gamma(5, 4): mean 1.25, 90% interval 0.49 to 2.29"],
+  ["/learn/bayes/shrinkage", "shrinking won in 996 of 1000 chains"],
+  ["/learn/bayes/bayes-linreg", "grid posterior: mean -4.000, sd 0.447"],
+  ["/learn/bayes/hierarchical-pooling", "partial pooling  mean squared error   22.1"],
+  ["/learn/bayes/priors-defend", "lift: weight on new test 0.20, posterior 7.20% +/- 1.79"],
 ];
 
 for (const [path, expected] of lessons) {

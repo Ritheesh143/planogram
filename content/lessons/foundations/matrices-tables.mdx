@@ -1,0 +1,292 @@
+<Section id="floor">
+
+Finance wants this week's revenue, cost and margin for every store, and next quarter the same for 40 stores, 60 SKUs and a dozen price scenarios. You could loop over stores, then SKUs, multiplying and adding. Or you could notice that you already have a **table** (stores × SKUs) and a **price list**, and that "revenue for every store" is one operation on the two.
+
+That table is a **matrix**. Matrix multiplication sounds like abstract algebra, but it's nothing more than the dot products from [Vectors as Baskets](/learn/foundations/vectors-baskets), done for every row at once. And it's the language of the normal equations on the Linear Regression page.
+
+<KeyIdea>
+
+**A matrix is a table; multiplying a matrix by a vector dots every row with that vector.** Multiplying two matrices does that for several vectors at once. $X^\top X$ is "every pair of columns dotted together", which is why it appears whenever we fit a model.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Last week's units at three stores:
+
+| Store | Paint (litres) | Brushes | Drills |
+|---|---|---|---|
+| Pune | 40 | 10 | 2 |
+| Indore | 25 | 20 | 5 |
+| Nagpur | 10 | 5 | 8 |
+
+Prices: paint ₹500 a litre, brushes ₹150, drills ₹4,000.
+
+<Steps>
+<Step>
+
+**Each store's revenue is its row dotted with the prices.**
+
+- Pune: $40(500) + 10(150) + 2(4000) = 20{,}000 + 1{,}500 + 8{,}000 =$ **₹29,500**
+- Indore: $25(500) + 20(150) + 5(4000) = 12{,}500 + 3{,}000 + 20{,}000 =$ **₹35,500**
+- Nagpur: $10(500) + 5(150) + 8(4000) = 5{,}000 + 750 + 32{,}000 =$ **₹37,750**
+
+Written as one operation, table $U$ times price vector $p$:
+
+$$
+U p = \begin{bmatrix} 40 & 10 & 2 \\ 25 & 20 & 5 \\ 10 & 5 & 8 \end{bmatrix}\begin{bmatrix} 500 \\ 150 \\ 4000 \end{bmatrix} = \begin{bmatrix} 29{,}500 \\ 35{,}500 \\ 37{,}750 \end{bmatrix}
+$$
+
+Chain revenue: **₹1,02,750**.
+
+</Step>
+<Step>
+
+**Flip the table (the transpose).** $U^\top$ has SKUs as rows and stores as columns. Dotting each SKU row with $(1, 1, 1)$ adds across stores: units per SKU are **75 litres, 35 brushes, 15 drills**. And $(75, 35, 15) \cdot p = 37{,}500 + 5{,}250 + 60{,}000 =$ **₹1,02,750** again: total units times price gives the same chain revenue.
+
+</Step>
+<Step>
+
+**Two columns at once: a matrix times a matrix.** Put the price and the unit cost side by side, one column each:
+
+$$
+P = \begin{bmatrix} 500 & 350 \\ 150 & 90 \\ 4000 & 3000 \end{bmatrix}
+\qquad
+U P = \begin{bmatrix} 29{,}500 & 20{,}900 \\ 35{,}500 & 25{,}550 \\ 37{,}750 & 27{,}950 \end{bmatrix}
+$$
+
+Column 1 is revenue, column 2 is cost. Pune's cost is $40(350) + 10(90) + 2(3000) = 14{,}000 + 900 + 6{,}000 = 20{,}900$. Margins: **₹8,600, ₹9,950, ₹9,800**. The shapes must line up: $(3 \times 3)$ times $(3 \times 2)$ gives $(3 \times 2)$, because each row of $U$ has 3 entries to dot with each 3-entry column of $P$.
+
+</Step>
+<Step>
+
+**$U^\top U$: every pair of columns dotted.** Dot the paint column with itself: $40^2 + 25^2 + 10^2 = 1{,}600 + 625 + 100 =$ **2,325**. Paint with brushes: $40(10) + 25(20) + 10(5) =$ **950**. Paint with drills: $40(2) + 25(5) + 10(8) =$ **285**. All of them:
+
+$$
+U^\top U = \begin{bmatrix} 2{,}325 & 950 & 285 \\ 950 & 525 & 160 \\ 285 & 160 & 93 \end{bmatrix}
+$$
+
+It's symmetric (paint·brush = brush·paint), and the diagonal holds each column's sum of squares.
+
+</Step>
+<Step>
+
+**You've seen this before.** On the [Linear Regression](/models/linear-regression) page, the table had a column of 1s and a price column, $X = [\mathbf 1, \text{price}]$, and
+
+$$
+X^\top X = \begin{bmatrix} 5 & 30 \\ 30 & 190 \end{bmatrix}, \qquad X^\top y = \begin{bmatrix} 260 \\ 1480 \end{bmatrix}
+$$
+
+5 is "1s·1s" (the number of weeks), 30 is "1s·price" (total price), 190 is "price·price". Solving $X^\top X\beta = X^\top y$ gave the line $100 - 8x$. The normal equations are just a table of column dot products.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Nagpur sells 2 more drills. Which numbers in the revenue column change?" options={["All three stores' revenue", "Only Nagpur's revenue", "Only the chain total"]} answer={1}>
+
+**Only Nagpur's** (up ₹8,000), and the chain total with it. Each store's revenue depends only on its own row; that's what "row dotted with prices" means.
+
+</Predict>
+
+<StoreTable />
+
+**Try this:**
+
+1. Click a store name to see its revenue written out as a dot product.
+2. Set Nagpur's drills from 8 to 10. Only Nagpur's revenue, cost and margin move.
+3. Cut the drill price to ₹3,500. Every store's revenue changes, but by different amounts: by ₹500 times its drill count.
+4. Tick **Show XᵀX**, then change a cell. Only the entries involving that cell's column change.
+
+</Section>
+
+<Section id="simulate">
+
+Pricing wants to see chain revenue under 1,000 random price scenarios, each price moving up or down by as much as 10%. Put the scenarios side by side as the 1,000 columns of a price matrix: one matrix product computes all 3,000 store revenues at once.
+
+<PriceScenarios />
+
+- The scenarios spread chain revenue roughly between ₹93,000 and ₹1,13,000 at ±10%.
+- The **average revenue over the scenarios equals the revenue at the average prices** (₹1,02,891 both). That's linearity: for a matrix product, averaging before or after multiplying gives the same answer.
+- That equality breaks the moment demand reacts to price (sales fall when prices rise). Then the average of outcomes and the outcome at average inputs differ, which is why demand models need simulation rather than plugging in averages.
+
+</Section>
+
+<Section id="formula">
+
+For a matrix $A$ with $m$ rows and $n$ columns and a vector $b$ with $n$ entries, $Ab$ has $m$ entries:
+
+$$
+(Ab)_i = \sum_{j=1}^{n} A_{ij}\, b_j \qquad \text{(row } i \text{ dotted with } b\text{)}
+$$
+
+For $A$ ($m \times n$) and $B$ ($n \times k$), the product $AB$ is $m \times k$:
+
+$$
+(AB)_{ik} = \sum_{j=1}^{n} A_{ij} B_{jk} \qquad \text{(row } i \text{ of } A \text{ dotted with column } k \text{ of } B\text{)}
+$$
+
+The transpose swaps rows and columns: $(A^\top)_{ij} = A_{ji}$. So $(X^\top X)_{ab} = \sum_i X_{ia} X_{ib}$, the dot product of columns $a$ and $b$.
+
+<Depth min={2}>
+
+**The rules that matter in practice.**
+
+- **Shapes:** the inner sizes must match, $(m \times n)(n \times k)$. Most "bugs" in model code are shape mismatches.
+- **Order matters:** $AB \ne BA$ in general; often $BA$ doesn't even exist. $UP$ is stores × (revenue, cost); $PU$ has no meaning.
+- **Grouping doesn't:** $(AB)C = A(BC)$. Chain revenue $\mathbf 1^\top(Up) = (\mathbf 1^\top U)p$: add stores first or SKUs first, the total is the same.
+- **Transposes reverse order:** $(AB)^\top = B^\top A^\top$.
+
+**Solving is "undoing" a multiplication.** $X^\top X\beta = X^\top y$ asks: which $\beta$, multiplied by the table $X^\top X$, gives $X^\top y$? Libraries solve this by elimination, not by computing an inverse.
+
+</Depth>
+
+<Depth min={3}>
+
+**When a table can't be undone.** If one column is a combination of others (say a "half-litre tins" column that is exactly 2 × paint litres), $X^\top X$ has a zero determinant and the normal equations have infinitely many solutions. That's perfect multicollinearity; near-duplicates make it nearly singular, which is why coefficients swing (Linear Regression's *Every Knob*). The rank of a table is the number of genuinely independent columns.
+
+**Cost.** Multiplying an $m \times n$ table by an $n \times k$ table takes about $mnk$ multiply-adds. Optimized libraries (BLAS, GPUs) do billions per second, which is why vectorized NumPy beats Python loops by orders of magnitude and why transformers, built from matrix products ($QK^\top$ in attention), are trainable at all.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A 2 × 2 table">
+
+Two stores sold (3 tins, 1 roller) and (0 tins, 2 rollers). Tins cost ₹100 and rollers ₹50. Compute both revenues as a matrix–vector product.
+
+<Solution>
+
+$\begin{bmatrix} 3 & 1 \\ 0 & 2 \end{bmatrix}\begin{bmatrix} 100 \\ 50 \end{bmatrix} = \begin{bmatrix} 350 \\ 100 \end{bmatrix}$: **₹350** and **₹100**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Which products exist?">
+
+$U$ is 40 stores × 60 SKUs, $P$ is 60 SKUs × 2 (price, cost), $W$ is 52 weeks × 40 stores. What are the shapes of $UP$ and $WU$? Does $PU$ exist?
+
+<Solution>
+
+$UP$ is **40 × 2** (each store's revenue and cost). $WU$ is **52 × 60** (rows are weeks, a weighted sum of stores per SKU). $PU$ would be (60 × 2)(40 × 60): inner sizes 2 and 40 don't match, so it **doesn't exist**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="One entry of UᵀU">
+
+Compute the brushes–drills entry of $U^\top U$ by hand and say what a large value means.
+
+<Solution>
+
+$10(2) + 20(5) + 5(8) = 20 + 100 + 40 =$ **160**. It's large when stores that sell many brushes also sell many drills; in regression terms the two columns move together, which makes their separate effects harder to tell apart.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="A price change">
+
+Paint goes ₹50 off. Ignoring any change in demand, how does each store's revenue change? Write it as $U\,\Delta p$.
+
+<Solution>
+
+$\Delta p = (-50, 0, 0)$, so $U\Delta p = (-2{,}000, -1{,}250, -500)$: Pune loses **₹2,000**, Indore **₹1,250**, Nagpur **₹500**, in proportion to litres of paint sold.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Two ways to the chain total">
+
+Show that adding store revenues and pricing SKU totals give the same chain revenue, using $\mathbf 1^\top(Up) = (\mathbf 1^\top U)p$, and check it on the table.
+
+<Solution>
+
+Both are $\sum_i\sum_j U_{ij}p_j$, summed in a different order. Store first: $29{,}500 + 35{,}500 + 37{,}750 = 1{,}02{,}750$. SKU first: $(75, 35, 15)\cdot(500, 150, 4000) = 37{,}500 + 5{,}250 + 60{,}000 = 1{,}02{,}750$. Matrix products can be regrouped freely; they can't be reordered.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="A duplicated column">
+
+Someone adds a "half-litre tins" column equal to 2 × the paint litres column to a regression table. Explain, using $X^\top X$, why the regression can no longer find a unique answer.
+
+<Solution>
+
+The new column is a combination of an existing one, so any coefficient on paint can be traded for half as much on tins with identical predictions: there are infinitely many equally good $\beta$. In $X^\top X$, the tins row is exactly 2 × the paint row, so the table has a zero determinant and can't be "undone" (solved). Fix it by dropping the duplicate, or use ridge, which adds λ to the diagonal and makes the table solvable again.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The store table in NumPy (`@` is matrix multiplication), then the Linear Regression page's normal equations. Expected: revenues 29,500, 35,500 and 37,750; margins 8,600, 9,950 and 9,800; and $\beta = (100, -8)$.
+
+<PyRunner title="Store × SKU tables in NumPy" code={`
+import numpy as np
+
+U = np.array([[40, 10, 2], [25, 20, 5], [10, 5, 8]])     # stores x SKUs: paint, brushes, drills
+p = np.array([500, 150, 4000])
+P = np.array([[500, 350], [150, 90], [4000, 3000]])      # SKUs x (price, cost)
+
+print("revenue per store, U @ p:", U @ p)
+print("chain revenue:", (U @ p).sum(), " via column totals:", U.sum(axis=0), "@ p =", U.sum(axis=0) @ p)
+RC = U @ P
+print("revenue and cost per store, U @ P:")
+print(RC)
+print("margins:", RC[:, 0] - RC[:, 1])
+print("U.T @ U (every pair of SKU columns dotted):")
+print(U.T @ U)
+
+X = np.column_stack([np.ones(5), [4, 5, 6, 7, 8]])
+y = np.array([69, 58, 54, 42, 37])
+print("linear regression: X'X =", (X.T @ X).tolist(), " X'y =", (X.T @ y).tolist(), " beta =", np.linalg.solve(X.T @ X, X.T @ y))
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Pivot, then multiply.** Sales logs arrive as long tables (store, SKU, week, units). `pandas.pivot_table` turns them into store × SKU matrices; after that, revenue, cost, margin and price scenarios are single matrix products.
+- **Most cells are zero.** A store sells a few thousand of 60,000 SKUs in a week. Sparse matrices store only the non-zeros and multiply proportionally faster.
+- **Vectorize.** One `U @ P` over 10,000 stores and 60,000 SKUs runs in optimized native code; the equivalent Python loop is thousands of times slower.
+- **Hierarchies are matrices.** Store forecasts summed to region and national level are a "summing matrix" times the store forecasts; reconciling forecasts so they add up is a projection with that matrix ([MinT reconciliation](/learn/retail/fc-mint)).
+- **Attention is matrix products.** A transformer compares every word with every other word with one product, $QK^\top$ ([Attention](/learn/deep/dl-attention)).
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain matrix multiplication without jargon.">
+
+Each entry of the result is a dot product: one row of the first table times one column of the second, multiplied pairwise and added. A stores × SKUs units table times a SKUs × (price, cost) table gives a stores × (revenue, cost) table. The inner sizes must match, and order matters.
+
+</QA>
+
+<QA q="What is XᵀX, and why does linear regression need it to be invertible?">
+
+It's the table of dot products between every pair of feature columns (with sums of squares on the diagonal). The normal equations XᵀXβ = Xᵀy have a unique solution only if no feature is an exact combination of others; otherwise XᵀX can't be inverted and infinitely many β fit equally well. Ridge regularization adds λ to the diagonal, which restores a unique solution.
+
+</QA>
+
+<QA q="Your NumPy code raises 'shapes (40,60) and (40,2) not aligned'. What's wrong?">
+
+The inner dimensions must match: a (40 × 60) table can only multiply something with 60 rows. Here the second array has 40 rows, so it's probably a stores × something table where a SKUs × something table was expected, or it needs transposing. Check what each axis means before reshaping.
+
+</QA>
+
+<Trap>
+
+**"AB and BA are the same, like ordinary multiplication."** Matrix multiplication isn't commutative: $UP$ (stores × prices) is revenue per store, while $PU$ doesn't even have compatible shapes. Even for square tables $AB$ and $BA$ usually differ.
+
+</Trap>
+
+</Section>

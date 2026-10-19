@@ -1,0 +1,300 @@
+<Section id="floor">
+
+Bolt & Beam tries a new endcap: a paint-roller starter kit at the end of aisle 4. On its first afternoon, **10 shoppers** stopped at it and **3 bought**. The merchandiser asks: *Is this endcap better than our usual one, which converts about 20%?*
+
+The raw rate says 30%. But 10 shoppers is almost nothing: a coin-flip run of luck could give 3 of 10 from a 15% endcap. On the other hand, ignoring the 3 of 10 and reporting "about 20%, like always" wastes real evidence. The merchandiser needs something in between, plus an honest statement of how unsure it is.
+
+<KeyIdea>
+
+**Treat past endcaps as pseudo-shoppers.** "About 20%, worth 10 shoppers of evidence" means 2 pretend buyers and 8 pretend non-buyers. Add the real shoppers to the pretend ones and you have the posterior: 2 + 3 buyers and 8 + 7 non-buyers, a **Beta(5, 15)**, centred on 25%. Bayes for a conversion rate is literally adding counts.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Write the prior as counts.** Past endcaps convert about 20%, and we trust that about as much as 10 shoppers' worth of evidence. That's **a = 2** pretend buyers and **b = 8** pretend non-buyers: the prior **Beta(2, 8)**, with mean $2/10 = 20\%$. Its 90% interval is wide, **4.1% to 42.9%**: before any data, we're not very sure about this particular endcap.
+
+</Step>
+<Step>
+
+**Add the real shoppers.** 3 bought and 7 didn't:
+
+$$
+\text{Beta}(2, 8) \;+\; \text{3 bought, 7 didn't} \;\longrightarrow\; \text{Beta}(2 + 3,\; 8 + 7) = \text{Beta}(5, 15)
+$$
+
+That's the entire update. No integrals, no sampler.
+
+</Step>
+<Step>
+
+**Read the posterior.** Mean $5/(5 + 15) =$ **0.250**. 90% credible interval **0.110 to 0.419**: after ten shoppers we're fairly sure the endcap converts between 11% and 42%, which is still wide. The chance the **next** shopper buys is also **25%** (5 of the 20 counts).
+
+Notice where 25% comes from: 10 pseudo-shoppers at 20% and 10 real shoppers at 30%, averaged by how many each contributes: $(10 \times 0.2 + 10 \times 0.3)/20 = 0.25$.
+
+</Step>
+<Step>
+
+**Shopper by shopper gives the same answer.** The ten shoppers came in this order: no, bought, no, no, no, bought, no, no, bought, no. Each "bought" adds 1 to $a$; each "no" adds 1 to $b$:
+
+| After shopper | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Posterior | (2, 9) | (3, 9) | (3, 10) | (3, 11) | (3, 12) | (4, 12) | (4, 13) | (4, 14) | (5, 14) | **(5, 15)** |
+
+Today's posterior is tomorrow's prior, exactly as on the [grid](/learn/bayes/posterior-grid).
+
+</Step>
+<Step>
+
+**Check it the slow way.** Lay 1,000 thin bars across 0–100%. Give each bar its prior height (the Beta(2, 8) curve) times its likelihood (the chance of 3 buyers in 10 at that rate), then divide by the total. The bars trace out the Beta(5, 15) curve, with mean **0.250**. The pseudo-count shortcut and the grid agree because a Beta prior times a binomial likelihood is again a Beta: the shapes multiply cleanly.
+
+</Step>
+<Step>
+
+**Answer the merchandiser.** "Is it better than 20%?" is a question about the posterior, so read it off: the probability that the conversion rate is above 20% is **0.67** under Beta(5, 15), up from **0.44** under the prior. That's encouraging, not conclusive. A rule like "keep the endcap if we're 90% sure it beats 20%" says: watch more shoppers.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Prior: about 20%, worth 10 shoppers. Data: 3 of 10 bought. What's the best single estimate of the conversion rate?" options={["20%: trust the history", "25%", "30%: trust the data"]} answer={1}>
+
+**25%**, halfway between, because the prior and the data are each worth 10 shoppers. Make the prior worth 100 shoppers and the answer stays near 21%; make it worth 2 and it moves to about 28%.
+
+</Predict>
+
+<BetaUpdater />
+
+**Try this:**
+
+1. Press **No shoppers yet**. You see the prior alone: Beta(2, 8), mean **0.200**, 90% interval **0.041 to 0.429**. Then add shoppers one at a time and watch the curve sharpen and slide.
+2. Go **back to the 10 shoppers** and slide the prior strength to **100**: Beta(23, 87), mean **0.209**. Strong history barely budges. Slide to **2**: Beta(3.4, 8.6), mean **0.283**. Weak history lets the data speak.
+3. With strength 10, add shoppers until you reach **12 buyers out of 40** (9 more buyers in 30 more shoppers). The mean is **0.280** and the interval shrinks to **0.182 to 0.388**.
+4. Look at the shaded bars under the curve. They're the posterior computed the slow way, from 50 thin bars of prior × likelihood. They sit on the Beta curve every time.
+
+</Section>
+
+<Section id="simulate">
+
+Is the posterior mean actually a better estimate than the raw rate? Simulate 1,000 endcaps whose true rates come from the same spread as past endcaps (Beta(2, 8)), watch each one for a handful of shoppers, and score both estimates against the truth.
+
+<EndcapSimulation />
+
+- With **10 shoppers** per endcap, the raw rate $k/n$ misses the truth by **9.2 points** on average; the posterior mean misses by **6.7**. That's about 27% less error, from nothing more than adding the prior's counts.
+- The 90% intervals contain the true rate **89.9%** of the time: calibrated, because the prior describes how endcaps really vary.
+- With **50 shoppers**, the two estimates are much closer (**4.2** vs **3.9** points): the more data, the less the prior matters.
+
+In the scatter, the raw rates sit on a few horizontal stripes (0%, 10%, 20%, …), and the extreme ones (0% or 60% after ten shoppers) are far from the truth. The posterior means are pulled toward 20%. That pull is **shrinkage**, the subject of [rung 7](/learn/bayes/shrinkage).
+
+</Section>
+
+<Section id="formula">
+
+**The Beta density** for a rate $p$ between 0 and 1:
+
+$$
+\text{Beta}(p \mid a, b) = \frac{p^{a-1}(1-p)^{b-1}}{B(a, b)}
+$$
+
+where $B(a, b)$ is the constant that makes the curve's area 1. That area is "the sum of infinitely many thin bars", which is all an integral is: $B(a, b) = \int_0^1 p^{a-1}(1-p)^{b-1}\,dp$.
+
+**The binomial likelihood** of $k$ buyers among $n$ shoppers is proportional to $p^k(1 - p)^{n - k}$.
+
+**Multiply:**
+
+$$
+\underbrace{p^{a-1}(1-p)^{b-1}}_{\text{prior}}\times\underbrace{p^{k}(1-p)^{n-k}}_{\text{likelihood}} = p^{(a+k)-1}(1-p)^{(b+n-k)-1}
+$$
+
+That's the shape of **Beta(a + k, b + n − k)**. Dividing by the total (the thin-bar sum) only fixes the constant. A prior whose product with the likelihood stays in the same family is called **conjugate**.
+
+**The posterior mean is a weighted average:**
+
+$$
+\frac{a + k}{a + b + n} = \underbrace{\frac{a + b}{a + b + n}}_{\text{weight on the prior}}\cdot\frac{a}{a + b} + \underbrace{\frac{n}{a + b + n}}_{\text{weight on the data}}\cdot\frac{k}{n}
+$$
+
+With $a + b = 10$ and $n = 10$, each side gets half the weight: $0.5 \times 0.2 + 0.5 \times 0.3 = 0.25$.
+
+<Depth min={2}>
+
+**Why the next shopper buys with probability 0.25.** The chance the next shopper buys, averaged over everything we believe about $p$, is $\int p\,\text{Beta}(p \mid 5, 15)\,dp$, which is the posterior mean, $5/20$. The predictive probability uses the whole posterior, not a single best guess.
+
+**How sure: the variance.** A Beta(a, b) has variance $\dfrac{m(1 - m)}{a + b + 1}$ with $m = a/(a + b)$. Adding shoppers grows $a + b$, so the variance shrinks roughly like $1/n$, the same $1/\sqrt n$ law for the spread as in Keystone 2.
+
+**What "prior strength" means.** $a + b$ is how many shoppers the prior is worth. A prior of Beta(20, 80) has the same 20% centre as Beta(2, 8) but counts as 100 shoppers, so 10 real shoppers can only move it a little.
+
+</Depth>
+
+<Depth min={3}>
+
+**Laplace's rule of succession.** With a flat prior, Beta(1, 1), the predictive probability after $k$ of $n$ is $(k + 1)/(n + 2)$. A new SKU with 0 sales in its first 3 views gets $1/5 = 20\%$, not 0%: you have seen too little to rule sales out.
+
+**The predictive for many shoppers.** The number of buyers among the next $m$ shoppers follows a **beta-binomial** distribution, which is wider than a binomial with $p = 0.25$ because it also carries our uncertainty about $p$. Planning stock for next Saturday's 200 visitors needs that wider distribution.
+
+**Conjugacy is a convenience.** Any prior works with a grid or MCMC. Conjugate pairs (Beta–Binomial here, Gamma–Poisson in rung 5, Normal–Normal in rung 7) are worth knowing because they make the update a one-line formula you can do in your head, and because they show exactly how prior and data trade off.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A slow start">
+
+Prior Beta(2, 8). The first 5 shoppers all walk past without buying. What's the posterior, and its mean?
+
+<Solution>
+
+Beta(2 + 0, 8 + 5) = **Beta(2, 13)**, mean $2/15 \approx$ **0.133**. Not zero: five shoppers aren't enough to conclude the endcap never sells.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Write a prior as counts">
+
+The category manager says: "Garden endcaps convert about 30%, and I'd trust that like 20 shoppers' worth of data." Which Beta prior is that?
+
+<Solution>
+
+$a + b = 20$ and $a/(a + b) = 0.3$, so **Beta(6, 14)**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Weights">
+
+For prior Beta(2, 8) and 3 of 10 buyers, compute the weights on the prior mean and on the raw rate, and check they give 0.25. What are the weights after 3 of 10 if the prior is Beta(20, 80)?
+
+<Solution>
+
+Weight on the prior: $(a + b)/(a + b + n) = 10/20 = 0.5$; on the data: 0.5. $0.5(0.2) + 0.5(0.3) = $ **0.25**. With Beta(20, 80): weights $100/110 \approx 0.909$ and $10/110 \approx 0.091$, so the mean is $0.909(0.2) + 0.091(0.3) \approx$ **0.209**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Same rate, more shoppers">
+
+Endcap A had 3 of 10 buyers; endcap B had 30 of 100. Both raw rates are 30%. With the Beta(2, 8) prior, compare their posteriors.
+
+<Solution>
+
+A: Beta(5, 15), mean 0.250, 90% interval 0.110 to 0.419. B: Beta(32, 78), mean **0.291**, 90% interval **0.222 to 0.364**. B's data outweigh the prior (100 shoppers against 10), so its estimate stays near 30% and its interval is much narrower. Same raw rate, very different certainty.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="The best-rated product problem">
+
+A product page shows "rating: 100% positive" for an item with 1 review, above an item with 96 of 100 positive. Using a flat Beta(1, 1) prior, which ranks higher by posterior mean?
+
+<Solution>
+
+1 of 1: $(1 + 1)/(1 + 2) = $ **0.667**. 96 of 100: $97/102 \approx$ **0.951**. The well-reviewed item ranks higher. Sorting by raw rates rewards tiny samples; sorting by posterior means (or by a lower credible bound) fixes it. Retail sites use exactly this for ratings and conversion-based ranking.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Is it better than 20%?">
+
+Explain why "the posterior mean is 25%, which is above 20%" doesn't answer the merchandiser, and what does. Use the numbers from *By Hand*.
+
+<Solution>
+
+The mean says nothing about uncertainty: with only 10 shoppers, rates well below 20% are still plausible. The right quantity is the posterior probability that $p \gt 0.2$, which is **0.67**. Compare it with the confidence the decision needs (say 90%), or better, with the costs: the expected profit of keeping vs replacing the endcap, averaged over the posterior.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The update with scipy, the same posterior from 1,000 thin bars, the shopper-by-shopper update, and 100,000 simulated endcaps. Expected: Beta(5, 15) with mean 0.250 and interval 0.110 to 0.419; the thin bars agree; the one-at-a-time update ends at (5, 15); the posterior mean misses by about 0.067 against 0.094 for the raw rate; and the 90% intervals contain the truth 90% of the time.
+
+<PyRunner title="Beta–Binomial: counts, thin bars and 100,000 endcaps" code={`
+import numpy as np
+from scipy.stats import beta, binom
+
+a, b = 2, 8          # past endcaps: about 20%, worth 10 shoppers
+k, n = 3, 10         # this endcap: 3 of 10 bought
+post = beta(a + k, b + n - k)
+lo, hi = post.interval(0.9)
+print(f"posterior Beta({a + k}, {b + n - k}): mean {post.mean():.3f}, 90% interval {lo:.3f} to {hi:.3f}")
+
+# The same posterior from 1,000 thin bars of prior x likelihood
+p = np.linspace(0.0005, 0.9995, 1000)
+w = beta.pdf(p, a, b) * binom.pmf(k, n, p)
+w = w / w.sum()
+print(f"thin bars:  mean {(p * w).sum():.3f}")
+
+# Shopper by shopper ends in the same place
+aa, bb = a, b
+for bought in [0, 1, 0, 0, 0, 1, 0, 0, 1, 0]:
+    aa, bb = aa + bought, bb + (1 - bought)
+print("one at a time:", (aa, bb))
+
+# 100,000 endcaps with true rates from the prior
+rng = np.random.default_rng(0)
+true = rng.beta(a, b, 100_000)
+kk = rng.binomial(n, true)
+raw = kk / n
+pm = (a + kk) / (a + b + n)
+lo_, hi_ = beta.ppf(0.05, a + kk, b + n - kk), beta.ppf(0.95, a + kk, b + n - kk)
+print(f"average miss: raw {np.abs(raw - true).mean():.3f}, posterior mean {np.abs(pm - true).mean():.3f}")
+print(f"90% intervals contain the truth: {((true >= lo_) & (true <= hi_)).mean():.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Ranking with few observations.** Endcaps, product pages, search results and coupons with little traffic should be ranked by posterior mean (or a lower credible bound), not raw rate. Otherwise every tiny-sample fluke rises to the top.
+- **Let the data choose the prior.** Fit $a$ and $b$ to the conversion rates of all past endcaps (empirical Bayes) instead of guessing. The prior's mean is the chain's typical rate and its strength reflects how much endcaps really differ, which is the first step toward [hierarchical models](/learn/bayes/hierarchical-pooling).
+- **A/B tests.** Two Beta posteriors, one per arm, give P(B beats A) by sampling from both: [Bayesian A/B Testing](/learn/bayes/bayes-ab) builds on exactly this.
+- **Explore vs exploit.** Thompson sampling picks which display to show next by drawing a rate from each display's Beta posterior and showing the highest draw: uncertain new displays get tried, proven losers fade out.
+- **Check the assumptions.** The binomial assumes shoppers decide independently with the same rate. Groups shopping together, time-of-day effects and promotions break that; segment the data or use a model with those effects.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why is the Beta distribution the standard prior for a conversion rate?">
+
+It lives on 0 to 1, its shape covers everything from flat to sharply peaked, and it's conjugate to the binomial: Beta(a, b) plus k successes in n trials gives Beta(a + k, b + n − k). Its parameters read as pseudo-counts of successes and failures, which makes priors easy to explain to stakeholders.
+
+</QA>
+
+<QA q="Explain conjugacy in one minute.">
+
+A prior is conjugate to a likelihood if the posterior is in the same family as the prior. For a rate, the Beta density is proportional to $p^{a-1}(1-p)^{b-1}$ and the binomial likelihood to $p^k(1-p)^{n-k}$; their product has the same form with exponents increased by k and n − k. So updating is just adding counts. Other pairs: Gamma–Poisson for demand rates, Normal–Normal for averages.
+
+</QA>
+
+<QA q="A new endcap shows 3 of 10. How do you report its conversion rate?">
+
+With a prior from comparable endcaps, for example Beta(2, 8) for "about 20%, worth 10 shoppers": the posterior is Beta(5, 15), mean 25%, 90% interval 11% to 42%, and a 67% probability that it beats 20%. I'd say it looks promising but needs more traffic before a decision, and I'd state the prior so it can be challenged.
+
+</QA>
+
+<QA q="How would you rank 10,000 products by conversion when many have only a few views?">
+
+Use a Beta prior fitted to all products' rates (empirical Bayes), compute each product's posterior, and rank by posterior mean or by a lower credible bound if you want to avoid promoting uncertain items. This shrinks low-traffic rates toward the typical rate and stops tiny samples from dominating the top of the list.
+
+</QA>
+
+<Trap>
+
+**"You need a conjugate prior to do Bayesian analysis."** Conjugacy only makes the update a closed-form formula. Any prior works with a grid (rung 3) or with MCMC (rung 11). Choose the prior that describes what you believe, and use conjugacy when it happens to fit.
+
+</Trap>
+
+</Section>

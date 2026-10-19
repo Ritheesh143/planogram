@@ -1,0 +1,324 @@
+<Section id="floor">
+
+Store 41 opened two weeks ago. It sold **20 and 40 litres** of emulsion paint, an average of **30** a week. The chain's 40 established stores average **50**, and they differ from each other by about 10 either way.
+
+Replenishment needs a number for next week. One planner says *"30: use the store's own data."* Another says *"50: it's a store like any other."* Both are wrong, and in opposite directions. Two weeks are too few to trust on their own, and the store has already shown it might be quieter than average.
+
+You face this every time something is new: a new store in multi-store forecasting, a new SKU, a geo region with little spend history in a media mix model. The answer is the same each time, and it's the first fully Bayesian idea on the ladder that you'll use every week.
+
+<KeyIdea>
+
+**The best estimate is a weighted average of the store's own data and the chain average, and each gets weight in proportion to how precise it is.** With two noisy weeks the chain gets 2/3 of the weight: estimate **43.3**. Each extra week shifts weight toward the store. The chain's knowledge is worth exactly **4 weeks** of data here.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Two sources of information about the same unknown number $\theta$: store 41's true average weekly sales.
+
+<Steps>
+<Step>
+
+**What the chain says.** Across 40 stores, true averages sit around **50** with a spread of about **10** (standard deviation). Before seeing store 41's sales, the honest belief is "about 50, give or take 10". That's the **prior**: variance $10^2 = 100$.
+
+</Step>
+<Step>
+
+**What the store's data say.** Weekly sales at one store bounce around their true average with a spread of about **20**. The average of 2 weeks is steadier: its spread is $20/\sqrt 2 \approx 14.1$, so its variance is $400/2 = 200$. The data say "about 30, give or take 14".
+
+</Step>
+<Step>
+
+**Turn each spread into a precision**, 1 ÷ variance. More precise means more trustworthy.
+
+| Source | Says | Variance | Precision |
+|---|---|---|---|
+| The chain (prior) | 50 | 100 | 1/100 = **0.010** |
+| Two weeks of data | 30 | 200 | 1/200 = **0.005** |
+| **Combined** | | | **0.015** |
+
+The chain is twice as precise as two weeks of data.
+
+</Step>
+<Step>
+
+**Weight each source by its share of the precision.** The data get $0.005/0.015 = 1/3$, the chain $2/3$:
+
+$$
+\hat\theta = \tfrac13 \times 30 + \tfrac23 \times 50 = 10 + 33.33 = \mathbf{43.33}
+$$
+
+And the combined precision 0.015 means a variance of $1/0.015 = 66.7$, a spread of **8.16**: more certain than either source alone (10 and 14.1).
+
+</Step>
+<Step>
+
+**The same answer as pseudo-weeks.** One week of data has variance 400; the prior has variance 100, so the prior is as informative as $400/100 = \mathbf 4$ **weeks** of sales at exactly 50. Pool them with the 2 real weeks:
+
+$$
+\frac{4 \times 50 + 2 \times 30}{4 + 2} = \frac{260}{6} = 43.33
+$$
+
+Shrinkage is averaging, where the chain contributes 4 imaginary weeks.
+
+</Step>
+<Step>
+
+**Watch the weight move as weeks accumulate** (the store keeps averaging 30):
+
+| Weeks of data | 1 | 2 | 4 | 8 | 20 |
+|---|---|---|---|---|---|
+| Weight on the store's data | 20% | 33% | 50% | 67% | 83% |
+| Estimate | 46.00 | 43.33 | 40.00 | 36.67 | 33.33 |
+| Posterior sd | 8.94 | 8.16 | 7.07 | 5.77 | 4.08 |
+
+At 4 weeks the data and the prior are equally precise and split the difference. After 20 weeks the store's own history dominates, as it should.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Store 41 keeps averaging 30. After 8 weeks of data, what's the best estimate of its true average?" options={["30: eight weeks is plenty", "36.67", "43.33, the same as before"]} answer={1}>
+
+**36.67.** The prior is worth 4 weeks, the data now 8, so the data get 8/12 = 2/3 of the weight: $\tfrac23 \times 30 + \tfrac13 \times 50 = 36.67$. Eight weeks moves you most of the way, not all of it.
+
+</Predict>
+
+<NewStoreShrinkage />
+
+**Try this:**
+
+1. Slide from 1 week to 20. The posterior (green) starts close to the chain's curve and slides toward the data's curve as the data's curve gets narrower.
+2. At **4 weeks**, the data curve and the prior curve are exactly as wide as each other, and the posterior sits halfway, at 40.
+3. Notice the posterior is always **narrower** than both. Two independent sources of evidence beat either one.
+
+Now all 40 stores at once. Each store's own average is compared with the **planted truth** (the generator knows each store's real average):
+
+<ShrinkageScatter />
+
+**Try this:**
+
+1. Choose **Raw averages**. The big circles (stores with 4 weeks or fewer) scatter far above and below the diagonal: two noisy weeks can make an average store look like a star.
+2. Choose **Both, with arrows**. Every arrow points toward the chain average, and the longest arrows belong to the stores with the least data.
+3. The five highest raw averages (85, 81, 76, 76 and 72 litres) all belong to stores with **4 weeks of history or less**. The three truly best stores (70, 67 and 66) have 14 to 30 weeks. Ranking stores by raw average rewards luck.
+4. Shrinking doesn't help every store: 16 of the 40 end up slightly further from their truth. But the total squared error falls from 3,574 to **1,026**.
+
+</Section>
+
+<Section id="simulate">
+
+One chain could be lucky. Here are 1,000 chains, each with 40 new true store averages and fresh weekly noise:
+
+<ShrinkageSimulation />
+
+Shrinking toward the chain average beat each store's own average in **992 of 1,000** chains, and on average cut the total squared error from about 3,575 to about 1,363. The few chains where it lost are ones where, by chance, the stores with little data happened to be truly unusual.
+
+</Section>
+
+<Section id="formula">
+
+**The rule.** Prior $\theta \sim \mathcal N(\mu_0, \tau^2)$. Data: $n$ weeks with average $\bar y$, each week $\sim \mathcal N(\theta, \sigma^2)$. Precisions add:
+
+$$
+\frac{1}{v_{\text{post}}} = \frac{1}{\tau^2} + \frac{n}{\sigma^2}
+\qquad
+\hat\theta = \frac{\frac{n}{\sigma^2}\,\bar y + \frac{1}{\tau^2}\,\mu_0}{\frac{n}{\sigma^2} + \frac{1}{\tau^2}} = w\,\bar y + (1 - w)\,\mu_0
+$$
+
+with the weight on the data
+
+$$
+w = \frac{n}{n + \sigma^2/\tau^2}
+$$
+
+Here $\sigma^2/\tau^2 = 400/100 = 4$: the prior counts as 4 weeks. Everything in *By Hand* is this formula with $\mu_0 = 50$, $\tau^2 = 100$, $\sigma^2 = 400$.
+
+<Depth min={2}>
+
+**Why the posterior is a weighted average.** Bayes says posterior ∝ prior × likelihood. On the log scale, both are parabolas in θ:
+
+$$
+\log p(\theta \mid y) = -\frac{(\theta - \mu_0)^2}{2\tau^2} - \frac{n(\theta - \bar y)^2}{2\sigma^2} + \text{const}
+$$
+
+A sum of two downward parabolas is another parabola. Its peak is where the derivative is zero, $-(\theta - \mu_0)/\tau^2 - n(\theta - \bar y)/\sigma^2 = 0$, which gives the weighted average above. Its curvature is $1/\tau^2 + n/\sigma^2$, which is why precisions add. A parabola on the log scale is a bell curve, so the posterior is Normal.
+
+**This is ridge regression.** The posterior peak minimizes
+
+$$
+\frac{n(\bar y - \theta)^2}{\sigma^2} + \frac{(\theta - \mu_0)^2}{\tau^2}
+$$
+
+squared error plus a penalty for straying from $\mu_0$. With $\mu_0 = 0$ that's exactly ridge, with $\lambda = \sigma^2/\tau^2$. Ridge shrinks toward zero; shrinkage toward the chain mean is ridge toward a sensible centre. The next rung makes this precise for a regression slope.
+
+</Depth>
+
+<Depth min={3}>
+
+**Where did 50 and 10 come from?** From the other 40 stores. Estimating the prior from the population you're shrinking is **empirical Bayes**, and doing it properly (with uncertainty about $\mu_0$ and $\tau$) is the hierarchical model of the next rung but one.
+
+**Stein's paradox.** In 1956 Charles Stein proved that when you estimate three or more means at once, the raw averages are *inadmissible* under total squared error: some shrinkage estimator is better for every possible set of true means. James and Stein (1961) gave one, shrinking toward a common point by a data-chosen amount. That's why shrinkage beat the raw averages in almost every simulated chain, even though no single store is guaranteed to improve.
+
+**Bias for variance.** Shrinkage is biased: a truly exceptional store is pulled toward average. But mean squared error is bias² plus variance, and for stores with little data the variance reduction is much larger than the bias it adds.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Four weeks">
+
+Store 41 has 4 weeks averaging 30. What weight do its data get, and what's the estimate?
+
+<Solution>
+
+$w = 4/(4 + 4) =$ **50%**. Estimate $0.5 \times 30 + 0.5 \times 50 =$ **40**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A more varied chain">
+
+If stores differed from each other by 20 (variance 400) instead of 10, how many weeks would the prior be worth? What would 2 weeks averaging 30 give?
+
+<Solution>
+
+$\sigma^2/\tau^2 = 400/400 =$ **1 week**. With 2 real weeks: $w = 2/3$, estimate $\tfrac23 \times 30 + \tfrac13 \times 50 \approx$ **36.67**. A more varied chain says less about any one store, so the data take over sooner.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A strong new store">
+
+A store has 12 weeks averaging 70. Give its shrunk estimate and posterior sd.
+
+<Solution>
+
+$w = 12/(12 + 4) = 0.75$, estimate $0.75 \times 70 + 0.25 \times 50 =$ **65**. Precision $1/100 + 12/400 = 0.04$, variance 25, sd **5**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Who is the better store?">
+
+Store A sold 80 in its single week. Store B has averaged 70 over 20 weeks. Which would you bet has the higher true average?
+
+<Solution>
+
+A: $w = 1/5 = 0.2$, estimate $0.2 \times 80 + 0.8 \times 50 =$ **56**. B: $w = 20/24$, estimate $\tfrac{20}{24} \times 70 + \tfrac{4}{24} \times 50 \approx$ **66.7**. Store B, despite the lower raw number. One great week is mostly luck; twenty good weeks are mostly the store.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Derive the weight">
+
+Starting from $\log p(\theta \mid y) = -\frac{(\theta - \mu_0)^2}{2\tau^2} - \frac{n(\theta - \bar y)^2}{2\sigma^2} + c$, show that the posterior peak is $w\bar y + (1 - w)\mu_0$ with $w = n/(n + \sigma^2/\tau^2)$.
+
+<Solution>
+
+Set the derivative to zero: $-(\theta - \mu_0)/\tau^2 - n(\theta - \bar y)/\sigma^2 = 0$. Multiply by $\sigma^2$: $-(\sigma^2/\tau^2)(\theta - \mu_0) - n(\theta - \bar y) = 0$. Writing $k = \sigma^2/\tau^2$: $\theta(k + n) = k\mu_0 + n\bar y$, so $\theta = \frac{n}{n + k}\bar y + \frac{k}{n + k}\mu_0$. That's $w\bar y + (1 - w)\mu_0$ with $w = n/(n + k)$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="The penalty view">
+
+Show that the shrunk estimate minimizes $n(\bar y - \theta)^2 + k(\theta - \mu_0)^2$ with $k = \sigma^2/\tau^2$. What happens as $k \to 0$ and $k \to \infty$, and which models do those correspond to?
+
+<Solution>
+
+The derivative $-2n(\bar y - \theta) + 2k(\theta - \mu_0) = 0$ gives the same $\theta = (n\bar y + k\mu_0)/(n + k)$. As $k \to 0$ (stores vary enormously, $\tau \to \infty$) the estimate is the store's own average: **no pooling**. As $k \to \infty$ (stores are all alike, $\tau \to 0$) it's the chain mean: **complete pooling**. Shrinkage is the continuum in between, and rung 9 lets the data choose where.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The weights by hand for 1 to 20 weeks, then 1,000 simulated chains of 40 stores. Expected: weights 0.200, 0.333, 0.500, 0.667, 0.833 with estimates 46.00 down to 33.33; the prior is worth 4.0 weeks; shrinking wins in 996 of 1,000 chains (a different random generator from the visual above, so a slightly different count).
+
+<PyRunner title="Shrinkage by hand and over 1,000 chains" code={`
+import numpy as np
+
+m0, v0 = 50.0, 100.0   # the chain: average store, and store-to-store variance (sd 10)
+s2 = 400.0             # week-to-week variance at one store (sd 20)
+ybar = 30.0            # the new store's average so far
+
+for n in [1, 2, 4, 8, 20]:
+    prec = 1 / v0 + n / s2                 # precisions add
+    w = (n / s2) / prec                    # the data's share of the weight
+    est = w * ybar + (1 - w) * m0
+    print(f"{n:2d} weeks: weight on data {w:.3f}, estimate {est:.2f}, posterior sd {np.sqrt(1 / prec):.2f}")
+print("the prior is worth", s2 / v0, "weeks of data at the chain average")
+
+# 1,000 chains of 40 stores with planted true means
+weeks = np.array([1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14,
+                  16, 16, 20, 20, 24, 24, 30, 30, 40, 40, 52, 52, 52, 52, 52, 52])
+rng = np.random.default_rng(0)
+raw_total = shrunk_total = 0.0
+wins = 0
+for _ in range(1000):
+    theta = rng.normal(m0, np.sqrt(v0), 40)
+    own = rng.normal(theta, np.sqrt(s2 / weeks))
+    w = (weeks / s2) / (1 / v0 + weeks / s2)
+    shrunk = w * own + (1 - w) * m0
+    raw, shr = ((own - theta) ** 2).sum(), ((shrunk - theta) ** 2).sum()
+    raw_total += raw
+    shrunk_total += shr
+    wins += shr < raw
+print(f"shrinking won in {wins} of 1000 chains; average error raw {raw_total / 1000:.0f}, shrunk {shrunk_total / 1000:.0f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Cold-start forecasting.** A new store or SKU gets a forecast that starts at its peer group's level (same format, region, category) and moves to its own history week by week. Most "new item" heuristics in planning systems are rough versions of this weight.
+- **Choose the peer group carefully.** Shrink a new premium-format store toward other premium stores, not the whole chain. A wrong centre is the main way shrinkage hurts.
+- **Leaderboards and top-N lists.** "Top 10 stores by growth" and "best-selling new SKUs" are dominated by small, lucky units. Rank by shrunk estimates instead, or the list will keep rewarding noise (and the winners will "regress" next quarter).
+- **Media mix models.** In a geo-level MMM, each region's TV coefficient is shrunk toward the national coefficient. Regions with little spend variation borrow strength from the rest, which is why hierarchical MMMs are more stable than one regression per region.
+- **Experiments with many variants.** When ten promo designs are tested at once, the observed best one overstates its lift. Shrinking the lifts toward the average lift gives honest expectations for the rollout.
+- **Estimate σ and τ from history** (rung 9 shows how) and revisit them: a chain that becomes more varied should trust each store's data sooner.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is shrinkage, and why does it improve estimates?">
+
+Shrinkage pulls each unit's noisy estimate toward a group average, with weight n/(n + σ²/τ²) on the unit's own data. It adds a little bias but removes much more variance, especially for units with little data, so the total squared error falls. Bayesianly, it's the posterior mean under a Normal prior centred on the group mean.
+
+</QA>
+
+<QA q="A new store had a record first week. The regional manager wants to hold it up as the model for all stores. What do you say?">
+
+One week is mostly noise: with week-to-week variation of ±20 and stores differing by ±10, a single week's average gets only about 20% weight. Its best estimate is much closer to the chain average. In the simulated chain on this page, the five highest raw averages all belonged to stores with four weeks of history or less. Wait for more weeks, or compare shrunk estimates.
+
+</QA>
+
+<QA q="How is shrinkage related to ridge regression?">
+
+The shrunk estimate minimizes squared error plus (σ²/τ²) times the squared distance from the prior mean. Ridge is the same penalty with the prior mean at zero and λ = σ²/τ². Both are the posterior mode (MAP) under a Gaussian prior.
+
+</QA>
+
+<QA q="How would you choose how much to shrink?">
+
+From the data: the spread of the units' averages equals the true spread plus sampling noise, so τ² ≈ observed variance of averages minus the average sampling variance (method of moments, empirical Bayes). Better: fit a hierarchical model that estimates τ with uncertainty. Then check the choice by backtesting forecasts for units with little history.
+
+</QA>
+
+<Trap>
+
+**"Shrinkage is biased, so it must be worse than the unbiased raw average."** Unbiasedness isn't the goal; small error is. Mean squared error = bias² + variance. For stores with two weeks of data, the raw average's expected squared error is 200; the shrunk estimate's is about 67, bias included. Across 1,000 simulated chains it won 992 times.
+
+</Trap>
+
+</Section>

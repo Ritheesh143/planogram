@@ -1,0 +1,314 @@
+<Section id="floor">
+
+The e-commerce team wants a "shoppers like you also bought" panel. The first prototype finds similar shoppers by multiplying basket counts together, and every customer, from a homeowner buying one tin of paint to a weekend driller, gets the same recommendations: whatever the big contractors bought. Something about "similar" went wrong.
+
+A basket is just a list of numbers, one per product. Lists of numbers are **vectors**, and three operations on them (dot product, length and cosine) power search, recommendations, regression and attention in LLMs. This lesson builds all three from a paint aisle.
+
+<KeyIdea>
+
+**A basket is a vector; the dot product measures overlap; cosine measures overlap after removing basket size.** Use the dot product when size should count (a prediction is a row dotted with coefficients). Use cosine when only the *mix* should count, as in "shoppers like you".
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Five products, always in this order: **paint, brush, tape, drill, bits**. Three shoppers:
+
+| Shopper | paint | brush | tape | drill | bits |
+|---|---|---|---|---|---|
+| A (repainting a room) | 2 | 1 | 1 | 0 | 0 |
+| B (touch-up job) | 1 | 1 | 0 | 0 | 0 |
+| C (hanging shelves) | 0 | 0 | 0 | 1 | 2 |
+
+<Steps>
+<Step>
+
+**The dot product: multiply matching positions, then add.**
+
+$$
+A \cdot B = 2(1) + 1(1) + 1(0) + 0(0) + 0(0) = \mathbf{3}
+\qquad
+A \cdot C = 0 + 0 + 0 + 0 + 0 = \mathbf{0}
+$$
+
+Products only add up where **both** baskets have something. A and C share nothing, so their dot product is zero.
+
+</Step>
+<Step>
+
+**Length: a basket dotted with itself, square-rooted.**
+
+$$
+\lVert A\rVert = \sqrt{4 + 1 + 1} = \sqrt 6 \approx \mathbf{2.449}, \quad
+\lVert B\rVert = \sqrt 2 \approx \mathbf{1.414}, \quad
+\lVert C\rVert = \sqrt 5 \approx \mathbf{2.236}
+$$
+
+It's Pythagoras in five dimensions: how big the basket is, all products together.
+
+</Step>
+<Step>
+
+**Cosine: the dot product divided by both lengths.**
+
+$$
+\cos(A, B) = \frac{3}{\sqrt 6\,\sqrt 2} = \frac{3}{\sqrt{12}} \approx \mathbf{0.866}
+\qquad
+\cos(A, C) = \mathbf{0}
+$$
+
+Cosine is the cosine of the angle between the two arrows. 1 means the same mix of products, 0 means nothing in common. Counts can't be negative, so for baskets cosine always lies between 0 and 1.
+
+</Step>
+<Step>
+
+**The contractor problem.** Contractor D buys B's mix ten times over: $D = (10, 10, 0, 0, 0)$.
+
+- Dot product: $A \cdot D = 2(10) + 1(10) =$ **30**, ten times $A \cdot B$. By dot product, D looks ten times *more similar* to A than B does.
+- Cosine: $30 / (\sqrt 6\,\sqrt{200}) \approx$ **0.866**, exactly the same as $\cos(A, B)$. Same mix, same cosine.
+
+That's what broke the prototype: the dot product rewards **size × similarity**, so the biggest baskets win every comparison.
+
+</Step>
+<Step>
+
+**Distance is the third option.** The straight-line distance between baskets:
+
+$$
+\lVert A - B\rVert = \sqrt{1^2 + 0^2 + 1^2} \approx \mathbf{1.414}, \qquad
+\lVert A - C\rVert = \sqrt{4 + 1 + 1 + 1 + 4} = \sqrt{11} \approx \mathbf{3.317}
+$$
+
+But $\lVert B - D\rVert = \sqrt{81 + 81} \approx$ **12.73**: the contractor is far from the touch-up shopper with the *identical* mix. Distance cares about size too, in the opposite way.
+
+</Step>
+<Step>
+
+**A dot product you use every day.** With shelf prices (₹500, ₹150, ₹120, ₹4,000, ₹600), basket A's value is
+
+$$
+A \cdot \text{prices} = 2(500) + 1(150) + 1(120) + 0 + 0 = \mathbf{₹1{,}270}
+$$
+
+and C's is ₹5,200. Every prediction of a linear model is this same operation: a row of features dotted with the coefficients (see [Linear Regression](/models/linear-regression)).
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Shopper 2 turns out to be a contractor who buys six times everything. What happens to the dot product and the cosine?" options={["Both grow six times", "Dot grows six times; cosine doesn't change", "Both stay the same"]} answer={1}>
+
+**The dot product grows six times; the cosine doesn't move.** Scaling a basket stretches its arrow without turning it, and cosine only measures the angle.
+
+</Predict>
+
+<BasketPlane />
+
+**Try this:**
+
+1. Make the two baskets point the same way, for example (2, 1) and (4, 2). Cosine is 1 even though the baskets differ in size.
+2. Set shopper 1 to only paint (2, 0) and shopper 2 to only brushes (0, 3). The arrows are at right angles: dot product 0, cosine 0.
+3. Tick **contractor** and watch the dot product jump while the angle stays put.
+4. Set one basket to all zeros. Cosine is undefined: an empty basket has no direction.
+
+</Section>
+
+<Section id="simulate">
+
+Now 1,000 Bolt & Beam shoppers: about half painters, half drillers, and one in five a contractor buying six times as much. For each query basket, find the ten most similar shoppers by raw dot product and by cosine.
+
+<BasketSearch />
+
+- For shopper A, the dot product's top ten are **all contractors**: big painter baskets, which is exactly the broken prototype. Cosine's top ten contain **no contractors**: ordinary painters with A's mix.
+- Both methods find the right *kind* of shopper here (painters for A, drillers for C). The difference is that the dot product ranks by size first.
+- For B (paint and brush only), half of cosine's top ten are contractors: their baskets are exactly B's mix scaled up, so their cosine is 1. Cosine doesn't exclude big shoppers; it just stops rewarding size.
+
+</Section>
+
+<Section id="formula">
+
+For vectors $a$ and $b$ with $n$ entries:
+
+$$
+a \cdot b = \sum_{i=1}^{n} a_i b_i
+\qquad
+\lVert a\rVert = \sqrt{a \cdot a}
+\qquad
+\cos\theta = \frac{a \cdot b}{\lVert a\rVert\,\lVert b\rVert}
+\qquad
+\lVert a - b\rVert = \sqrt{\sum_i (a_i - b_i)^2}
+$$
+
+Scaling a basket by $k$ scales the dot product by $k$ and the length by $k$, so cosine is unchanged. Dividing a vector by its length (**normalizing**) gives a length-1 vector with the same direction; the dot product of two normalized vectors *is* their cosine.
+
+<Depth min={2}>
+
+**Why the dot product measures an angle.** Expand the squared distance:
+
+$$
+\lVert a - b\rVert^2 = \sum_i (a_i - b_i)^2 = \lVert a\rVert^2 + \lVert b\rVert^2 - 2\,a \cdot b
+$$
+
+The law of cosines from school geometry says the same triangle side is $\lVert a\rVert^2 + \lVert b\rVert^2 - 2\lVert a\rVert\lVert b\rVert\cos\theta$. Matching the two gives $a \cdot b = \lVert a\rVert\lVert b\rVert\cos\theta$.
+
+**Distance and cosine agree after normalizing.** For length-1 vectors the identity becomes $\lVert a - b\rVert^2 = 2 - 2\cos\theta$, so ranking by smallest distance and ranking by largest cosine give the same order. That's why search engines normalize embeddings and then use fast dot products.
+
+**Projection.** $(a \cdot b)/\lVert b\rVert$ is the length of $a$'s shadow along $b$'s direction. Least squares projects the sales vector onto the space of the feature columns, which is why residuals end up perpendicular (dot product 0) to every feature.
+
+</Depth>
+
+<Depth min={3}>
+
+**High dimensions.** With 60,000 SKUs, two random baskets almost never share a product, so most cosines are exactly 0 and similarity search lives entirely in the few overlaps. Re-weighting products by how rare they are (TF-IDF, the idea behind BM25 search) stops paint, which nearly everyone buys, from dominating every cosine.
+
+**Other similarities.** For yes/no baskets, Jaccard (shared items ÷ items in either) is common. For learned embeddings the dot product is sometimes used deliberately without normalizing, so that a vector's length can encode popularity; then you must decide whether popularity should count, exactly the contractor question.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A dot product">
+
+Compute $(1, 0, 2, 0, 0) \cdot (3, 1, 1, 0, 0)$.
+
+<Solution>
+
+$1(3) + 0(1) + 2(1) + 0 + 0 =$ **5**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A length">
+
+A shopper buys 3 drills and 4 packs of bits: $(0, 0, 0, 3, 4)$. What's the basket's length?
+
+<Solution>
+
+$\sqrt{9 + 16} =$ **5**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Half the overlap">
+
+Find the cosine between $(1, 1, 0, 0, 0)$ (paint, brush) and $(0, 1, 1, 0, 0)$ (brush, tape).
+
+<Solution>
+
+Dot product 1 (they share a brush); both lengths are $\sqrt 2$. Cosine $= 1/2 =$ **0.5**, an angle of 60°.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="A promotion as a dot product">
+
+With prices (₹500, ₹150, ₹120, ₹4,000, ₹600), basket A is worth ₹1,270. Paint goes ₹50 off. Write the change as a dot product and compute A's new value.
+
+<Solution>
+
+The price change is the vector $(-50, 0, 0, 0, 0)$, and $A \cdot (-50, 0, 0, 0, 0) = -100$. A's new value is **₹1,170**. Changes in a linear model are dot products too.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Distance from dot products">
+
+Show that $\lVert a - b\rVert^2 = \lVert a\rVert^2 + \lVert b\rVert^2 - 2\,a \cdot b$, then use it to check $\lVert A - C\rVert^2 = 11$.
+
+<Solution>
+
+$\lVert a - b\rVert^2 = \sum(a_i - b_i)^2 = \sum a_i^2 + \sum b_i^2 - 2\sum a_ib_i$. For A and C: $6 + 5 - 2(0) =$ **11**, matching $\sqrt{11} \approx 3.317$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Complements look unrelated">
+
+A shopper who buys only paint, $(1, 0, 0, 0, 0)$, and one who buys only brushes, $(0, 1, 0, 0, 0)$, have cosine 0, though paint and brushes are bought together all the time. Why does basket cosine miss this, and what would capture it?
+
+<Solution>
+
+Basket vectors treat every product as its own axis, at right angles to all others, so two shoppers who bought *different* products look unrelated however often those products go together. What's needed is a representation where paint and brush are **close**: item embeddings learned from co-purchases (item2vec, matrix factorization), where each product is a dense vector and related products point in similar directions. Then shoppers are compared through the products' vectors, and paint-only and brush-only shoppers come out similar. That's the step from baskets to [embeddings](/learn/deep/dl-embeddings).
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand-worked numbers in NumPy, scikit-learn's cosine matrix, and a nearest-neighbour search. Expected: A·B = 3, cos(A, B) = cos(A, D) = 0.866, and A's two nearest neighbours by cosine are B and D (tied).
+
+<PyRunner title="Baskets as vectors" code={`
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.neighbors import NearestNeighbors
+
+skus = ["paint", "brush", "tape", "drill", "bits"]
+A = np.array([2, 1, 1, 0, 0])
+B = np.array([1, 1, 0, 0, 0])
+C = np.array([0, 0, 0, 1, 2])
+D = 10 * B                                   # a contractor with B's mix
+
+cos = lambda u, v: u @ v / (np.linalg.norm(u) * np.linalg.norm(v))
+print("A.B =", A @ B, " A.C =", A @ C, " A.D =", A @ D)
+print("lengths:", np.round([np.linalg.norm(v) for v in (A, B, C)], 3))
+print(f"cos(A,B) = {cos(A, B):.3f}  cos(A,D) = {cos(A, D):.3f}  cos(A,C) = {cos(A, C):.3f}")
+print(f"distance A-B {np.linalg.norm(A - B):.3f}  A-C {np.linalg.norm(A - C):.3f}  B-D {np.linalg.norm(B - D):.2f}")
+print("sklearn cosine matrix:")
+print(np.round(cosine_similarity(np.vstack([A, B, C, D])), 3))
+
+prices = np.array([500, 150, 120, 4000, 600])
+print("basket values A, C:", A @ prices, C @ prices)
+
+nn = NearestNeighbors(n_neighbors=2, metric="cosine").fit(np.vstack([B, C, D]))
+dist, idx = nn.kneighbors(A.reshape(1, -1))
+print("nearest to A by cosine:", [["B", "C", "D"][i] for i in idx[0]], "cosine distances", np.round(dist[0], 3))
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Baskets are sparse.** A real catalogue has tens of thousands of SKUs and a basket has a handful, so store baskets as sparse vectors (`scipy.sparse`); dot products then cost time proportional to the items bought, not the catalogue.
+- **Normalize once, then dot.** Divide every customer or product vector by its length when you build the index; similarity search becomes fast dot products, and libraries like FAISS assume this.
+- **Down-weight the obvious.** Carrier bags and best-selling paint appear in many baskets and swamp similarity. TF-IDF weighting, or similarity on learned embeddings, fixes this.
+- **Dense embeddings are vectors too.** Two-tower retrieval scores a customer and a product by the dot product of their embeddings; whether that score is normalized decides whether popular products get a boost.
+- **At scale, approximate.** Comparing a query with 10 million customers exactly is slow; approximate nearest-neighbour indexes (HNSW, IVF) return almost the same top results in milliseconds. See the search lessons ([ANN Search](/learn/retail/search-ann)).
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Cosine similarity, dot product or Euclidean distance: which would you use for finding similar customers?">
+
+Cosine, if similarity should mean "buys the same mix" regardless of how much: it removes basket size, so contractors don't dominate. Dot product if size or popularity should count. Euclidean distance on raw counts mixes the two and penalizes size differences. For normalized vectors, cosine and Euclidean rank identically.
+
+</QA>
+
+<QA q="What does a dot product of zero mean?">
+
+The vectors are perpendicular: for baskets, no product in common. It doesn't mean the shoppers are opposites; with non-negative counts the cosine is between 0 and 1.
+
+</QA>
+
+<QA q="How would you find the 10 most similar customers to a given one among 10 million?">
+
+Represent customers as normalized vectors (TF-IDF-weighted baskets or learned embeddings), build an approximate nearest-neighbour index (HNSW or IVF in FAISS), and query it with the customer's vector. Then evaluate recall against exact search on a sample, and check that the results aren't dominated by heavy buyers or best-sellers.
+
+</QA>
+
+<Trap>
+
+**"A cosine similarity of 0 means the two shoppers are opposites."** It means they're at right angles: nothing in common. Opposite would be −1, which needs negative entries, impossible for purchase counts. (It can happen for centred ratings or learned embeddings.)
+
+</Trap>
+
+</Section>
