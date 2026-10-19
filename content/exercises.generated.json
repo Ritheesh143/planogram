@@ -1,0 +1,422 @@
+[
+ {
+  "slug": "mle-peak",
+  "n": 1,
+  "level": "easy",
+  "title": "Mean or median?"
+ },
+ {
+  "slug": "mle-peak",
+  "n": 2,
+  "level": "easy",
+  "title": "Log loss per shopper"
+ },
+ {
+  "slug": "mle-peak",
+  "n": 3,
+  "level": "medium",
+  "title": "Poisson MLE in general"
+ },
+ {
+  "slug": "mle-peak",
+  "n": 4,
+  "level": "medium",
+  "title": "Estimating σ too"
+ },
+ {
+  "slug": "mle-peak",
+  "n": 5,
+  "level": "hard",
+  "title": "A service-level forecast"
+ },
+ {
+  "slug": "mle-peak",
+  "n": 6,
+  "level": "hard",
+  "title": "Poisson objective on over-dispersed sales"
+ },
+ {
+  "slug": "ci-repeat",
+  "n": 1,
+  "level": "easy",
+  "title": "How many misses?"
+ },
+ {
+  "slug": "ci-repeat",
+  "n": 2,
+  "level": "easy",
+  "title": "More stores"
+ },
+ {
+  "slug": "ci-repeat",
+  "n": 3,
+  "level": "medium",
+  "title": "A CI by hand"
+ },
+ {
+  "slug": "ci-repeat",
+  "n": 4,
+  "level": "medium",
+  "title": "Test vs control"
+ },
+ {
+  "slug": "ci-repeat",
+  "n": 5,
+  "level": "hard",
+  "title": "Planning the test"
+ },
+ {
+  "slug": "counting-worlds",
+  "n": 1,
+  "level": "easy",
+  "title": "Ladders and paint"
+ },
+ {
+  "slug": "counting-worlds",
+  "n": 2,
+  "level": "medium",
+  "title": "The stockout alert"
+ },
+ {
+  "slug": "counting-worlds",
+  "n": 3,
+  "level": "medium",
+  "title": "Odds in your head"
+ },
+ {
+  "slug": "counting-worlds",
+  "n": 4,
+  "level": "hard",
+  "title": "What would it take?"
+ },
+ {
+  "slug": "counting-worlds",
+  "n": 5,
+  "level": "hard",
+  "title": "Same model, two stores"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 1,
+  "level": "easy",
+  "title": "One probability"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 2,
+  "level": "easy",
+  "title": "One MLE"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 3,
+  "level": "medium",
+  "title": "Likelihood ratio"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 4,
+  "level": "medium",
+  "title": "Which sentence is right?"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 5,
+  "level": "hard",
+  "title": "Cross-entropy from scratch"
+ },
+ {
+  "slug": "likelihood-dial",
+  "n": 6,
+  "level": "hard",
+  "title": "Stockouts censor demand"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 1,
+  "level": "easy",
+  "title": "One update"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 2,
+  "level": "easy",
+  "title": "Round zero"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 3,
+  "level": "medium",
+  "title": "Your own first stump"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 4,
+  "level": "medium",
+  "title": "Outlier store"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 5,
+  "level": "hard",
+  "title": "XGBoost's λ"
+ },
+ {
+  "slug": "boosting-by-hand",
+  "n": 6,
+  "level": "hard",
+  "title": "Boosting a quantile"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 1,
+  "level": "easy",
+  "title": "Forecast week 7"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 2,
+  "level": "easy",
+  "title": "Which shape?"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 3,
+  "level": "medium",
+  "title": "A remodel with two ReLUs"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 4,
+  "level": "medium",
+  "title": "Count the boxes"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 5,
+  "level": "hard",
+  "title": "Make the trees extrapolate"
+ },
+ {
+  "slug": "tree-vs-mlp",
+  "n": 6,
+  "level": "hard",
+  "title": "Junk features"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 1,
+  "level": "easy",
+  "title": "Route a new store"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 2,
+  "level": "easy",
+  "title": "Impurity of a leaf"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 3,
+  "level": "medium",
+  "title": "Gini and entropy"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 4,
+  "level": "medium",
+  "title": "When does the branch get pruned?"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 5,
+  "level": "hard",
+  "title": "Where greedy fails"
+ },
+ {
+  "slug": "decision-tree",
+  "n": 6,
+  "level": "hard",
+  "title": "Why store ID looks important"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 1,
+  "level": "easy",
+  "title": "One more round, by hand"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 2,
+  "level": "easy",
+  "title": "Gradient and hessian for log loss"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 3,
+  "level": "medium",
+  "title": "λ by hand"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 4,
+  "level": "medium",
+  "title": "When γ blocks a split"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 5,
+  "level": "hard",
+  "title": "Poisson's multiplicative step"
+ },
+ {
+  "slug": "gradient-boosting",
+  "n": 6,
+  "level": "hard",
+  "title": "Why not just fit the residuals for every loss?"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 1,
+  "level": "easy",
+  "title": "Read the line"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 2,
+  "level": "easy",
+  "title": "Elasticity at a different point"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 3,
+  "level": "medium",
+  "title": "Three weeks by hand"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 4,
+  "level": "medium",
+  "title": "Ridge by hand"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 5,
+  "level": "hard",
+  "title": "Why the residuals are uncorrelated with price"
+ },
+ {
+  "slug": "linear-regression",
+  "n": 6,
+  "level": "hard",
+  "title": "Log-log elasticity"
+ },
+ {
+  "slug": "mlp",
+  "n": 1,
+  "level": "easy",
+  "title": "Is the neuron on?"
+ },
+ {
+  "slug": "mlp",
+  "n": 2,
+  "level": "easy",
+  "title": "Where is the kink?"
+ },
+ {
+  "slug": "mlp",
+  "n": 3,
+  "level": "medium",
+  "title": "Count the weights"
+ },
+ {
+  "slug": "mlp",
+  "n": 4,
+  "level": "medium",
+  "title": "A dead unit"
+ },
+ {
+  "slug": "mlp",
+  "n": 5,
+  "level": "hard",
+  "title": "Why MLPs extrapolate in straight lines"
+ },
+ {
+  "slug": "mlp",
+  "n": 6,
+  "level": "hard",
+  "title": "Why rupees break SGD"
+ },
+ {
+  "slug": "model-arena",
+  "n": 1,
+  "level": "easy",
+  "title": "Score a forecast"
+ },
+ {
+  "slug": "model-arena",
+  "n": 2,
+  "level": "easy",
+  "title": "Read the matrix"
+ },
+ {
+  "slug": "model-arena",
+  "n": 3,
+  "level": "medium",
+  "title": "Why did ridge collapse on IDs?"
+ },
+ {
+  "slug": "model-arena",
+  "n": 4,
+  "level": "medium",
+  "title": "Mean imputation's hidden cost"
+ },
+ {
+  "slug": "model-arena",
+  "n": 5,
+  "level": "hard",
+  "title": "Design a scenario"
+ },
+ {
+  "slug": "model-arena",
+  "n": 6,
+  "level": "hard",
+  "title": "When is a 1% gap real?"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 1,
+  "level": "easy",
+  "title": "Bundle three flags"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 2,
+  "level": "easy",
+  "title": "Leaves at a given depth"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 3,
+  "level": "medium",
+  "title": "Ordered statistics with a different order"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 4,
+  "level": "medium",
+  "title": "GOSS weights"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 5,
+  "level": "hard",
+  "title": "Where should missing go?"
+ },
+ {
+  "slug": "xgb-lgbm-catboost",
+  "n": 6,
+  "level": "hard",
+  "title": "Why does naive encoding leak more with more stores?"
+ }
+]

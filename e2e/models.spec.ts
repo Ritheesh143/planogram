@@ -124,3 +124,40 @@ test("model arena: the failure matrix opens each cell", async ({ page }) => {
   await expect(page.getByTestId("fm-detail")).toContainText("Decision tree: WAPE 0.448");
   await expect(page.getByTestId("ac-rises-ridge")).toHaveText("0% of promo weeks");
 });
+
+test("plan: start the sprint, tick a task and log hours", async ({ page }) => {
+  await page.goto("/plan");
+  await expect(page.getByTestId("plan-week")).toHaveText("Not started");
+  await page.getByRole("button", { name: "Start today" }).click();
+  await expect(page.getByTestId("plan-week")).toHaveText("1 of 16");
+  await page.getByTestId("plan-task-w1-check").check();
+  await expect(page.getByTestId("plan-week-1")).toContainText("1/6 done");
+  await page.getByTestId("plan-hours-input").fill("2.5");
+  await page.getByRole("button", { name: "Log hours" }).click();
+  await expect(page.getByTestId("plan-hours")).toHaveText("2.5");
+  await page.reload();
+  await expect(page.getByTestId("plan-hours")).toHaveText("2.5");
+});
+
+test("exercises, graph and threads pages work", async ({ page }) => {
+  await page.goto("/exercises");
+  await expect(page.getByTestId("ex-done")).toContainText("0 of");
+  await page.getByTestId("ex-counting-worlds-1").check();
+  await expect(page.getByTestId("ex-done")).toContainText("1 of");
+  await page.goto("/graph");
+  await page.getByTestId("graph-node-gradient-boosting").hover();
+  await expect(page.getByText("needs 2 lessons before it")).toBeVisible();
+  await page.goto("/threads");
+  await expect(page.getByTestId("thread-likelihood-loss")).toContainText("MLE and Losses as Negative Log-Likelihood");
+});
+
+test("navigation: More menu on desktop, Menu on mobile", async ({ page }) => {
+  await page.goto("/");
+  await page.getByText("More ▾").click();
+  await page.getByRole("link", { name: "Concept Graph" }).click();
+  await expect(page).toHaveURL(/\/graph/);
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.getByTestId("mobile-menu").click();
+  await page.getByTestId("mobile-menu").locator("..").getByRole("link", { name: "Plan", exact: true }).click();
+  await expect(page).toHaveURL(/\/plan/);
+});

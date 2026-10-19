@@ -37,7 +37,9 @@ retailer **Bolt & Beam** (never a real company's data or branding).
    `Slider`, `Key`, `Tip`). Colors come from CSS tokens (`var(--series-1)` …, status colors only
    for state). Keep numeric logic in `lib/sim/` so vitest can check it. Register new components in
    `mdx-components.tsx`.
-7. **Verify**: `npm run typecheck && npm run lint && npm test && npm run build`, then
+7. **Verify**: run `node scripts/index-exercises.mjs` (it lists every `<Exercise>` for the
+   /exercises page; `npm test` fails if it's stale), then
+   `npm run typecheck && npm run lint && npm test && npm run build`, then
    `npm run test:e2e`. Add an e2e test that moves a control and checks a number, and
    `PYODIDE_E2E=1 npx playwright test e2e/pyodide.spec.ts` after adding a `<PyRunner>`.
    Make sure every number written in the lesson matches what the visual and tests produce.

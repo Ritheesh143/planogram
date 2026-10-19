@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MainNav } from "@/components/ui/MainNav";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import "./globals.css";
 
@@ -19,12 +20,6 @@ export const metadata: Metadata = {
   description:
     "A visual, first-principles learning map for retail math, data science, ML engineering and agentic AI.",
 };
-
-const nav = [
-  { href: "/", label: "Store map" },
-  { href: "/check", label: "Floor Check" },
-  { href: "/review", label: "Review" },
-];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -54,18 +49,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               Planogram
             </Link>
-            <nav className="ml-auto flex items-center gap-0.5 text-sm sm:gap-1">
-              {nav.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className="rounded-md px-2 py-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink sm:px-2.5"
-                >
-                  {n.label}
-                </Link>
-              ))}
-              <ThemeToggle />
-            </nav>
+            <MainNav />
+            <ThemeToggle />
           </div>
         </header>
         <main className="flex-1">{children}</main>

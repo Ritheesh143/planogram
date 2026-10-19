@@ -30,12 +30,25 @@ export type CheckAttempt = {
   total: number;
 };
 
+export type HoursEntry = { date: string; hours: number; note: string };
+
+export type PlanState = {
+  /** First day of sprint week 1 (YYYY-MM-DD), chosen by the learner. */
+  start?: string;
+  /** Ids of finished career tasks and milestones from content/plan.ts. */
+  done: string[];
+  hours: HoursEntry[];
+};
+
 export type Progress = {
   version: 1;
   lessons: Record<string, LessonProgress>;
   cards: Record<string, StoredCard>;
   checks: CheckAttempt[];
   depth: 1 | 2 | 3;
+  plan: PlanState;
+  /** Pen-and-paper exercises marked done, as "slug#n". */
+  exercises: string[];
 };
 
 const KEY = "planogram:v1";
@@ -47,6 +60,8 @@ export const emptyProgress: Progress = {
   cards: {},
   checks: [],
   depth: 2,
+  plan: { done: [], hours: [] },
+  exercises: [],
 };
 
 let cachedRaw: string | null | undefined;
@@ -65,7 +80,9 @@ export function loadProgress(): Progress {
   if (raw === cachedRaw) return cachedValue;
   cachedRaw = raw;
   try {
-    cachedValue = raw ? { ...emptyProgress, ...(JSON.parse(raw) as Progress) } : emptyProgress;
+    // Fields added after a learner's first visit fall back to their defaults.
+    const parsed = raw ? (JSON.parse(raw) as Partial<Progress>) : null;
+    cachedValue = parsed ? { ...emptyProgress, ...parsed, plan: { ...emptyProgress.plan, ...parsed.plan } } : emptyProgress;
   } catch {
     cachedValue = emptyProgress;
   }
@@ -131,4 +148,30 @@ export function lessonStatus(p: Progress, slug: string): LessonStatus {
   if (!l) return "new";
   if (l.mastered) return "mastered";
   return l.sections.length > 0 ? "started" : "new";
+}
+
+export function toggleExercise(id: string): void {
+  updateProgress((p) => ({
+    ...p,
+    exercises: p.exercises.includes(id) ? p.exercises.filter((e) => e !== id) : [...p.exercises, id],
+  }));
+}
+
+export function togglePlanItem(id: string): void {
+  updateProgress((p) => ({
+    ...p,
+    plan: { ...p.plan, done: p.plan.done.includes(id) ? p.plan.done.filter((d) => d !== id) : [...p.plan.done, id] },
+  }));
+}
+
+export function setSprintStart(date: string): void {
+  updateProgress((p) => ({ ...p, plan: { ...p.plan, start: date } }));
+}
+
+export function logHours(entry: HoursEntry): void {
+  updateProgress((p) => ({ ...p, plan: { ...p.plan, hours: [...p.plan.hours, entry] } }));
+}
+
+export function removeHours(index: number): void {
+  updateProgress((p) => ({ ...p, plan: { ...p.plan, hours: p.plan.hours.filter((_, i) => i !== index) } }));
 }
