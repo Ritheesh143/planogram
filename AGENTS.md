@@ -4,6 +4,32 @@ A visual, first-principles learning site for retail math, data science, ML engin
 agentic AI. Lessons are MDX with interactive React visuals; learner progress lives only in the
 browser's localStorage.
 
+## Where we are
+
+M1 and M2 are done and live (Vercel deploys `main`). **Next is M3, the AI layer with no API key:**
+Claude Code skills plus an "Ask Claude" copy-prompt button. Read `docs/ROADMAP.md` before
+starting work. It holds the status, the M3 spec, the batch order for M4 onward and the per-batch
+checklist. Update its Status section after each batch.
+
+If `private/profile.md` exists, read it for the learner's career context and project details. It is
+gitignored, and nothing from it may appear in a tracked file.
+
+## Local setup
+
+```bash
+npm ci
+npx playwright install chromium                  # for npm run test:e2e
+pip install -r python/requirements.txt pytest     # for npm run test:py
+python3 -m venv python/.venv && python/.venv/bin/pip install -r python/requirements-arena.txt   # arena only
+```
+
+## Working rules
+
+- Ship in batches. Push to `main` only after typecheck, lint, vitest, pytest, build and
+  e2e (`PYODIDE_E2E=1` when a page has a PyRunner) all pass.
+- Assert every number written in a lesson in vitest from `lib/sim`, so the prose can't drift.
+- Ask before outward-facing actions beyond the agreed batch push.
+
 ## Commands
 
 - `npm run dev` / `npm run build` / `npm start`

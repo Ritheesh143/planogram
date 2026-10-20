@@ -95,9 +95,10 @@ Import the repository and keep the defaults.
 
 | Milestone | Scope |
 |---|---|
-| M3 | AI layer (Claude-powered tutor, Feynman grader, mock interviewer with Project Grill) |
+| M3 | AI layer with no API key: Claude Code skills (tutor, Feynman grader, mock interviewer, Project Grill) and an "Ask Claude" copy-prompt button |
 | M4+ | Weekly lesson batches in sprint order: MCMC → forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
 
+The full plan, current status and per-batch checklist are in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 New lessons follow [`.claude/skills/new-lesson/SKILL.md`](.claude/skills/new-lesson/SKILL.md).
 
 ## Data and naming
