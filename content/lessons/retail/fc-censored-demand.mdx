@@ -1,0 +1,298 @@
+<Section id="floor">
+
+A tinting-base paint sells fast at the Pune store. The shelf holds **12 tins**, refilled every morning. The forecasting system sees sales of 9, 12, 11, 12, … and averages them to **10.9 a day**, so the planner sets the shelf a little lower next month.
+
+The trouble is the 12s. On those days the shelf **ran out**: the store sold 12 because it *had* 12, not because 12 people came. Sales are demand cut off at the shelf. Forecast from sales and you forecast too low; stock less and you sell out more, which makes sales look lower still. Left alone, that loop quietly shrinks the shelf.
+
+<KeyIdea>
+
+**Sales are censored demand: on a sold-out day you only know demand was at least the shelf.** Averaging sales is biased low, and dropping the sold-out days is worse (it keeps only the quiet days). The fix is a **censored likelihood**: an ordinary day contributes P(demand = sales), a sold-out day contributes P(demand ≥ shelf). Maximizing it recovers the true demand rate, as long as some days don't sell out.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Ten days of the paint, shelf of 12 (a 12 means it sold out):
+
+| Day | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Sold | 9 | **12** | 11 | **12** | 8 | **12** | **12** | 10 | **12** | 11 |
+
+<Steps>
+<Step>
+
+**Average the sales:** $109/10 =$ **10.9**. Five of the ten numbers are a floor on demand, not demand itself, so this is too low.
+
+</Step>
+<Step>
+
+**Drop the sold-out days:** $(9 + 11 + 8 + 10 + 11)/5 = 49/5 =$ **9.8**. Even lower. The days that didn't sell out are, by definition, the days demand was low: you've kept only the quiet days.
+
+</Step>
+<Step>
+
+**Ask the right question of each day.** If demand is Poisson with rate λ, an ordinary day with 9 sold has probability P(D = 9). A sold-out day says only D ≥ 12, which has probability P(D ≥ 12). For a few candidate rates:
+
+| λ | 10 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|
+| P(D ≥ 12) | 0.303 | 0.421 | 0.538 | 0.647 | 0.740 |
+| log-likelihood, five ordinary days | −10.69 | −11.02 | −11.76 | −12.83 | −14.20 |
+| 5 × log P(D ≥ 12) | −5.97 | −4.33 | −3.10 | −2.18 | −1.51 |
+| **Total** | −16.66 | −15.35 | **−14.85** | −15.01 | −15.71 |
+
+</Step>
+<Step>
+
+**Pick the best-scoring λ.** The ordinary days pull toward 10, and the sold-out days pull up: a bigger λ makes "at least 12" more likely. The total peaks near 12. A fine search puts it at **12.23 tins a day**: 12% more than the average of sales, and 25% more than the "clean days" average.
+
+</Step>
+<Step>
+
+**What the old shelf cost.** With demand 12 a day and a shelf of 12, the shelf runs out on 54% of days, and expected sales are only **10.63** a day: about 1.4 tins of demand walk out every day, even though the shelf is "the right size" on average.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="True demand is 12 a day, the shelf holds 12, and it sells out on 55% of days. Which estimate is closest to 12?" options={["The average of all sales", "The average of the days that didn't sell out", "The censored likelihood"]} answer={2}>
+
+**The censored likelihood**: 12.19, against 10.73 for the sales average and 9.16 for the clean days. Both averages treat a floor as if it were the number.
+
+</Predict>
+
+<CensoredShelf />
+
+**Try this:**
+
+1. Start at **demand 12, shelf 12**. It sells out on **55%** of days. The sales average reads **10.73**, the clean-day average **9.16** and the censored likelihood **12.19** (these 56 days' demand actually averaged 12.48).
+2. Raise the **shelf to 16**. Sell-outs drop to 20% and the estimates close in: **12.04, 11.07, 12.37**.
+3. Shelf **20**: 5% sell-outs, and all three agree (12.43, 12.00, 12.49). Censoring only matters when shelves bind.
+4. Shelf **9**: it sells out 84% of the time. The sales average collapses to **8.68**, but the likelihood still says **11.95**. Its curve is much flatter, though: with few ordinary days, it's less sure.
+5. **Demand 16, shelf 12**: 88% sell-outs. The sales average says 11.66, the likelihood **15.88**. A store that is always empty can't show you its demand any other way.
+
+</Section>
+
+<Section id="simulate">
+
+Now close the loop. Each week, set the shelf to the forecast (rounded up, no safety buffer), then re-forecast from the last 28 days. Demand is 12 a day throughout:
+
+<ShelfSpiral />
+
+- **The spiral is real.** Forecasting from raw sales, the shelf drifts from 12 down to **9** in sixteen weeks, and **19.4%** of demand is lost. Every week's sell-outs make the next forecast lower.
+- **The censored likelihood holds its ground.** Its shelf wobbles around 12, losing **9.7%**: a shelf at the mean still runs out on busy days. That remaining loss is a safety-stock question, not a forecasting one.
+
+How biased is each estimate, by shelf size? 300 histories of 28 days at a true rate of 12:
+
+| Shelf | 10 | 12 | 14 | 16 | 20 |
+|---|---|---|---|---|---|
+| Days that sell out | 75.8% | 53.8% | 31.8% | 15.6% | 2.1% |
+| Average of sales | 9.46 | 10.63 | 11.37 | 11.70 | 11.93 |
+| Average of days that didn't sell out | 7.71 | 9.03 | 10.18 | 10.93 | 11.74 |
+| Censored likelihood | **12.21** | **12.08** | **12.01** | **11.95** | **11.96** |
+| Its spread (sd) | 0.88 | 0.83 | 0.69 | 0.66 | 0.63 |
+
+The likelihood is close to unbiased at every shelf size. The price of censoring is **precision**: its spread rises from 0.63 to 0.88 as more days are cut off, because a sold-out day carries less information than a counted one.
+
+</Section>
+
+<Section id="formula">
+
+**The censored likelihood.** With shelf $c$ and sales $y_i$:
+
+$$
+L(\lambda) = \prod_{y_i \lt c} P(D = y_i \mid \lambda) \;\times \prod_{y_i = c} P(D \ge c \mid \lambda)
+$$
+
+For Poisson demand, $\log L = \sum_{\text{ordinary}} (y_i \log\lambda - \lambda) + n_{\text{out}} \log P(D \ge c \mid \lambda) + \text{const}$. Only three numbers matter: the total of the ordinary days, how many there were, and how many sold out.
+
+**Why both averages are biased.** $\mathbb E[\text{sales}] = \mathbb E[\min(D, c)] \lt \mathbb E[D]$ whenever $P(D \gt c) \gt 0$, so the sales average is low. The clean-day average estimates $\mathbb E[D \mid D \lt c]$, which is lower still: you've selected days *by their outcome*.
+
+**For Normal demand** the same idea is the **Tobit** model: ordinary days contribute the density $\varphi$, censored days contribute $1 - \Phi((c - \mu)/\sigma)$.
+
+<Depth min={2}>
+
+**Imputation with EM.** An equivalent recipe that is easy to bolt onto any forecaster:
+
+1. Start from a guess $\lambda_0$.
+2. Replace each sold-out day's sales with its expected demand given that it sold out, $\mathbb E[D \mid D \ge c, \lambda_0]$.
+3. Average the completed series to get $\lambda_1$, and repeat until it settles.
+
+This converges to the same maximum likelihood estimate. The completed series can then feed any model (ETS, gradient boosting) as if it were demand.
+
+**Partial-day stockouts.** If the shelf emptied at 3 pm, the day saw demand for only part of its hours. With the intraday sales curve (say 70% of a day's demand arrives before 3 pm), the day's demand is censored at the stockout time: model it as "rate × 70% of the day observed, the rest unknown". Point-of-sale timestamps make this much sharper than a daily flag.
+
+**Which days are censored?** Sales equal to the shelf is the cleanest flag. In practice, use end-of-day on-hand = 0, or hours with zero sales during opening times for a usually busy SKU. Both are noisy, and **phantom inventory** (the system says 3 on hand, the shelf is empty) hides stockouts entirely.
+
+</Depth>
+
+<Depth min={3}>
+
+**Censored is not truncated.** Censored: you see that a day sold out, and you know it happened. Truncated: those days vanish from the data entirely (for example, an export that drops zero-stock days). Truncation needs $P(D = y)/P(D \lt c)$ for each kept day, a different likelihood. Dropping sold-out days turns censored data into truncated data and then forgets to correct.
+
+**Identifiability.** If every day sells out, the likelihood keeps rising with λ: "at least 12, every day" fits any large rate. The estimate is only as good as the ordinary days. That's why the spread grows with the sell-out rate, and why a few deliberately over-stocked days can be worth more than they cost.
+
+**The survival-analysis connection.** A sold-out day is exactly a right-censored survival time: "the customer count got past 12 before we stopped watching". Kaplan–Meier and the Cox model handle the same structure, and the likelihood above is the parametric version.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Spot the floor">
+
+A week's sales with a shelf of 20: 14, 20, 17, 20, 20, 12, 16. Which days are censored, and what does each tell you?
+
+<Solution>
+
+Days 2, 4 and 5 sold 20, the shelf: each says only **demand ≥ 20**. The other four days are exact demand (if nothing else limited sales).
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Two wrong averages">
+
+For that week, compute the sales average and the clean-day average. Which is lower, and why?
+
+<Solution>
+
+Sales average: $119/7 =$ **17.0**. Clean days: $(14 + 17 + 12 + 16)/4 =$ **14.75**, lower, because the kept days are the ones where demand happened to be under 20.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A censored day's likelihood">
+
+Demand is Poisson(12) and the shelf holds 12. What does one sold-out day contribute to the likelihood? And at λ = 14?
+
+<Solution>
+
+$P(D \ge 12 \mid 12) =$ **0.538**, and $P(D \ge 12 \mid 14) =$ **0.740**. A larger rate makes selling out more likely, so sold-out days push λ up.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Lost sales on a right-sized shelf">
+
+With demand Poisson(12) and a shelf of 12, expected sales are 10.63 a day. What share of demand is lost? What does that mean for a forecast trained on sales?
+
+<Solution>
+
+$1 - 10.63/12 \approx$ **11.4%** of demand is lost. A forecast fitted to sales learns 10.63, not 12: an 11% under-forecast before any model error.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="One EM step">
+
+Start the hand example at $\lambda_0 = 10.9$. For Poisson(10.9), $\mathbb E[D \mid D \ge 12] \approx 14.08$. Replace the five sold-out days with that and re-average. Which way did λ move?
+
+<Solution>
+
+The completed total is $49 + 5 \times 14.08 = 119.4$, so $\lambda_1 =$ **11.94**: **up**, toward the maximum likelihood estimate of 12.23. Repeating the step keeps climbing until it settles there.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Always sold out">
+
+A new SKU sold out on all 14 days of its launch, at a shelf of 6. What can you say about its demand, and what would you do?
+
+<Solution>
+
+Only that demand is probably well above 6: the likelihood $P(D \ge 6)^{14}$ keeps rising with λ, so there is **no finite estimate**. Raise the shelf (or the allocation) for a few days to observe uncensored demand, or borrow a prior from similar SKUs' launches (the [shrinkage](/learn/bayes/shrinkage) idea).
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand-worked likelihood, a search for its peak, one EM imputation, and a quick bias check over many simulated months. Expected: averages of 10.90 and 9.80, a censored estimate of 12.23, and in the simulation the sales average near 10.6 while the censored estimate stays near 12.
+
+<PyRunner title="Demand behind the empty shelf" code={`
+import numpy as np
+from math import lgamma, log, exp
+
+def log_pmf(k, lam):
+    return k * log(lam) - lam - lgamma(k + 1)
+
+def tail(c, lam):          # P(D >= c)
+    return 1 - sum(exp(log_pmf(k, lam)) for k in range(c))
+
+def censored_ll(sales, shelf, lam):
+    return sum(log(tail(shelf, lam)) if y >= shelf else log_pmf(y, lam) for y in sales)
+
+sales = np.array([9, 12, 11, 12, 8, 12, 12, 10, 12, 11])
+shelf = 12
+print(f"average of sales:        {sales.mean():.2f}")
+print(f"average of clean days:   {sales[sales < shelf].mean():.2f}")
+
+grid = np.round(np.arange(5, 25, 0.01), 2)
+ll = [censored_ll(sales, shelf, l) for l in grid]
+print(f"censored MLE:            {grid[int(np.argmax(ll))]:.2f}")
+
+# One EM step from the sales average: impute E[D | D >= 12] for sold-out days
+lam0 = sales.mean()
+k = np.arange(shelf, 80)
+p = np.exp([log_pmf(int(i), lam0) for i in k])
+cond = np.sum(k * p) / np.sum(p)
+filled = np.where(sales >= shelf, cond, sales)
+print(f"EM step: E[D | sold out] = {cond:.2f}, new estimate {filled.mean():.2f}")
+
+# Many 28-day months at a true rate of 12 on a shelf of 12
+rng = np.random.default_rng(1)
+naive, mle = [], []
+for _ in range(200):
+    s = np.minimum(rng.poisson(12, 28), shelf)
+    naive.append(s.mean())
+    g = np.round(np.arange(6, 20, 0.05), 2)
+    mle.append(g[int(np.argmax([censored_ll(s, shelf, l) for l in g]))])
+print(f"200 months: sales average {np.mean(naive):.2f}, censored MLE {np.mean(mle):.2f} (truth 12)")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Flag stockouts before you train.** Join sales to end-of-day on-hand and to replenishment events. Mark a store-SKU-day as censored when on-hand hit zero, or when sales stop for hours at a time the SKU usually sells. Store the flag next to sales; every downstream model needs it.
+- **Three ways to use the flag.** Drop the censored rows (biased, but simple: only acceptable when they are rare). Impute demand for them (EM, or a model trained on uncensored days) and train on the completed series. Or use a censored loss directly. Imputation is the common production choice, because it lets the same feature pipeline serve every model.
+- **Substitution moves demand, it doesn't destroy it.** When the 4-litre tin sells out, some shoppers buy the 1-litre tin. That inflates the substitute's sales on those days. Ignoring this double-counts demand at category level; the [stockout experiments](/learn/retail/cx-stockout-experiments) lesson uses it to measure substitution.
+- **Phantom inventory hides censoring.** If the system believes there's stock when the shelf is empty, the day looks like a genuine zero. Low-sales streaks for a usually steady SKU are a classic alert for a store audit.
+- **Online is different.** Backorders and "notify me" clicks record demand past zero stock, so e-commerce sales are less censored, but out-of-stock pages lose browsing demand you never see.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why can't you forecast demand directly from sales history?">
+
+Because sales are demand cut off at available stock. On stockout days you only know demand was at least what sold. Training on raw sales biases forecasts low, which lowers orders and causes more stockouts: a self-reinforcing loop. I'd flag stockout days and either impute their demand or fit with a censored likelihood.
+
+</QA>
+
+<QA q="A colleague suggests simply removing all stockout days from the training data. What's wrong with that?">
+
+It selects on the outcome: the days that didn't stock out are disproportionately low-demand days, so the estimate drops further. In the hand example, the sales average was 10.9, the clean-day average 9.8 and the censored estimate 12.2. Removal turns censored data into truncated data without the truncation correction.
+
+</QA>
+
+<QA q="How does a censored observation enter a likelihood?">
+
+As the probability of the event you actually observed: demand of at least the stock level, $P(D \ge c)$, instead of the probability of an exact value. For Normal errors that's the Tobit model; for counts, the Poisson or negative binomial tail. The same structure is right-censoring in survival analysis.
+
+</QA>
+
+<Trap>
+
+**"Our forecast matches sales closely, so it's accurate."** If the history is censored, matching sales means matching the *shelf*, not demand. A model can have a great WAPE against sales while under-forecasting true demand by 10% or more. Evaluate on uncensored days, or against imputed demand, and track lost sales separately.
+
+</Trap>
+
+</Section>

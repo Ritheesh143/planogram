@@ -1,0 +1,303 @@
+<Section id="floor">
+
+The premium cordless drill sells in about **3 weeks out of 10**, a couple of units at a time. Run ordinary exponential smoothing on it and the forecast jumps after every sale, then sags week by week until the next one. The replenishment system dutifully orders more right after a sale and less right before the next.
+
+Then the supplier discontinues the drill. Somebody has to notice that "no sales for six weeks" now means *gone*, not *between sales*. Slow movers are most of a DIY store's range, so getting this right matters for most of the shelf.
+
+<KeyIdea>
+
+**Split intermittent demand into two questions: how big is a sale, and how often does one happen?** **Croston** smooths the size of each sale and the gap between sales, updating only when a sale happens; forecast = size ÷ gap. It is steadier than exponential smoothing but biased high, so **SBA** scales it by (1 − α/2). **TSB** smooths the *chance* of a sale every week instead of the gap, so a forecast decays when sales stop, and an obsolete item fades out.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Twelve weeks of drill sales. Smooth with **α = 0.2**.
+
+| Week | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Sold | 0 | 0 | 3 | 0 | 0 | 0 | 2 | 0 | 4 | 0 | 0 | 0 |
+
+The average is $9/12 =$ **0.75 a week**.
+
+<Steps>
+<Step>
+
+**Exponential smoothing** (starting from 0) jumps to 0.6 after week 3, sags to 0.48, 0.384, 0.307, jumps to 0.646 after week 7, and so on. It ends at **0.621**. The forecast depends on how recently the drill sold, not on how fast it sells.
+
+</Step>
+<Step>
+
+**Croston: sizes and gaps.** The sales were 3, 2 and 4 units, and the gaps between them 3, 4 and 2 weeks. Start from the first sale: size $z = 3$, gap $p = 3$, forecast $3/3 =$ **1.0**. It stays 1.0 through the empty weeks: nothing is updated until a sale.
+
+</Step>
+<Step>
+
+**Week 7 sells 2, after a gap of 4.** $z = 3 + 0.2(2 - 3) = 2.8$ and $p = 3 + 0.2(4 - 3) = 3.2$, so the forecast is $2.8/3.2 =$ **0.875**. **Week 9 sells 4, after a gap of 2.** $z = 3.04$, $p = 2.96$, forecast **1.027**.
+
+</Step>
+<Step>
+
+**SBA.** Croston's ratio runs high (the next sections show why), so Syntetos and Boylan scale it by $1 - \alpha/2 = 0.9$: $0.9 \times 1.027 =$ **0.924**.
+
+</Step>
+<Step>
+
+**TSB: the chance of a sale, updated every week.** Start with chance $d = 1/3$ (one sale in the first three weeks) and size $z = 3$. Each empty week multiplies $d$ by 0.8: 0.267, 0.213, 0.171. A sale week moves it 20% of the way to 1: week 7 gives $0.171 + 0.2(1 - 0.171) = 0.337$. The forecast is $d \times z$, and after weeks 10–12 with no sale it has decayed to **0.647**.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="The drill is discontinued after week 78. Twenty-six weeks later, which forecast is still ordering it at its old rate?" options={["Exponential smoothing", "Croston", "TSB"]} answer={1}>
+
+**Croston.** It only updates when a sale happens, and no sale ever comes, so its forecast never moves. Exponential smoothing and TSB update every week and decay toward zero.
+
+</Predict>
+
+<DrillForecasts />
+
+**Try this:**
+
+1. **Croston at α = 0.1.** It enters the dead weeks at **0.633** a week and is still at **0.633** twenty-six weeks later: **16.5 units** ordered for a drill nobody can buy.
+2. **SBA**: the same flat line, 5% lower (**0.602**, 15.6 units).
+3. **TSB**: **0.767** going in, **0.050** at the end, and **7.2** units for the dead weeks. The chance of a sale decays every empty week.
+4. **SES**: it also decays (0.809 to **0.052**). But look at weeks 1–78: its line jumps at every sale and sags between them.
+5. Raise **α to 0.2**. Croston gets stuck higher (**0.738**, 19.2 units); TSB fades faster (0.987 to 0.003, 4.9 units).
+
+</Section>
+
+<Section id="simulate">
+
+Now the drill never stops selling. Simulate 1,000 drills with the same pattern (a sale in 30% of weeks, of 1 + Poisson(1.5) units: 0.75 a week on average) and compare each method's forecasts with the true 0.75, with α = 0.1:
+
+<IntermittentStudy />
+
+| | SES | Croston | SBA | TSB |
+|---|---|---|---|---|
+| Average forecast | 0.752 | **0.798** | 0.758 | 0.756 |
+| RMSE against 0.75 | 0.304 | 0.222 | **0.206** | 0.286 |
+
+- **Croston is biased high by about 6%.** It divides by a smoothed gap, and dividing by a noisy number inflates the result on average.
+- **SBA removes the bias and is the steadiest.** Its RMSE is a third lower than SES's: no sawtooth.
+- **SES and TSB are unbiased but jumpy,** because they update every week. TSB's advantage over SES is not accuracy on a live item; it's that the chance of a sale and the size of a sale are separate, readable numbers, and it fades out dead items. Many teams run TSB with a small β (slow-moving chance) to steady it.
+
+</Section>
+
+<Section id="formula">
+
+**Croston.** In a week with a sale of size $y_t$, after a gap of $q$ weeks since the last one:
+
+$$
+z \leftarrow z + \alpha (y_t - z), \qquad p \leftarrow p + \alpha (q - p), \qquad \hat y = \frac{z}{p}
+$$
+
+In weeks without a sale, nothing changes.
+
+**SBA** (Syntetos–Boylan approximation): $\hat y = (1 - \tfrac{\alpha}{2})\, z/p$.
+
+**TSB** (Teunter–Syntetos–Babai). Every week, with $o_t = 1$ if there was a sale and 0 if not:
+
+$$
+d \leftarrow d + \beta (o_t - d), \qquad z \leftarrow z + \alpha (y_t - z) \text{ only if } o_t = 1, \qquad \hat y = d \cdot z
+$$
+
+<Depth min={2}>
+
+**Which series are intermittent?** Two numbers per series sort them (Syntetos–Boylan–Croston):
+
+- **ADI**, the average demand interval: weeks per sale.
+- **CV²**, the squared coefficient of variation of the non-zero sizes.
+
+| | CV² below 0.49 | CV² 0.49 or more |
+|---|---|---|
+| **ADI below 1.32** | Smooth: ETS or a global model | Erratic |
+| **ADI 1.32 or more** | Intermittent: Croston / SBA / TSB | Lumpy: hardest |
+
+The drill's 78 selling weeks had 22 sales: ADI = $78/22 = 3.55$ and CV² = 0.318, so it is **intermittent**.
+
+**Forecast the distribution, not just the rate.** A rate of 0.75 a week doesn't tell you how many to stock. Stocking for a 95% service level over a 2-week lead time needs the 95th percentile of 2-week demand: a compound distribution (a Poisson or Bernoulli number of sales, each of random size). Simulate it, or fit a negative binomial and read off its quantile. The point forecast alone sets the shelf far too low.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why Croston is biased.** Even if $z$ and $p$ are each unbiased, $\mathbb E[z/p] \ne \mathbb E[z]/\mathbb E[p]$: $1/p$ is convex, so by Jensen's inequality $\mathbb E[1/p] \gt 1/\mathbb E[p]$, and the noise in the smoothed gap inflates the ratio. Syntetos and Boylan expanded $\mathbb E[1/p]$ to first order in the smoothed gap's variance (which scales like $\alpha/(2 - \alpha)$), and the correction factor that cancels it is approximately $1 - \alpha/2$. In the simulation, Croston averaged 0.798, and $0.95 \times 0.798 = 0.758$.
+
+**Croston has no tidy underlying model.** Shenstone and Hyndman (2005) showed that any model for which Croston's method is optimal is non-stationary and allows non-integer or negative demand, so its forecasts don't come with honest intervals. Treat it as a robust heuristic for the rate, and get intervals by simulation or from a distributional model.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="ADI">
+
+A SKU sold in 13 of 52 weeks. What is its ADI?
+
+<Solution>
+
+$52/13 =$ **4 weeks** per sale: intermittent by the 1.32 cut-off.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A Croston forecast">
+
+Smoothed size $z = 4$ units and smoothed gap $p = 5$ weeks. What does Croston forecast per week, and what does SBA forecast with α = 0.1?
+
+<Solution>
+
+Croston: $4/5 =$ **0.8**. SBA: $0.95 \times 0.8 =$ **0.76**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="One Croston update">
+
+With $z = 2.8$, $p = 3.2$ and α = 0.2, a sale of 5 arrives after a gap of 6 weeks. Update both and give the forecast.
+
+<Solution>
+
+$z = 2.8 + 0.2(5 - 2.8) = 3.24$ and $p = 3.2 + 0.2(6 - 3.2) = 3.76$, so the forecast is $3.24/3.76 \approx$ **0.862**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="TSB fading out">
+
+TSB has $d = 0.3$ and $z = 2.5$, with β = 0.1. The item stops selling. What's the forecast after 10 empty weeks?
+
+<Solution>
+
+Each empty week multiplies $d$ by 0.9: $0.3 \times 0.9^{10} = 0.105$, so the forecast is $0.105 \times 2.5 \approx$ **0.26** a week, down from 0.75.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="The sawtooth">
+
+SES with α = 0.2 sits at 0.6 right after a sale. With no sale for 4 weeks, where is it? Why does that matter for ordering?
+
+<Solution>
+
+$0.6 \times 0.8^4 \approx$ **0.246**. The forecast swings with the time since the last sale, so orders are largest right after a sale (when the next is least due) and smallest just before one. Croston and SBA hold flat between sales, which is what the shelf actually needs.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Stock for the lead time">
+
+A drill sells in 30% of weeks, always 2 units at a time. The lead time is 2 weeks. What's the chance of selling 4 or more in the lead time? How many would you stock for a 90% chance of not running out?
+
+<Solution>
+
+The lead-time sales are 0, 2 or 4, with probabilities $0.7^2 = 0.49$, $2 \times 0.3 \times 0.7 = 0.42$ and $0.3^2 =$ **0.09**. Stocking 2 covers 91% of lead times, so **2 units** meet 90%. The mean (1.2) would have suggested 1, which covers only 49%.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+SES, Croston, SBA and TSB from scratch in numpy: the hand example, then a discontinued drill and a bias check. Expected: Croston's forecast after week 12 is 1.027 and SBA's 0.924; after discontinuation Croston stays flat while TSB fades; across many live drills Croston averages about 5% high and SBA is close to 0.75.
+
+<PyRunner title="Croston, SBA and TSB" code={`
+import numpy as np
+
+def ses(y, a, init):
+    f, out = init, []
+    for v in y:
+        out.append(f)
+        f += a * (v - f)
+    return np.array(out + [f])
+
+def croston(y, a, sba=False):
+    first = int(np.argmax(y > 0))
+    z, p, gap = y[first], first + 1.0, 0
+    for v in y[first + 1:]:
+        gap += 1
+        if v > 0:
+            z, p, gap = z + a * (v - z), p + a * (gap - p), 0
+    return (1 - a / 2 if sba else 1) * z / p
+
+def tsb(y, a, b):
+    first = int(np.argmax(y > 0))
+    z, d = y[first], 1 / (first + 1)
+    for v in y[first + 1:]:
+        d += b * ((v > 0) - d)
+        if v > 0:
+            z += a * (v - z)
+    return d * z
+
+hand = np.array([0, 0, 3, 0, 0, 0, 2, 0, 4, 0, 0, 0], dtype=float)
+print(f"SES ends at {ses(hand, 0.2, 0.0)[-1]:.3f}")
+print(f"Croston forecast after week 12: {croston(hand, 0.2):.3f}, SBA {croston(hand, 0.2, sba=True):.3f}")
+print(f"TSB ends at {tsb(hand, 0.2, 0.2):.3f}")
+
+# A drill: a sale in 30% of weeks, of 1 + Poisson(1.5) units; discontinued after week 78
+rng = np.random.default_rng(11)
+sale = rng.random(104) < 0.3
+size = 1 + rng.poisson(1.5, 104)
+drill = np.where(sale, size, 0).astype(float)
+drill[78:] = 0
+print(f"after discontinuation: Croston {croston(drill, 0.1):.3f}, TSB {tsb(drill, 0.1, 0.1):.3f}")
+
+# Bias on drills that keep selling (true rate 0.75)
+avg = {"Croston": [], "SBA": [], "TSB": []}
+for _ in range(500):
+    y = np.where(rng.random(200) < 0.3, 1 + rng.poisson(1.5, 200), 0).astype(float)
+    if y[:15].sum() == 0:
+        continue
+    ends = [(croston(y[:t], 0.1), croston(y[:t], 0.1, True), tsb(y[:t], 0.1, 0.1)) for t in range(40, 200, 20)]
+    for name, col in zip(avg, np.array(ends).T):
+        avg[name].append(col.mean())
+print("average forecast:", {k: round(float(np.mean(v)), 3) for k, v in avg.items()}, "(true 0.75)")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Classify first, then choose.** Compute ADI and CV² for every store-SKU and route each class to a method: smooth series to ETS or a global model, intermittent ones to SBA or TSB, lumpy ones to a distributional model. statsforecast has `CrostonOptimized`, `CrostonSBA`, `TSB` and `ADIDA` ready to run in bulk.
+- **Global models handle intermittency too.** A global LightGBM with a Tweedie objective (the [next lesson](/learn/retail/fc-tweedie-lgbm)) learns zeros directly and borrows strength across SKUs. It's the usual winner when there are useful features (price, promo, calendar). Croston-family methods remain strong, cheap baselines for the long tail.
+- **Score with the right metric.** WAPE rewards forecasting zero for slow movers (see [Baselines and Backtests](/learn/retail/fc-baselines)). Use bias, MASE, or better, pinball loss on the quantile that sets the stock.
+- **Detect obsolescence explicitly.** Don't rely on a smoother to notice a discontinued item. Join the product lifecycle status (delisted, superseded) and zero the forecast on the date. TSB's fade is a backstop, not the process.
+- **Pool for the rate, not just the item.** A store-SKU with 3 sales in a year has little to smooth. Hierarchical pooling across stores for the same SKU (the [hierarchical pooling](/learn/bayes/hierarchical-pooling) idea) often beats any single-series method.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why does simple exponential smoothing behave badly on intermittent demand?">
+
+It updates every period, so the forecast jumps after each sale and decays during the gaps. It ends up tracking time since the last sale rather than the underlying rate, and the orders it drives swing the wrong way. It isn't biased on average, but it's noisy where it matters.
+
+</QA>
+
+<QA q="Explain Croston's method and its main flaw.">
+
+Croston smooths the non-zero demand sizes and the intervals between them separately, updating only when demand occurs, and forecasts size divided by interval. Its flaw is a positive bias, because the expectation of a ratio isn't the ratio of expectations. The SBA correction multiplies by (1 − α/2). It also never decays if demand stops, which TSB fixes by smoothing the demand probability every period.
+
+</QA>
+
+<QA q="How would you set stock levels for a slow-moving SKU?">
+
+From the distribution of demand over the lead time, not the mean: model the number of sales and their sizes (or fit a negative binomial / Tweedie), simulate or compute lead-time demand, and stock to the quantile matching the target service level. Then backtest the achieved service level.
+
+</QA>
+
+<Trap>
+
+**"Croston is unbiased because it smooths the sizes and the intervals separately."** Each piece can be unbiased, and the ratio is still biased upward: dividing by a noisy interval inflates the average. In the simulation Croston ran about 6% high; SBA's (1 − α/2) factor removes most of it.
+
+</Trap>
+
+</Section>

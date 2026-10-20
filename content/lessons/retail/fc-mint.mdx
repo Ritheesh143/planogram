@@ -1,0 +1,294 @@
+<Section id="floor">
+
+Three teams forecast next week's paint sales. Store managers forecast their own stores: **60** at store A and **45** at store B. The region planner forecasts the region: **100**. The warehouse ships to the region, the stores stock their shelves, and finance books the total, and the numbers don't add up: 60 + 45 = 105, not 100.
+
+Somebody has to pick one set of numbers that adds up (a **coherent** forecast), and ideally a set that is *more* accurate than any team's alone. Each team saw something the others didn't: the store managers know their local events, and the region total is smoother and easier to forecast. Reconciliation combines them.
+
+<KeyIdea>
+
+**Coherent forecasts are the ones that add up, and they form a flat subspace. Reconciliation projects the base forecasts onto it.** Bottom-up keeps the stores and ignores the total. OLS splits the disagreement equally. **MinT** weights by each forecast's error variance, so the least reliable forecasts move the most, and with the right weights every level gets more accurate, not just consistent.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Base forecasts: **total 100, A 60, B 45**. The gap is $100 - (60 + 45) =$ **−5**.
+
+<Steps>
+<Step>
+
+**Bottom-up:** add the stores. Total **105**, A 60, B 45. The region planner's information is thrown away.
+
+</Step>
+<Step>
+
+**Top-down:** keep the total and split it in the stores' proportions, 60 : 45. A gets $100 \times 60/105 =$ **57.14** and B gets **42.86**. Now the stores' local knowledge only survives as a ratio.
+
+</Step>
+<Step>
+
+**OLS (equal trust).** Spread the disagreement of 5 equally across the three numbers: total up 1.67, each store down 1.67. Result: **101.67 = 58.33 + 43.33**. It adds up.
+
+</Step>
+<Step>
+
+**The same thing with matrices.** Every coherent forecast is $S b$ for some store forecasts $b$, with summing matrix $S$ (rows: total, A, B):
+
+$$
+S = \begin{pmatrix} 1 & 1 \\ 1 & 0 \\ 0 & 1 \end{pmatrix}, \quad S^\top S = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}, \quad S^\top \hat y = \begin{pmatrix} 160 \\ 145 \end{pmatrix}
+$$
+
+$\tilde b = (S^\top S)^{-1} S^\top \hat y = \tfrac13 (2 \cdot 160 - 145,\; 2 \cdot 145 - 160) = (58.33, 43.33)$. That is least squares, as in [linear regression](/models/linear-regression): the closest coherent point to the base forecasts.
+
+</Step>
+<Step>
+
+**MinT (weighted by error variance).** Past errors had variance **25** for the total, **16** for A and **9** for B (sum 50). Each forecast absorbs the gap in proportion to its variance: total $+5 \times 25/50 =$ **+2.5**, A $-5 \times 16/50 =$ **−1.6**, B $-5 \times 9/50 =$ **−0.9**. Result: **102.5 = 58.4 + 44.1**. Store B's manager has the best track record, so B moves least.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="If the region total is forecast very reliably (error sd 1, against 4 and 3 for the stores), where does MinT put the total?" options={["Near 105: the stores win", "Near 100: the total wins", "Exactly 102.5, whatever the weights"]} answer={1}>
+
+**Near 100**: at 100.19. A forecast with tiny error variance barely moves, and the stores take almost all of the gap (A 56.92, B 43.27).
+
+</Predict>
+
+<Reconciler />
+
+**Try this:**
+
+1. **MinT** with the total's error sd at 5: **102.5 = 58.4 + 44.1**, the hand result.
+2. Switch to **OLS**: **101.67 = 58.33 + 43.33**. Equal trust, equal moves.
+3. Back on MinT, slide the **total's error sd to 1**: **100.19 = 56.92 + 43.27**. Then to **10**: 104 = 59.36 + 44.64. The weights decide who gives way.
+4. **Top-down** gives 100 = 57.14 + 42.86, and **bottom-up** 105 = 60 + 45: the two extremes, each ignoring one team.
+5. Set the base **total to 105**. The gap is 0, and every method returns the base forecasts unchanged: they were already coherent.
+
+</Section>
+
+<Section id="simulate">
+
+A larger hierarchy: **total → 2 regions → 4 stores**. Each of the 7 nodes has its own forecaster, with independent errors: sd 25 at the total, 20 per region, 15 per store. Over 20,000 simulated weeks, compare the error at each level after each method:
+
+<MinTStudy />
+
+| RMSE | Total | Region | Store |
+|---|---|---|---|
+| Base (doesn't add up) | 25.0 | 20.0 | 15.0 |
+| Bottom-up | 29.9 | 21.2 | 15.0 |
+| OLS | 16.9 | 13.6 | 12.7 |
+| **MinT (WLS)** | **15.8** | **13.0** | **12.5** |
+
+- **Bottom-up is worse than base at the top:** four store errors add up to an sd of $\sqrt{4 \times 15^2} = 30$, worse than the total's own 25.
+- **Reconciliation improves every level,** not just the top. The store forecasts get better too (15.0 to 12.5), because the region and total forecasts carry independent information about the same stores.
+- **The simulation matches the algebra.** The exact reconciled sds are 15.89, 13.00 and 12.44 for MinT and 16.96, 13.63 and 12.61 for OLS.
+
+</Section>
+
+<Section id="formula">
+
+**Coherence.** Stack all $n$ node forecasts into $\hat y$. With $m$ bottom-level series and the $n \times m$ summing matrix $S$, a forecast is coherent exactly when $\tilde y = S \tilde b$ for some bottom-level $\tilde b$: it lies in the column space of $S$.
+
+**Reconciliation as projection.** For a symmetric positive-definite weight matrix $W$:
+
+$$
+\tilde y = S (S^\top W^{-1} S)^{-1} S^\top W^{-1} \hat y = P \hat y
+$$
+
+- $W = I$: OLS, the orthogonal projection.
+- $W = \operatorname{diag}(\hat\sigma_i^2)$: WLS, MinT's variance-scaling version.
+- $W = \hat\Sigma$, the full covariance of base-forecast errors, estimated with shrinkage: **MinT** proper.
+
+**Unbiasedness.** $PS = S$, so a forecast that is already coherent is left alone, and unbiased base forecasts stay unbiased.
+
+**Minimum trace.** Wickramasuriya, Athanasopoulos and Hyndman (2019) showed that $W = \Sigma$ minimizes the total variance of the reconciled errors, $\operatorname{tr}(P \Sigma P^\top)$, among all unbiased linear reconciliations.
+
+<Depth min={2}>
+
+**The three-node case, solved.** With total $T$ and stores $A$, $B$ having error variances $\sigma_T^2, \sigma_A^2, \sigma_B^2$, let the gap be $d = \hat T - \hat A - \hat B$ and $\Sigma = \sigma_T^2 + \sigma_A^2 + \sigma_B^2$. Then
+
+$$
+\tilde T = \hat T - d\,\frac{\sigma_T^2}{\Sigma}, \qquad \tilde A = \hat A + d\,\frac{\sigma_A^2}{\Sigma}, \qquad \tilde B = \hat B + d\,\frac{\sigma_B^2}{\Sigma}
+$$
+
+Check: $\tilde T - \tilde A - \tilde B = d - d = 0$. With equal variances, each moves by d/3: OLS.
+
+**Top-down's flaw.** Splitting a total by historical proportions is coherent but biased whenever store shares change (a new competitor near store A), and it can't use store-level information. Bottom-up is unbiased but noisy at the top. Projection methods use every level.
+
+**Estimating W.** Use the in-sample one-step residuals of each base model:
+
+- **variance scaling** (WLS): only the diagonal;
+- **structural scaling:** variances proportional to the number of bottom series under each node, so it needs no residuals at all;
+- **shrinkage:** the full sample covariance shrunk toward its diagonal (MinT-shrink). This is the usual default when there are many series.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why it can't hurt any node (for the right W).** With $W = \Sigma$, the reconciled forecast of any node, and indeed of any linear combination $a^\top y$, is the minimum-variance unbiased linear combination of all the base forecasts. The node's own base forecast is itself one unbiased linear combination of the base forecasts, so the reconciled variance can't be larger. With a mis-specified W (say OLS when variances differ), improvements are typical but not guaranteed.
+
+**An oblique projection.** P is idempotent ($P^2 = P$), but it is orthogonal only in the inner product $\langle u, v\rangle = u^\top W^{-1} v$. Geometrically, MinT measures distance in units of each forecast's uncertainty and finds the closest coherent point in those units: the [Projection thread](/threads) from least squares, now with weights.
+
+**Negative and integer forecasts.** Projection can push a small store's forecast below zero. Non-negative reconciliation solves the same weighted least squares problem with $\tilde b \ge 0$ (a quadratic program). Probabilistic reconciliation projects samples, or each quantile path, instead of point forecasts.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Is it coherent?">
+
+Region 230; stores 90, 80 and 70. Coherent? What does bottom-up give?
+
+<Solution>
+
+$90 + 80 + 70 = 240 \ne 230$: **not coherent**. Bottom-up gives a region forecast of **240**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="OLS by hand">
+
+Total 200, A 120, B 70. Reconcile with equal weights.
+
+<Solution>
+
+The gap is $200 - 190 = 10$, split 3 ways: total $200 - 3.33 =$ **196.67**, A **123.33**, B **73.33**. Check: 123.33 + 73.33 = 196.67.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="MinT by hand">
+
+Same forecasts, with error variances 4 (total), 16 (A) and 20 (B). Reconcile with WLS.
+
+<Solution>
+
+The sum of variances is 40 and $d = 10$. Total: $200 - 10 \times 4/40 =$ **199**. A: $120 + 10 \times 16/40 =$ **124**. B: $70 + 10 \times 20/40 =$ **75**. Check: 124 + 75 = 199. The reliable total barely moves.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Bottom-up error at the top">
+
+Ten stores' forecasts each have independent errors with sd 12. What's the sd of the bottom-up total? If the total's own forecast has sd 25, which is better at the top?
+
+<Solution>
+
+$12\sqrt{10} \approx$ **37.9**. The total's own forecast (25) is better at the top, which is why bottom-up throws away value.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="The summing matrix">
+
+Write S for total → regions (N, S) → stores (N1, N2) and (S1, S2). How many rows and columns? What does $S^\top S$ look like?
+
+<Solution>
+
+**7 × 4**. The rows are the total (1,1,1,1), N (1,1,0,0), S (0,0,1,1), then the identity for the four stores. $S^\top S$ has 3 on the diagonal (each store appears in the total, its region and itself), 2 for two stores in the same region, and 1 for stores in different regions.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Already coherent">
+
+Show that reconciliation leaves a coherent forecast unchanged, for any W.
+
+<Solution>
+
+If $\hat y = S b$, then $P\hat y = S(S^\top W^{-1}S)^{-1}S^\top W^{-1} S b = S b$, since $(S^\top W^{-1}S)^{-1}(S^\top W^{-1}S) = I$. So $PS = S$, and coherent forecasts (and unbiased ones) pass through unchanged.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Reconciliation in numpy: the hand example with every method, then the seven-node hierarchy with its exact reconciled error sds. Expected: OLS gives 101.67 = 58.33 + 43.33, MinT gives 102.5 = 58.4 + 44.1, and in the seven-node hierarchy MinT's error sd at the total is 15.89 against the base forecast's 25.
+
+<PyRunner title="Reconcile a hierarchy" code={`
+import numpy as np
+
+def reconcile(S, yhat, w):
+    Winv = np.diag(1 / np.asarray(w, dtype=float))
+    b = np.linalg.solve(S.T @ Winv @ S, S.T @ Winv @ yhat)
+    return S @ b
+
+# By hand: total, A, B
+S3 = np.array([[1, 1], [1, 0], [0, 1]], dtype=float)
+yhat = np.array([100, 60, 45], dtype=float)
+print("bottom-up:", S3 @ yhat[1:])
+print("top-down: ", np.round([100, 100 * 60 / 105, 100 * 45 / 105], 2))
+print("OLS:      ", np.round(reconcile(S3, yhat, [1, 1, 1]), 2))
+print("MinT/WLS: ", np.round(reconcile(S3, yhat, [25, 16, 9]), 2))
+
+# Total -> 2 regions -> 4 stores; each node's forecaster has its own independent error
+S7 = np.array([[1, 1, 1, 1], [1, 1, 0, 0], [0, 0, 1, 1],
+               [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=float)
+sd = np.array([25, 20, 20, 15, 15, 15, 15], dtype=float)
+
+def projection(S, w):
+    Winv = np.diag(1 / np.asarray(w, dtype=float))
+    return S @ np.linalg.solve(S.T @ Winv @ S, S.T @ Winv)
+
+for name, w in [("OLS", np.ones(7)), ("MinT", sd ** 2)]:
+    P = projection(S7, w)
+    exact = np.sqrt(np.diag(P @ np.diag(sd ** 2) @ P.T))
+    print(f"{name:4s} error sd: total {exact[0]:.2f}, region {exact[1]:.2f}, store {exact[3]:.2f}")
+    print("     P S = S:", np.allclose(P @ S7, S7))
+
+# Check by simulation
+rng = np.random.default_rng(0)
+E = rng.normal(0, sd, size=(20000, 7))
+rec = E @ projection(S7, sd ** 2).T
+print("simulated MinT RMSE by node:", np.round(np.sqrt((rec ** 2).mean(axis=0)), 1))
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Reconcile across the planning hierarchy, not just geography.** A retailer has store → region → national and SKU → subcategory → category → department, crossed (a grouped hierarchy), plus time (days → weeks → months: temporal hierarchies). The same projection handles all of them; S just gets bigger and sparser.
+- **Use sparse algebra at scale.** 10,000 stores × 5,000 SKUs is 50 million bottom series. Don't form $S^\top W^{-1} S$ densely. Use sparse solvers, reconcile per category in parallel, or use structural or diagonal W, where the solution has a cheap closed form.
+- **Base models can be different at each level.** A global LightGBM at store-SKU, ETS at region-category and a judgmental forecast at national: reconciliation doesn't care how the base forecasts were made, only how reliable they are (W). That's how judgmental adjustments get folded in coherently.
+- **Watch for negatives and integer needs.** Small store-SKU forecasts can go negative after projection. Use non-negative reconciliation (`hierarchicalforecast`'s MinT with `nonnegative=True`) and round at execution time, not before reconciling.
+- **Probabilistic forecasts need probabilistic reconciliation.** Reconcile sample paths or use bootstrapped residuals, so the region's 95th percentile is consistent with the stores' joint distribution, not the sum of their 95th percentiles.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is forecast reconciliation and why do we need it?">
+
+Forecasts made independently at different levels of a hierarchy (store, region, total) don't add up, but planning needs one consistent set. Reconciliation maps the base forecasts onto the coherent subspace $\tilde y = S\tilde b$. Done well (MinT), it also improves accuracy, because it pools the information from every level.
+
+</QA>
+
+<QA q="Compare bottom-up, top-down and MinT.">
+
+Bottom-up sums the bottom forecasts: unbiased, but noisy at aggregate levels, and it ignores aggregate information. Top-down disaggregates a top forecast by proportions: it's smooth, but biased when mixes shift, and it loses local information. MinT projects all base forecasts onto the coherent subspace, weighting by the inverse error covariance, which minimizes the total reconciled error variance among unbiased linear methods.
+
+</QA>
+
+<QA q="What does the matrix W do in MinT, and how do you estimate it?">
+
+W is the covariance of the base forecast errors. Forecasts with larger error variance get less weight, so they move more during reconciliation. Estimate it from in-sample one-step residuals: the diagonal only (WLS), structural scaling, or a shrinkage estimator of the full covariance when there are many series.
+
+</QA>
+
+<Trap>
+
+**"Reconciliation only makes the numbers add up; it can't improve accuracy."** With sensible weights it does both. In the simulation, MinT cut the total's RMSE from 25 to 15.8 and the stores' from 15 to 12.5. The other levels' forecasts carry independent information about each node, and the projection combines it.
+
+</Trap>
+
+</Section>

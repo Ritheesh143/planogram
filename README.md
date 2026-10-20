@@ -37,6 +37,13 @@ naive, rolling-origin folds, WAPE with bias and MASE, and why WAPE prefers zero 
 *Exponential Smoothing as Geometric Weights* (α from the signal-to-noise ratio) and *ARIMA
 Intuition* (AR, MA and differencing read off the ACF and PACF, and the forecast fan).
 
+**M4, batch 2b: hard demand and global models (Signature B).** *Demand ≠ Sales* (the censored
+likelihood behind an empty shelf, and the stockout spiral it prevents), *Intermittent Demand*
+(Croston, SBA and TSB, and which one notices a discontinued item), *Global Boosting and the Tweedie
+Loss* (the loss and its gradient derived, and why log-link stumps fit multiplied effects) and
+*Hierarchical Reconciliation as Projection* (bottom-up, OLS and MinT, and how reconciling improves
+every level).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also

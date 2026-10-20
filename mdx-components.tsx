@@ -33,6 +33,8 @@ import { ABTest, PeekingStudy } from "@/components/viz/BayesAB";
 import { MMMBridge, MMMStudy, SpendTogether } from "@/components/viz/MMMBridge";
 import { ACFExplorer, Decomposer, HoldoutStudy, NoiseACF, RollingOrigin, SlowMover } from "@/components/viz/ForecastBasics";
 import { ACFPACFLab, AlphaStudy, ForecastFan, SESExplorer } from "@/components/viz/Smoothing";
+import { CensoredShelf, DrillForecasts, IntermittentStudy, ShelfSpiral } from "@/components/viz/HardDemand";
+import { GlobalBoost, MinTStudy, Reconciler, TweedieShape } from "@/components/viz/GlobalModels";
 
 // Lesson building blocks are available in every MDX file without imports.
 const components: MDXComponents = {
@@ -90,6 +92,14 @@ const components: MDXComponents = {
   AlphaStudy,
   ACFPACFLab,
   ForecastFan,
+  CensoredShelf,
+  ShelfSpiral,
+  DrillForecasts,
+  IntermittentStudy,
+  TweedieShape,
+  GlobalBoost,
+  Reconciler,
+  MinTStudy,
   CountingWorlds,
   CIRepeat,
   LikelihoodDial,

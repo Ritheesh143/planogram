@@ -34,6 +34,10 @@ const lessons: [string, string][] = [
   ["/learn/retail/fc-baselines", "seasonal naive: WAPE 4.34%, bias -4.14%, MASE 1.86"],
   ["/learn/retail/fc-ets", "week 7 forecast: 2603.36"],
   ["/learn/retail/fc-arima", "AR(1) forecasts: 2920.0, 2872.0, 2843.2, 2825.9"],
+  ["/learn/retail/fc-censored-demand", "censored MLE:            12.23"],
+  ["/learn/retail/fc-intermittent", "Croston forecast after week 12: 1.027, SBA 0.924"],
+  ["/learn/retail/fc-tweedie-lgbm", "step -0.667: leaf 2.00 -> 1.03 (leaf mean 1.00)"],
+  ["/learn/retail/fc-mint", "MinT error sd: total 15.89, region 13.00, store 12.44"],
 ];
 
 for (const [path, expected] of lessons) {

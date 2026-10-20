@@ -401,3 +401,56 @@ test("ARIMA: AR, MA and random-walk signatures, and the forecast fan", async ({ 
   await expect(page.getByTestId("ff-sd-26")).toHaveText("507");
   await expect(page.getByTestId("ff-mid")).toHaveText("3,003");
 });
+
+test("Censored demand: the likelihood sees past the empty shelf", async ({ page }) => {
+  await page.goto("/learn/retail/fc-censored-demand");
+  await expect(page.getByTestId("cs-out")).toHaveText("55%");
+  await expect(page.getByTestId("cs-naive")).toHaveText("10.73");
+  await expect(page.getByTestId("cs-dropped")).toHaveText("9.16");
+  await expect(page.getByTestId("cs-mle")).toHaveText("12.19");
+  await setRange(page, "cs-shelf", 16);
+  await expect(page.getByTestId("cs-mle")).toHaveText("12.37");
+  await expect(page.getByTestId("sp-naive-end")).toHaveText("9");
+  await expect(page.getByTestId("sp-naive-lost")).toHaveText("19.4%");
+  await expect(page.getByTestId("sp-mle-lost")).toHaveText("9.7%");
+});
+
+test("Intermittent demand: Croston never notices a dead item, TSB does", async ({ page }) => {
+  await page.goto("/learn/retail/fc-intermittent");
+  await expect(page.getByTestId("dr-78")).toHaveText("0.633");
+  await expect(page.getByTestId("dr-end")).toHaveText("0.633");
+  await expect(page.getByTestId("dr-dead")).toHaveText("16.5");
+  await page.getByRole("radio", { name: "TSB" }).click();
+  await expect(page.getByTestId("dr-end")).toHaveText("0.050");
+  await expect(page.getByTestId("dr-dead")).toHaveText("7.2");
+  await expect(page.getByTestId("is-mean-croston")).toHaveText("0.798");
+  await expect(page.getByTestId("is-rmse-sba")).toHaveText("0.206");
+});
+
+test("Tweedie: the zero spike, and log-link stumps beat squared error", async ({ page }) => {
+  await page.goto("/learn/retail/fc-tweedie-lgbm");
+  await expect(page.getByTestId("tw-p0")).toHaveText("0.059");
+  await expect(page.getByTestId("tw-mean")).toHaveText("2.01");
+  await setRange(page, "tw-mu", 0);
+  await setRange(page, "tw-p", 1.2);
+  await expect(page.getByTestId("tw-p0")).toHaveText("0.621");
+  await expect(page.getByTestId("gb-sq")).toHaveText("183.4%", { timeout: 20_000 });
+  await expect(page.getByTestId("gb-neg")).toHaveText("285");
+  await expect(page.getByTestId("gb-tw")).toHaveText("9.6%");
+  await page.getByRole("radio", { name: "Depth 4" }).click();
+  await expect(page.getByTestId("gb-tw")).toHaveText("22.9%", { timeout: 20_000 });
+});
+
+test("MinT: reconciliation by variance, and every level improves", async ({ page }) => {
+  await page.goto("/learn/retail/fc-mint");
+  await expect(page.getByTestId("rc-gap")).toHaveText("-5");
+  await expect(page.getByTestId("rc-total")).toHaveText("102.5");
+  await expect(page.getByTestId("rc-a")).toHaveText("58.4");
+  await setRange(page, "rc-sd", 1);
+  await expect(page.getByTestId("rc-total")).toHaveText("100.19");
+  await page.getByRole("radio", { name: "OLS" }).click();
+  await expect(page.getByTestId("rc-total")).toHaveText("101.67");
+  await expect(page.getByTestId("mt-bu-total")).toHaveText("29.9");
+  await expect(page.getByTestId("mt-wls-total")).toHaveText("15.8");
+  await expect(page.getByTestId("mt-wls-stores")).toHaveText("12.5");
+});

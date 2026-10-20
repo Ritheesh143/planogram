@@ -816,6 +816,42 @@
   "title": "When does zero win?"
  },
  {
+  "slug": "fc-censored-demand",
+  "n": 1,
+  "level": "easy",
+  "title": "Spot the floor"
+ },
+ {
+  "slug": "fc-censored-demand",
+  "n": 2,
+  "level": "easy",
+  "title": "Two wrong averages"
+ },
+ {
+  "slug": "fc-censored-demand",
+  "n": 3,
+  "level": "medium",
+  "title": "A censored day's likelihood"
+ },
+ {
+  "slug": "fc-censored-demand",
+  "n": 4,
+  "level": "medium",
+  "title": "Lost sales on a right-sized shelf"
+ },
+ {
+  "slug": "fc-censored-demand",
+  "n": 5,
+  "level": "hard",
+  "title": "One EM step"
+ },
+ {
+  "slug": "fc-censored-demand",
+  "n": 6,
+  "level": "hard",
+  "title": "Always sold out"
+ },
+ {
   "slug": "fc-ets",
   "n": 1,
   "level": "easy",
@@ -850,6 +886,114 @@
   "n": 6,
   "level": "hard",
   "title": "Optimal α"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 1,
+  "level": "easy",
+  "title": "ADI"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 2,
+  "level": "easy",
+  "title": "A Croston forecast"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 3,
+  "level": "medium",
+  "title": "One Croston update"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 4,
+  "level": "medium",
+  "title": "TSB fading out"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 5,
+  "level": "hard",
+  "title": "The sawtooth"
+ },
+ {
+  "slug": "fc-intermittent",
+  "n": 6,
+  "level": "hard",
+  "title": "Stock for the lead time"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 1,
+  "level": "easy",
+  "title": "Is it coherent?"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 2,
+  "level": "easy",
+  "title": "OLS by hand"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 3,
+  "level": "medium",
+  "title": "MinT by hand"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 4,
+  "level": "medium",
+  "title": "Bottom-up error at the top"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 5,
+  "level": "hard",
+  "title": "The summing matrix"
+ },
+ {
+  "slug": "fc-mint",
+  "n": 6,
+  "level": "hard",
+  "title": "Already coherent"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 1,
+  "level": "easy",
+  "title": "Where's the zero spike?"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 2,
+  "level": "easy",
+  "title": "Variance by power"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 3,
+  "level": "medium",
+  "title": "A gradient"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 4,
+  "level": "medium",
+  "title": "Multiplicative to additive"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 5,
+  "level": "hard",
+  "title": "Leakage in lag features"
+ },
+ {
+  "slug": "fc-tweedie-lgbm",
+  "n": 6,
+  "level": "hard",
+  "title": "Each leaf is an average"
  },
  {
   "slug": "decision-tree",

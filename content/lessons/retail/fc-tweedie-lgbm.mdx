@@ -1,0 +1,305 @@
+<Section id="floor">
+
+Bolt & Beam wants one forecasting model for every store × SKU, not 10,000 separate ones. One **global** gradient-boosted model, trained on all series at once, can learn that Saturdays lift everything, that promotions double a SKU, and that a slow SKU in a big store still sells more than in a small one. It can then apply all of that to a series with little history of its own.
+
+But which loss? Nearly half the store-SKU-days in the chain sold **nothing**, a few sold dozens, and the effects multiply rather than add. Squared error was built for none of this. The M5 forecasting competition's winning recipe was a global LightGBM with the **Tweedie** loss, and this lesson is why.
+
+<KeyIdea>
+
+**Tweedie is a Poisson number of purchases, each of a random size: a spike at zero plus a skewed spread, with variance growing like μᵖ.** Trained with a **log link**, a global model predicts log demand, so store, weekday and promotion effects that *multiply* sales become effects that *add* in log space, and even one-split trees can capture them. The gradient is just the residual weighted by μ¹⁻ᵖ, so boosting with Tweedie is barely harder than boosting with squared error.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**A Tweedie day, built by hand.** Take a SKU with mean sales μ = 2 a day, variance power p = 1.5 and dispersion φ = 1. The compound Poisson–gamma recipe gives:
+
+- **Baskets per day:** $\lambda = \mu^{2-p}/(\varphi(2 - p)) = \sqrt2/0.5 =$ **2.83**, so $P(\text{no sale}) = e^{-2.83} =$ **0.059**.
+- **Units per basket:** each is Gamma with shape $(2 - p)/(p - 1) = 1$ and scale $\varphi(p - 1)\mu^{p-1} = 0.5\sqrt2 =$ **0.707**.
+- **Check:** the mean is $2.83 \times 0.707 =$ **2.0**, and the variance is $\mu^p = 2^{1.5} =$ **2.83**.
+
+</Step>
+<Step>
+
+**The loss.** The negative log-likelihood, keeping only the terms that involve μ, is
+
+$$
+\ell(y, \mu) = -\frac{y\, \mu^{1-p}}{1 - p} + \frac{\mu^{2-p}}{2 - p}
+$$
+
+For a zero day only the second term remains: it pushes μ down, but gently ($\propto \sqrt\mu$ at p = 1.5), not quadratically like squared error.
+
+</Step>
+<Step>
+
+**With the log link** $F = \log\mu$, the derivatives are short:
+
+$$
+g = \frac{\partial \ell}{\partial F} = \mu^{1-p}(\mu - y), \qquad h = \frac{\partial^2 \ell}{\partial F^2} = \mu^{1-p}\big((2-p)\mu - (1-p)\,y\big)
+$$
+
+The gradient is the plain residual μ − y, weighted by $\mu^{1-p}$. That weight is large for small μ, so slow SKUs aren't drowned out by fast ones.
+
+</Step>
+<Step>
+
+**One Newton step for a leaf.** A leaf holds four store-days with sales 0, 0, 3 and 1, currently predicted at μ = 2 (F = log 2). With $\mu^{-0.5} = 0.7071$:
+
+| Sales y | 0 | 0 | 3 | 1 | Sum |
+|---|---|---|---|---|---|
+| g = 0.7071 × (2 − y) | 1.414 | 1.414 | −0.707 | 0.707 | G = **2.828** |
+| h = 0.7071 × (1 + 0.5y) | 0.707 | 0.707 | 1.768 | 1.061 | H = **4.243** |
+
+The leaf's step is $-G/H =$ **−0.667** in log space, so the prediction becomes $2e^{-0.667} =$ **1.03**. The leaf's actual average is 1.0: one Newton step lands almost exactly on it.
+
+</Step>
+<Step>
+
+**Why the log link matters.** Suppose a big store sells 1.4×, Saturday sells 1.5× and a promotion 2×. On the raw scale the combined effect is a product, $1.4 \times 1.5 \times 2 = 4.2\times$, which additive trees can only approximate with many interacting splits. In log space it is a sum, $\log 1.4 + \log 1.5 + \log 2$: one split per effect.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="A slow SKU averages μ = 0.3 a day with variance power p = 1.2. Roughly what share of days sell nothing?" options={["About 5%", "About 30%", "About 60%"]} answer={2}>
+
+**About 60%.** Baskets per day: $\lambda = 0.3^{0.8}/0.8 = 0.477$, so $P(0) = e^{-0.477} = 0.621$. Most of the time nobody buys it, which is exactly the data a global model sees for the long tail.
+
+</Predict>
+
+<TweedieShape />
+
+**Try this:**
+
+1. Start at **μ = 2, p = 1.5**: a 5.9% spike at zero (5.7% in 4,000 draws), mean **2.01**, variance **2.76** against the theory's 2.83.
+2. Drop to **μ = 0.3** and set **p = 1.2**: **62%** of days are zeros. At p = 1.5 the same mean has only 33% zeros but bigger baskets.
+3. Go to **μ = 10, p = 1.1**: almost no zeros, and a variance of 12.59, close to Poisson's 10.
+4. Push **p to 1.9** at μ = 10: the variance jumps to about 74 (theory $10^{1.9} = 79.4$). A few huge baskets; this is gamma-like.
+
+</Section>
+
+<Section id="simulate">
+
+A chain of **8 stores × 12 SKUs**, 70 days. Demand multiplies store, SKU, weekday and promotion effects, and arrives in shopper baskets: 45% of store-SKU-days sell nothing, and the SKUs range from 18 a day down to 0.15. Train one global model on the first 8 weeks and forecast the last 2. Because this is a simulation, we can score each model against the **true** demand rate, not just the noisy sales:
+
+<GlobalBoost />
+
+- **With stumps, the log link wins outright.** After 200 one-split trees, Tweedie is within **9.6%** of the true demand on average and Poisson within **11.3%**. Squared error is off by **183%** and predicts *negative* sales for **285** of 1,344 test rows: added effects can't express multiplied ones.
+- **Deeper trees rescue squared error, then everything overfits.** At depth 4 all three reach 14–18% around 50–70 trees, then drift up to 23% by 200 (Tweedie's best: **14.4%** at 50 trees). Early stopping on a validation fold isn't optional.
+- **WAPE against actual sales barely separates them** at depth 4 (51.8% against 51.5%): on single store-SKU-days, the noise swamps the signal. Judging a loss needs enough data, and a look at bias and quantiles, not one headline WAPE.
+
+</Section>
+
+<Section id="formula">
+
+**The Tweedie family.** All exponential-family distributions whose variance is a power of the mean:
+
+$$
+\operatorname{Var}(Y) = \varphi\, \mu^p: \quad p = 0 \text{ Normal}, \ p = 1 \text{ Poisson}, \ p = 2 \text{ Gamma}, \ 1 \lt p \lt 2 \text{ compound Poisson–gamma}
+$$
+
+For $1 \lt p \lt 2$, $Y = \sum_{i=1}^{N} G_i$ with $N \sim \text{Poisson}(\lambda)$ and $G_i \sim \text{Gamma}$, with
+
+$$
+\lambda = \frac{\mu^{2-p}}{\varphi(2-p)}, \qquad \text{shape} = \frac{2-p}{p-1}, \qquad \text{scale} = \varphi(p-1)\mu^{p-1}
+$$
+
+**The training loss** is the negative log-likelihood in μ (the deviance, up to constants):
+
+$$
+\ell(y, \mu) = -\frac{y\,\mu^{1-p}}{1-p} + \frac{\mu^{2-p}}{2-p}, \qquad g = \mu^{1-p}(\mu - y), \qquad h = \mu^{1-p}\big((2-p)\mu - (1-p)y\big)
+$$
+
+LightGBM's `objective="tweedie"` uses exactly these, with `tweedie_variance_power` = p (default 1.5), a log link, and a starting score of log(mean sales).
+
+**A global model** is one model trained on rows from every series:
+
+- the features include series identifiers (store, SKU, category) as categorical features;
+- calendar, price and promotion;
+- and lag features (sales 7, 14 and 28 days back; rolling means), always lagged by at least the forecast horizon, so nothing at prediction time comes from the future.
+
+<Depth min={2}>
+
+**Choosing p.** Fit the model at several powers (say 1.1, 1.3, 1.5) and compare them on a validation fold, by a metric that doesn't depend on p: WAPE, bias, or pinball loss at the quantiles you'll use. Raw deviances at different p are on different scales and can't be compared directly. Counts that arrive one at a time suggest p near 1; demand that arrives in bulk baskets suggests 1.3–1.6.
+
+**Why Poisson isn't enough.** Poisson forces the variance to equal the mean. Real store demand is overdispersed: baskets bring several units, and days vary. The mean forecasts can still be fine (the score equation only needs the mean right), but anything built on the spread, like intervals and safety stock, will be far too narrow. Tweedie lets the spread grow faster than the mean.
+
+**Recursive or direct?** To forecast 14 days ahead with lag features, either:
+
+- **recursive:** predict day 1, feed it in as a lag, then predict day 2, and so on (errors compound);
+- **direct:** train separate models, or a horizon feature, with lags of at least h.
+
+Most production retail setups use direct models for each horizon bucket.
+
+</Depth>
+
+<Depth min={3}>
+
+**Each leaf is a weighted mean.** At convergence, a leaf's prediction μ satisfies $\sum_{\text{leaf}} g_i = 0$, that is $\mu^{1-p}\sum (\mu - y_i) = 0$, so μ is the leaf's **plain average**: Tweedie and Poisson boosting are calibrated in every leaf, which the Newton step above nearly achieved in one move. Across leaves, the $\mu^{1-p}$ weights decide how much each region's errors count when trees are grown.
+
+**Why squared stumps go negative.** With squared loss and one split per tree, the model is additive on the raw scale: $\hat y = b + f_1(\text{store}) + f_2(\text{SKU}) + f_3(\text{day}) + f_4(\text{promo})$. The truth is multiplicative, so for a slow SKU in a small store on a quiet day, the additive pieces (each sized for the average SKU) can sum below zero. Under a log link, the same additive structure is exactly right.
+
+**The density has no closed form.** For $1 \lt p \lt 2$, the Tweedie density is an infinite series (Dunn and Smyth evaluate it numerically). Boosting never needs it: only the μ-terms of the log-likelihood enter the gradient, and those are simple.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Where's the zero spike?">
+
+A SKU has μ = 1, p = 1.5, φ = 1. What is λ, and what share of days sell nothing?
+
+<Solution>
+
+$\lambda = 1^{0.5}/0.5 =$ **2**, so $P(0) = e^{-2} \approx$ **0.135**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Variance by power">
+
+Mean daily sales are 4 with φ = 1. What's the variance under p = 1, 1.5 and 2?
+
+<Solution>
+
+$4^1 =$ **4** (Poisson), $4^{1.5} =$ **8**, and $4^2 =$ **16** (Gamma).
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A gradient">
+
+With p = 1.5 and current prediction μ = 4, find g for sales y = 0 and for y = 10.
+
+<Solution>
+
+$\mu^{-0.5} = 0.5$. For y = 0: $g = 0.5 \times 4 =$ **2**. For y = 10: $g = 0.5 \times (4 - 10) =$ **−3**. Both are residuals scaled by 0.5. At μ = 0.25 the scale would be 2: slow items get louder gradients.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Multiplicative to additive">
+
+Store A sells 1.5× the chain average, promos add ×2 and Saturdays ×1.4. In log space, what's the combined effect, and the multiplier?
+
+<Solution>
+
+$\log 1.5 + \log 2 + \log 1.4 = 0.405 + 0.693 + 0.336 =$ **1.435**, a multiplier of $e^{1.435} =$ **4.2×**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Leakage in lag features">
+
+You forecast 7 days ahead and include "sales yesterday" as a feature. Your backtest WAPE is excellent. What's wrong, and how do you fix it?
+
+<Solution>
+
+On day 7 of the horizon, "yesterday" is day 6, which you don't know when you make the forecast. The backtest used real values and leaked the future. Use lags of at least 7 (7, 14, 28), or a recursive scheme that feeds in its own predictions, or one direct model per horizon.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Each leaf is an average">
+
+Show that a leaf's Tweedie-optimal prediction (log link, any p) is the average of its rows' sales.
+
+<Solution>
+
+All rows in a leaf share μ. Setting $\sum g_i = \mu^{1-p}\sum(\mu - y_i) = 0$ and dividing by $\mu^{1-p} \gt 0$ gives $n\mu = \sum y_i$, so **μ = ȳ**. The power p affects which splits are chosen (through the weights across leaves), not the value inside a leaf.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand-worked Newton step, then a global LightGBM on a simulated chain: stumps with squared error against stumps with Tweedie, scored against the true demand. Expected: the leaf moves from 2.00 to 1.03; squared-error stumps predict some negative sales; Tweedie stumps land much closer to the true demand.
+
+<PyRunner title="A global model with the Tweedie loss" code={`
+import numpy as np
+import lightgbm as lgb
+
+# By hand: one Newton step for a leaf with sales 0, 0, 3, 1 at prediction 2, p = 1.5
+p = 1.5
+y = np.array([0, 0, 3, 1.0])
+mu = 2.0
+g = mu ** (1 - p) * (mu - y)
+h = mu ** (1 - p) * ((2 - p) * mu - (1 - p) * y)
+step = -g.sum() / h.sum()
+print(f"G = {g.sum():.3f}, H = {h.sum():.3f}, step {step:.3f}: leaf {mu:.2f} -> {mu * np.exp(step):.2f} (leaf mean {y.mean():.2f})")
+
+# A chain: 8 stores x 12 SKUs x 70 days, effects multiply, sales come in baskets
+rng = np.random.default_rng(1)
+store_fx = np.array([0.35, 0.2, 0.1, 0, 0, -0.1, -0.25, -0.4])
+sku_fx = np.array([2.9, 2.4, 1.9, 1.5, 1.1, 0.7, 0.3, 0, -0.4, -0.8, -1.3, -1.9])
+dow_fx = np.array([-0.2, -0.25, -0.15, -0.1, 0.05, 0.4, 0.25])
+s, k, d = np.meshgrid(np.arange(8), np.arange(12), np.arange(70), indexing="ij")
+s, k, d = s.ravel(), k.ravel(), d.ravel()
+promo = (rng.random((12, 70)) < 0.125)[k, d].astype(int)
+true_mu = np.exp(store_fx[s] + sku_fx[k] + dow_fx[d % 7] + 0.7 * promo)
+baskets = rng.poisson(true_mu / 2.5)
+sales = np.array([n + rng.poisson(1.5, n).sum() for n in baskets], dtype=float)
+print(f"rows {len(sales)}, share of zero days {np.mean(sales == 0):.0%}")
+
+X = np.column_stack([s, k, d % 7, promo])
+train, test = d < 56, d >= 56
+for name, params in [("squared", {"objective": "regression"}),
+                     ("tweedie", {"objective": "tweedie", "tweedie_variance_power": 1.3})]:
+    model = lgb.train({**params, "num_leaves": 2, "learning_rate": 0.1, "min_data_in_leaf": 1,
+                       "verbose": -1}, lgb.Dataset(X[train], sales[train]), num_boost_round=200)
+    pred = model.predict(X[test])
+    err = np.mean(np.abs(pred - true_mu[test]) / true_mu[test])
+    print(f"{name:8s} stumps: error vs true demand {err:.0%}, negative predictions {int(np.sum(pred < 0))}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **The M5 recipe.** The winning entries in the M5 competition (Walmart store-SKU-day sales) were global LightGBMs with Tweedie objectives, typically with lag and rolling features, price and calendar features, and separate models by store or horizon. They are still the default to beat for retail demand.
+- **Categorical IDs, carefully.** Pass store and SKU IDs as categorical features (LightGBM's native handling), or use target encodings computed out of fold. Raw high-cardinality IDs overfit quickly: watch the validation curve, as in the simulation above.
+- **One model, many series, one bias check per segment.** A global model optimizes the total loss, which fast movers dominate even with Tweedie. Report bias and WAPE by velocity band, category and store cluster; retrain or reweight if the tail drifts.
+- **New items borrow from the old.** A SKU with two weeks of history gets most of its forecast from category, price and attribute features learned on other SKUs. That cold-start strength is the main reason to go global.
+- **Distributions for stocking.** A Tweedie mean is not a service level. Get quantiles from quantile models trained alongside (LightGBM's `objective="quantile"`, pinball loss), from conformal intervals on backtest residuals, or by simulating the fitted Tweedie with an estimated φ.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why use the Tweedie loss for retail demand rather than squared error?">
+
+Retail sales are non-negative, zero-heavy and right-skewed, with variance growing with the mean, and effects such as store size, weekday and promotion multiply. Tweedie with a log link matches all of that: a point mass at zero, variance φμᵖ, and multiplicative effects that become additive in log space. Squared error on raw sales is dominated by fast movers and can predict negative sales.
+
+</QA>
+
+<QA q="What's the gradient of the Tweedie loss with a log link, and what does it mean?">
+
+$g = \mu^{1-p}(\mu - y)$ and $h = \mu^{1-p}((2-p)\mu - (1-p)y)$. It's the ordinary residual weighted by $\mu^{1-p}$, which up-weights low-volume rows relative to squared error. With p = 1 it's the Poisson gradient, μ − y.
+
+</QA>
+
+<QA q="Global or local forecasting models: when would you choose each?">
+
+Global models share patterns across thousands of related series, handle short histories and cold starts, and use rich features (price, promo, calendar). Local models (ETS, ARIMA per series) are simpler, robust, and good when series are long, few, or behave differently. In retail, a global gradient-boosted model is usually the main model, with local statistical models as baselines and fallbacks.
+
+</QA>
+
+<Trap>
+
+**"The Tweedie model predicts 0.3 a day, so stock 1 and you're covered."** The mean says nothing about the tail: a Tweedie SKU with μ = 0.3 can sell a basket of several units on one day. Stock decisions need a quantile of lead-time demand, not the mean. Also, never compare deviances fitted with different p as if they were the same metric.
+
+</Trap>
+
+</Section>
