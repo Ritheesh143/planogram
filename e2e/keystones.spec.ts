@@ -104,3 +104,16 @@ test("planned lessons render a placeholder", async ({ page }) => {
   await page.goto("/models/gradient-boosting");
   await expect(page.getByRole("heading", { name: "Gradient Boosting, End to End" })).toBeVisible();
 });
+
+test("the depth summary counts what each level reveals and jumps to it", async ({ page }) => {
+  await page.goto("/learn/foundations/counting-worlds");
+  const summary = page.getByTestId("depth-summary");
+  await page.getByRole("radio", { name: "L1 Intuition" }).click();
+  await expect(summary).toContainText("L1 hides 2 deeper blocks, the first in Now the Formula.");
+  await page.getByRole("radio", { name: "L2 Derivation" }).click();
+  await expect(summary).toContainText("L2 adds 1 extra block to this page, the first in Now the Formula. 1 more at L3.");
+  await summary.getByRole("button", { name: "Jump to it →" }).click();
+  await expect(page.getByText("The odds form: Bayes in your head")).toBeInViewport();
+  await page.getByRole("radio", { name: "L3 Rigor" }).click();
+  await expect(summary).toContainText("L3 adds 2 extra blocks to this page");
+});

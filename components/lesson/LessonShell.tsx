@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { setDepth, setMastered, useProgress } from "@/lib/progress";
 import { AskClaude } from "./AskClaude";
+import { DepthSummary } from "./DepthSummary";
 import { LessonContext } from "./LessonContext";
 import { sectionsFor, type LessonKind } from "./sections";
 
@@ -96,6 +97,7 @@ export function LessonShell(props: Props) {
               </button>
             ))}
           </div>
+          <DepthSummary kind={props.kind} />
 
           <div className="lesson-body mt-6">{props.children}</div>
 
