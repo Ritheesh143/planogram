@@ -54,3 +54,5 @@ retailer **Bolt & Beam** (never a real company's data or branding).
 - Put components on their own lines with blank lines around Markdown inside them, or they get
   wrapped in `<p>` and cause hydration errors.
 - In GFM tables, write `\lvert x \rvert` instead of `|x|`.
+- `$` starts inline math, so two dollar amounts in one paragraph become a formula (and can overflow
+  a phone screen). Bolt & Beam prices are in rupees: write money as plain `₹200` text.

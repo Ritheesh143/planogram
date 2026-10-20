@@ -44,6 +44,13 @@ Loss* (the loss and its gradient derived, and why log-link stumps fit multiplied
 *Hierarchical Reconciliation as Projection* (bottom-up, OLS and MinT, and how reconciling improves
 every level).
 
+**M4, batch 2c: uncertainty to production (Signature B).** *Pinball Loss Gives Quantiles* (why the
+minimum is a quantile, and conformal intervals that keep their coverage), *Promotions and the
+Post-Promo Dip* (gross lift vs net, and the lagged features a forecast needs), *DeepAR, TFT and
+Foundation Models* (sample paths, scaled series, and when zero-shot beats a local fit) and *From
+Forecast to Order* (the newsvendor critical ratio, safety stock under correlated errors, and
+per-SKU policies at scale).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also

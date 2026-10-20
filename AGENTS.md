@@ -8,9 +8,9 @@ browser's localStorage.
 
 M1, M2 and M3 (the no-API-key AI layer: the `tutor`, `feynman-grade`, `mock-interview` and
 `project-grill` skills plus the "Ask Claude" panel) are done and live (Vercel deploys `main`).
-M4 is weekly lesson batches: batch 1 (Bayes rungs 10–13) and batches 2a and 2b (Signature B:
-forecasting basics, hard demand and global models) are live. **Next is batch 2c: uncertainty to
-production.** Read `docs/ROADMAP.md`
+M4 is weekly lesson batches: batch 1 (Bayes rungs 10–13) and batches 2a, 2b and 2c (all of
+Signature B, multi-store forecasting) are live. **Next is Signature D: cannibalization and
+halo.** Read `docs/ROADMAP.md`
 before starting work. It holds the status, the batch order for M4 onward and the per-batch
 checklist. Update its Status section after each batch.
 

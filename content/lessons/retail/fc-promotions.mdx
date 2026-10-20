@@ -1,0 +1,295 @@
+<Section id="floor">
+
+Bolt & Beam runs deck stain at **25% off** for a week. Sales jump from 100 tins to 220, and the promo report celebrates 120 extra tins. Then the next three weeks sell **84** each. Plenty of those 220 buyers were going to buy anyway; the discount just moved their purchase earlier. They stocked up.
+
+This matters twice. The forecaster has to predict the spike *and* the dip, or the shelf is overstocked for three weeks. And the promo's value is the units that wouldn't have sold otherwise, after the dip, at a margin that fell from ₹80 a tin to ₹30.
+
+<KeyIdea>
+
+**A promotion's lift is partly borrowed from the following weeks.** Net incremental units = gross lift − the post-promo dip. A forecast model needs the promo calendar as input, *including last week's promo*, or it over-forecasts the dip weeks and under-forecasts ordinary ones. A baseline averaged over weeks with promos in them is inflated. The promo's profit has to cover the lower margin on every unit sold that week, not just the extra ones.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Deck stain sells **100** tins a week at ₹200. It costs Bolt & Beam ₹120, so the margin is **₹80**. At 25% off the price is ₹150 and the margin **₹30**.
+
+| Week | −2 | −1 | Promo | +1 | +2 | +3 | +4 |
+|---|---|---|---|---|---|---|---|
+| Tins | 100 | 100 | 220 | 84 | 84 | 84 | 100 |
+
+<Steps>
+<Step>
+
+**Gross lift:** $220 - 100 =$ **120** tins. This is the number on the promo report.
+
+</Step>
+<Step>
+
+**The dip:** $3 \times (100 - 84) =$ **48** tins that would have sold at full price in the next three weeks. That's **40%** of the lift, pulled forward.
+
+</Step>
+<Step>
+
+**Net incremental:** $120 - 48 =$ **72** tins. Over the seven weeks the store sold 772 tins instead of 700.
+
+</Step>
+<Step>
+
+**Profit.** Promo week: 220 × ₹30 = ₹6,600, against 100 × ₹80 = ₹8,000 at full price: **−₹1,400**. Dip: 48 tins not sold at ₹80: **−₹3,840**. The promo cost **₹5,240**, while selling 72 extra tins.
+
+</Step>
+<Step>
+
+**The inflated baseline.** Average the seven weeks: $772/7 =$ **110.3**. A forecaster that learns the "normal" level from this history over-forecasts every ordinary week by 10%.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Take away the dip: nobody stocks up, so all 120 extra tins are new sales. Does the 25%-off promo make money?" options={["Yes, it gains about ₹3,600", "Roughly breaks even", "No, it still loses about ₹1,400"]} answer={2}>
+
+**It still loses ₹1,400.** Every one of the 220 tins sold at a ₹30 margin, including the 100 that would have sold at ₹80 anyway. That cost of ₹5,000 is more than the 120 extra tins earn at ₹30 (₹3,600).
+
+</Predict>
+
+<PromoShape />
+
+**Try this:**
+
+1. Set **pulled forward to 0%**: the dip disappears and the net is the full 120, but profit is still **−₹1,400**.
+2. With no pull-forward, try **10% off**: lift **33**, profit **+₹9**. **5% off**: **+₹57**. Small discounts on their own barely break even; deep ones lose fast.
+3. Back to 40% pulled forward, try **10% off**: lift 33, dip 13, profit **−₹1,063**.
+4. **40% off**: the margin is ₹0 and the lift is **306** tins, so profit is **−₹17,777**.
+5. Change **how long the dip lasts**. The profit doesn't move: the same 48 tins are missing, only spread differently. But the forecast for each of those weeks changes, and so does the order.
+
+</Section>
+
+<Section id="simulate">
+
+Two hundred SKUs, each with ten promos over two years (10% to 30% off), a lift that depends on the depth, and 40% of the lift repaid over the next three weeks. Fit three forecast models on the first 78 weeks of each SKU and forecast the last 26, with the promo calendar known in advance:
+
+<PromoStudy />
+
+| Model | Promo-week WAPE | Bias, 3 weeks after | Bias, other weeks |
+|---|---|---|---|
+| History average | 45.3% | +20.0% | +5.3% |
+| Promo depth | 6.2% | +9.7% | −4.0% |
+| Depth + last 3 weeks' promos | 6.2% | −0.5% | +0.1% |
+
+- **The history average** misses every spike and is 5.3% high on ordinary weeks: promo weeks inflated its level.
+- **Promo depth alone** nails the spikes (6.2% WAPE) but still over-forecasts the dip weeks by 9.7%. It also under-forecasts ordinary weeks by 4%: the dip weeks look like ordinary weeks to it and drag its baseline down.
+- **Adding the promo depth of the last three weeks** fixes both: the dip becomes a learned negative effect, and ordinary weeks are no longer contaminated.
+
+</Section>
+
+<Section id="formula">
+
+With base rate $b$, discount $d$ and price elasticity $\varepsilon$, the promo week sells
+
+$$
+b \, (1 - d)^{-\varepsilon}, \qquad \text{lift } L = b \left[ (1 - d)^{-\varepsilon} - 1 \right]
+$$
+
+Here $0.75^{-2.74} = 2.20$, so $L = 120$. A share $\pi$ of the lift is pulled forward from the next $w$ weeks, each losing $\pi L / w$. Then
+
+$$
+\text{net} = (1 - \pi) L, \qquad \Delta\text{profit} = (b + L)\,m_d - b\,m - \pi L\, m
+$$
+
+where $m$ is the full margin and $m_d = p(1 - d) - c$ the promo margin. With $m = 80$, $m_d = 30$: $220 \times 30 - 8000 - 48 \times 80 = -5240$.
+
+**A forecast model** for week $t$ needs the promo depth this week and in the weeks just before:
+
+$$
+\hat y_t = \beta_0 + \beta_1 d_t + \beta_2 d_t^2 + \gamma_1 d_{t-1} + \gamma_2 d_{t-2} + \gamma_3 d_{t-3}
+$$
+
+The $\gamma$'s come out negative: the dip. In a global boosted model, the same idea is a set of features: discount now, discount 1–3 weeks ago, and weeks since the last promo.
+
+<Depth min={2}>
+
+**Measuring true incrementality.** The post-promo dip is only one leak. Others:
+
+- **Cannibalization**: some buyers switched from another stain brand at full price, so the category gained less than the item did.
+- **Halo**: some buyers also bought brushes and tape, so the basket gained more.
+- **Pre-promo dip**: if the promo is advertised in advance, some buyers wait for it.
+
+The honest number is category (or store) sales with the promo against without it, net of all of these. That's Signature D: cross-elasticities and causal estimates of cannibalization and halo.
+
+**Estimating the baseline.** "What would have sold without the promo" is never observed in the promo week. Common estimates: an average of nearby non-promo weeks (simple, biased if dips are included), a model fitted on non-promo weeks and predicted into the promo week, or control stores that didn't run the promo. The last is the most defensible because it handles seasonality and trends.
+
+</Depth>
+
+<Depth min={3}>
+
+**Stockouts hide the lift.** If the shelf held 180 tins and sold out on the promo week, sales show 180, a "lift" of 80 instead of 120, and a dip of 48 looks like 60% pull-forward instead of 40%. Treat promo weeks with stockouts as censored ([Demand ≠ Sales](/learn/retail/fc-censored-demand)), or the elasticity, and the next promo's order, will be too low.
+
+**Stockpiling depends on shelf life and pack size.** Stain and screws keep for years, so pull-forward is large. Fresh items can't be stockpiled, so their lift is closer to fully incremental. Repeated deep promos also train customers to wait (reference-price effects): the baseline itself erodes. A model with only the current and last few weeks' depth won't see that; add longer windows such as promo weeks in the last 13 weeks.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Gross and net">
+
+A SKU sells 50 a week. Its promo week sells 95, then 41, 44 and 50. Find the gross lift, the dip and the net incremental units.
+
+<Solution>
+
+Gross: $95 - 50 =$ **45**. Dip: $9 + 6 + 0 =$ **15**. Net: **30**, a third of the lift pulled forward.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="The promo margin">
+
+A box of tile spacers sells at ₹400 and costs ₹260. What's the margin per box at 20% off, against full price?
+
+<Solution>
+
+$400 \times 0.8 - 260 =$ **₹60**, against **₹140**: less than half.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Break-even lift">
+
+Deck stain: base 100, margin ₹80, promo margin ₹30 at 25% off. With no dip, how big must the lift be for the promo to break even?
+
+<Solution>
+
+$(100 + L) \times 30 \ge 8000$, so $L \ge$ **166.7** tins: a 2.67× week, not the 2.2× it gets.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="An inflated baseline">
+
+A year (52 weeks) of base-100 sales includes six promos like the hand example (120 lift, 48 dip). What does a plain yearly average say the base rate is?
+
+<Solution>
+
+Each promo adds a net 72: $100 + 6 \times 72 / 52 =$ **108.3**, about 8% too high for every ordinary week.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Elasticity from one promo">
+
+A promo at 25% off multiplied sales by 2.2. With $\text{multiplier} = (1 - d)^{-\varepsilon}$, what is ε? What multiplier does it predict at 15% off?
+
+<Solution>
+
+$\varepsilon = \ln 2.2 / \ln(1/0.75) = 0.788/0.288 =$ **2.74**. At 15% off: $0.85^{-2.74} = e^{2.74 \times 0.1625} \approx$ **1.56**, a lift of 56.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="A sold-out promo">
+
+The shelf held only 180 tins in the hand example's promo week, and it sold out. What lift and pull-forward share does the sales data show, and why is that dangerous?
+
+<Solution>
+
+Observed lift **80** (not 120), and the 48-tin dip is $48/80 =$ **60%** of it (not 40%). The promo looks weaker and more borrowed than it is, so the next promo is under-ordered, sells out again, and the estimate shrinks further: the [stockout spiral](/learn/retail/fc-censored-demand), now with promos.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand example, then a simulated SKU with promos and dips, and the three forecast models fitted by least squares. Expected: the hand line shows lift 120, dip 48, net 72 and a ₹5,240 loss; the model without lagged promo features over-forecasts the weeks after each promo, and the one with them doesn't.
+
+<PyRunner title="Promo lift and the dip" code={`
+import numpy as np
+
+base, price, cost, eps = 100, 200, 120, 2.74
+d, pull, dip_weeks = 0.25, 0.4, 3
+lift = base * ((1 - d) ** -eps - 1)
+dip = pull * lift
+profit = (base + lift) * (price * (1 - d) - cost) - base * (price - cost) - dip * (price - cost)
+print(f"gross lift {lift:.0f}, dip {dip:.0f}, net {lift - dip:.0f}, profit change {profit:.0f}")
+
+# A SKU over 104 weeks: ten promos at least 6 weeks apart, 40% of each lift repaid over 3 weeks
+rng = np.random.default_rng(4)
+T, train = 104, 78
+depth = np.zeros(T)
+weeks = []
+while len(weeks) < 10:
+    w = int(rng.integers(3, T))
+    if all(abs(w - v) >= 6 for v in weeks):
+        weeks.append(w)
+depth[weeks] = rng.choice([0.1, 0.15, 0.2, 0.25, 0.3], 10)
+expected = np.full(T, 150.0)
+for w in weeks:
+    l = 150 * ((1 - depth[w]) ** -eps - 1)
+    expected[w] += l
+    expected[w + 1:w + 4] -= pull * l / 3
+y = rng.poisson(expected)
+
+def lag(x, k):
+    return np.concatenate([np.zeros(k), x[:-k]])
+
+features = {
+    "history": np.ones((T, 1)),
+    "depth": np.column_stack([np.ones(T), depth, depth ** 2]),
+    "dip": np.column_stack([np.ones(T), depth, depth ** 2, lag(depth, 1), lag(depth, 2), lag(depth, 3)]),
+}
+after = (lag(depth, 1) + lag(depth, 2) + lag(depth, 3) > 0) & (depth == 0)
+test = np.arange(T) >= train
+for name, X in features.items():
+    beta, *_ = np.linalg.lstsq(X[3:train], y[3:train], rcond=None)
+    f = X @ beta
+    mask = test & after
+    print(f"{name:8s} bias in the weeks after a promo: {np.sum(f[mask] - y[mask]) / np.sum(y[mask]):+.1%}" if mask.any() else name)
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **The promo calendar is a known-future input.** Promos are planned weeks ahead, so the forecast can use this week's discount, display and flyer flags. Global models (LightGBM, TFT) take them as features; classical ETS and ARIMA need them added as regressors.
+- **Encode the aftermath.** Add lagged promo features (discount 1–3 weeks ago, weeks since last promo, promo count in the last quarter) so the model learns the dip and promo fatigue. Without them it over-orders after every promo.
+- **Clean the baseline before you judge a promo.** Fit the baseline on non-promo weeks, or use control stores, and report net incremental units and profit, not gross lift. The units can rise while the profit falls, as in the hand example.
+- **Watch censoring.** Promos are when shelves sell out. Flag stockouts in promo weeks and treat them as censored, or every promo estimate will be biased low.
+- **Promo planning is a forecast consumer.** The same model that predicts lift lets planners simulate "what if 20% instead of 25%?". That needs the elasticity to be causal, not just predictive, which is why promo evaluation leans on experiments and the causal methods of Signature D.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is the post-promotion dip and why does it matter for forecasting?">
+
+Customers who would have bought in the following weeks buy during the promo instead, so sales fall below baseline afterwards. A model that knows only the current promo flag over-forecasts those weeks, which overstocks the shelf. Add lagged promo features so the dip is learned.
+
+</QA>
+
+<QA q="How would you measure whether a promotion was profitable?">
+
+Estimate the baseline that would have sold without it (from non-promo weeks or control stores), then count net incremental units over the promo and the following weeks, valued at the promo and full margins. Subtract the margin given up on units that would have sold anyway. Then consider category effects: cannibalization of substitutes and halo on complements.
+
+</QA>
+
+<QA q="Your model forecasts promo weeks well but the business says it's always wrong right after a promo. What's happening?">
+
+It probably has a contemporaneous promo feature but no lagged ones, so the pull-forward dip looks like noise. It may also have learned an inflated or deflated baseline because the dip weeks were treated as normal. Add lagged promo features and check bias on the post-promo weeks separately.
+
+</QA>
+
+<Trap>
+
+**"The promo sold 120 extra units, so it worked."** That's gross lift. Here 48 of those units were pulled forward from the next three weeks, and the 100 tins that would have sold anyway went out at ₹30 margin instead of ₹80. Net: 72 extra tins and a ₹5,240 loss.
+
+</Trap>
+
+</Section>

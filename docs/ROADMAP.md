@@ -13,7 +13,7 @@ context, project details and screening results. Never copy anything from it into
 | **M1** Scaffold, Bolt & Beam generator, lesson template, store map, progress, FSRS review, Floor Check, the four Keystones | Done, live |
 | **M2** Model Lab (linear regression, decision tree, gradient boosting, XGBoost vs LightGBM vs CatBoost, MLP), Model Arena + Failure Matrix, Tree vs MLP, Bayes rungs 2–9, Math Toolkit, Plan / Exercises / Concept Graph / Threads pages | Done, live |
 | **M3** The AI layer, without an API key (spec below): `tutor`, `feynman-grade`, `mock-interview`, `project-grill` skills and the Ask Claude panel | Done, live. A manual run of each skill in a local `claude` session is still to do |
-| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13), 2a (forecasting basics) and 2b (hard demand and global models) done, live. **Next**: batch 2c, uncertainty to production |
+| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13) and Signature B (2a forecasting basics, 2b hard demand and global models, 2c uncertainty to production) done, live. **Next**: Signature D, cannibalization and halo |
 
 The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys it.
 
@@ -24,7 +24,7 @@ The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys
   priors-defend (6), shrinkage (7), bayes-linreg (8), hierarchical-pooling (9), why-sample (10),
   mcmc-walker (11), bayes-ab (12), bayes-mmm-bridge (13)
 - **Retail (Signature B):** fc-anatomy, fc-baselines, fc-ets, fc-arima, fc-censored-demand,
-  fc-intermittent, fc-tweedie-lgbm, fc-mint
+  fc-intermittent, fc-tweedie-lgbm, fc-mint, fc-pinball, fc-promotions, fc-deep, fc-safety-stock
 - **Models (lessons):** boosting-by-hand, tree-vs-mlp
 - **Model Lab (`/models/<slug>`):** linear-regression, decision-tree, gradient-boosting,
   xgb-lgbm-catboost, mlp, model-arena
@@ -125,9 +125,14 @@ pushed on its own.
      and TSB for intermittent demand (`fc-intermittent`); a global booster with the Tweedie loss
      derived (`fc-tweedie-lgbm`); MinT reconciliation as a projection (`fc-mint`). The math is in
      `lib/sim/demand.ts` (vitest: `tests/forecast-batch-2b.test.ts`).
-   - **2c, next.** Pinball loss → quantile and conformal intervals (`fc-pinball`); promotions and the
-     post-promo dip; DeepAR, TFT and foundation models; forecasting at scale and safety stock.
-3. **Signature D (cannibalization and halo):**
+   - **2c, done.** Pinball loss → quantiles, and split conformal intervals with their coverage
+     guarantee (`fc-pinball`); gross lift, the post-promo dip and lagged promo features
+     (`fc-promotions`); global models on scaled series, sample paths vs per-horizon quantiles, and
+     zero-shot vs local fits (`fc-deep`); the newsvendor critical ratio, σ√L under correlated
+     errors, and per-SKU ordering policies at scale (`fc-safety-stock`). The math is in
+     `lib/sim/uncertainty.ts` (vitest: `tests/forecast-batch-2c.test.ts`). Money in these lessons
+     is in ₹, like the rest of the site; write it as plain `₹` text, since `$` starts math.
+3. **Signature D (cannibalization and halo), next:**
    - Definitions, and why item lift ≠ category incrementality.
    - Cross-price elasticity and the sign of substitutes vs complements.
    - MNL from random utility (Gumbel → softmax), IIA and nested logit.

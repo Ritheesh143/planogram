@@ -454,3 +454,69 @@ test("MinT: reconciliation by variance, and every level improves", async ({ page
   await expect(page.getByTestId("mt-wls-total")).toHaveText("15.8");
   await expect(page.getByTestId("mt-wls-stores")).toHaveText("12.5");
 });
+
+test("pinball: the minimum is the quantile, and conformal intervals keep coverage", async ({ page }) => {
+  await page.goto("/learn/retail/fc-pinball");
+  await expect(page.getByTestId("pb-q")).toHaveText("10");
+  await expect(page.getByTestId("pb-below")).toHaveText("80%");
+  await expect(page.getByTestId("pb-mean")).toHaveText("8.4");
+  await page.getByRole("radio", { name: "200 days" }).click();
+  await expect(page.getByTestId("pb-below")).toHaveText("76%");
+  await setRange(page, "pb-tau", 0.9);
+  await expect(page.getByTestId("pb-q")).toHaveText("15");
+  await expect(page.getByTestId("cf-pois")).toHaveText("48.8%");
+  await expect(page.getByTestId("cf-mean")).toHaveText("81.6%");
+  await expect(page.getByTestId("cf-low")).toHaveText("25.4%");
+  await setRange(page, "cf-n", 2);
+  await expect(page.getByTestId("cf-low")).toHaveText("12.1%");
+});
+
+test("promotions: the dip, the profit, and lagged promo features", async ({ page }) => {
+  await page.goto("/learn/retail/fc-promotions");
+  await expect(page.getByTestId("pr-lift")).toHaveText("120");
+  await expect(page.getByTestId("pr-net")).toHaveText("72");
+  await expect(page.getByTestId("pr-profit")).toHaveText("−₹5,240");
+  await setRange(page, "pr-pull", 0);
+  await expect(page.getByTestId("pr-profit")).toHaveText("−₹1,400");
+  await setRange(page, "pr-depth", 0.1);
+  await expect(page.getByTestId("pr-profit")).toHaveText("+₹9");
+  await expect(page.getByTestId("ps-promo-history")).toHaveText("45.3%");
+  await expect(page.getByTestId("ps-post-depth")).toHaveText("+9.7%");
+  await expect(page.getByTestId("ps-post-dip")).toHaveText("-0.5%");
+  await page.getByRole("radio", { name: "History average" }).click();
+  await expect(page.getByRole("radio", { name: "History average" })).toHaveAttribute("aria-checked", "true");
+});
+
+test("deep models: sample paths for lead-time totals, and global vs local", async ({ page }) => {
+  await page.goto("/learn/retail/fc-deep");
+  await expect(page.getByTestId("dp-paths")).toHaveText("199.8");
+  await expect(page.getByTestId("dp-sum")).toHaveText("209.0");
+  await expect(page.getByTestId("dp-indep")).toHaveText("190.2");
+  await setRange(page, "dp-lead", 8);
+  await expect(page.getByTestId("dp-sum")).toHaveText("410.1");
+  await expect(page.getByTestId("dp-paths")).toHaveText("379.0");
+  await expect(page.getByTestId("gl-global-8")).toHaveText("13.5%");
+  await expect(page.getByTestId("gl-local-8")).toHaveText("21.9%");
+  await page.getByRole("radio", { name: "Unlike it (φ = 0.95)" }).click();
+  await expect(page.getByTestId("gl-local-52")).toHaveText("5.5%");
+  await expect(page.getByTestId("gl-global-52")).toHaveText("7.9%");
+});
+
+test("safety stock: the critical ratio, correlated errors and per-SKU policies", async ({ page }) => {
+  await page.goto("/learn/retail/fc-safety-stock");
+  await expect(page.getByTestId("nv-cr")).toHaveText("0.643");
+  await expect(page.getByTestId("nv-q")).toHaveText("107");
+  await expect(page.getByTestId("nv-profit")).toHaveText("₹15,620");
+  await setRange(page, "nv-cost", 250);
+  await expect(page.getByTestId("nv-q")).toHaveText("79");
+  await expect(page.getByTestId("nv-mean-profit")).toHaveText("₹2,511");
+  await expect(page.getByTestId("lt-true")).toHaveText("28.7");
+  await expect(page.getByTestId("lt-service")).toHaveText("87.4%");
+  await setRange(page, "lt-lead", 8);
+  await setRange(page, "lt-rho", 0.8);
+  await expect(page.getByTestId("lt-service")).toHaveText("77.3%");
+  await expect(page.getByTestId("pol-profit-p95")).toHaveText("−₹4,53,511");
+  await expect(page.getByTestId("pol-profit-cr")).toHaveText("₹10,25,760");
+  await setRange(page, "pol-salvage", 0);
+  await expect(page.getByTestId("pol-profit-p95")).toHaveText("−₹11,94,306");
+});

@@ -76,7 +76,10 @@ const raw: LessonInput[] = [
   { slug: "fc-intermittent", aisle: "retail", title: "Intermittent Demand: Croston, SBA and TSB", status: "ready", week: 5, minutes: 45, summary: "Smooth the size and the gap separately, correct Croston's bias, and let dead items fade.", prereqs: ["fc-ets"] },
   { slug: "fc-tweedie-lgbm", aisle: "retail", title: "Global Boosting and the Tweedie Loss", status: "ready", week: 6, minutes: 55, summary: "One model for every store × SKU: the Tweedie loss derived, and why the log link lets stumps fit multiplied effects.", prereqs: ["gradient-boosting", "mle-peak", "fc-baselines"] },
   { slug: "fc-mint", aisle: "retail", title: "Hierarchical Reconciliation as Projection", status: "ready", week: 6, minutes: 50, summary: "Store, region and total forecasts made coherent, and more accurate, by projecting with MinT.", prereqs: ["fc-baselines", "matrices-tables", "linear-regression"] },
-  { slug: "fc-pinball", aisle: "retail", title: "Pinball Loss Gives Quantiles", week: 6, summary: "A proof that minimizing pinball loss yields a quantile, and conformal intervals.", prereqs: ["fc-baselines"] },
+  { slug: "fc-pinball", aisle: "retail", title: "Pinball Loss Gives Quantiles", status: "ready", week: 6, minutes: 50, summary: "Why minimizing pinball loss yields a quantile, and conformal intervals that keep their promised coverage.", prereqs: ["fc-baselines", "mle-peak"] },
+  { slug: "fc-promotions", aisle: "retail", title: "Promotions and the Post-Promo Dip", status: "ready", week: 6, minutes: 45, summary: "Gross lift, the pulled-forward dip and net incremental units, and the lagged promo features a forecast needs.", prereqs: ["fc-baselines", "fc-tweedie-lgbm"] },
+  { slug: "fc-deep", aisle: "retail", title: "DeepAR, TFT and Foundation Models", status: "ready", week: 6, minutes: 55, summary: "Global models on scaled series: sample paths, per-horizon quantiles, tokens, and when zero-shot beats a local fit.", prereqs: ["fc-tweedie-lgbm", "fc-pinball", "mlp"] },
+  { slug: "fc-safety-stock", aisle: "retail", title: "From Forecast to Order: Newsvendor and Safety Stock", status: "ready", week: 6, minutes: 50, summary: "The critical ratio picks the quantile, σ√L needs independent errors, and a blanket service level loses money.", prereqs: ["fc-pinball"] },
   { slug: "cx-cross-elasticity", aisle: "retail", title: "Cannibalization vs Halo: Cross-Price Elasticity", week: 5, summary: "The sign of the cross-elasticity tells substitutes from complements.", prereqs: ["elasticity-derivative"] },
   { slug: "cx-mnl", aisle: "retail", title: "Choice Models: Gumbel Errors Give Softmax", week: 6, summary: "The multinomial logit from random utility, IIA and nested logit.", prereqs: ["cx-cross-elasticity", "mle-peak"] },
   { slug: "cx-double-ml", aisle: "retail", title: "Double ML for Elasticities", week: 6, summary: "What orthogonalization actually means, visualized.", prereqs: ["cx-cross-elasticity", "linear-regression"] },
@@ -114,7 +117,7 @@ const raw: LessonInput[] = [
   { slug: "mle-spark", aisle: "mle", title: "Forecasting Millions of Series With Spark", week: 12, summary: "Partitioning, pandas UDFs and backtest harnesses.", prereqs: ["mle-serving", "fc-tweedie-lgbm"] },
 
   // Aisle 7: Checkout
-  { slug: "sd-forecasting", aisle: "checkout", title: "System Design: Forecasting for 10k Stores", week: 11, summary: "The full design, built on your forecasting project.", prereqs: ["fc-mint", "mle-spark"] },
+  { slug: "sd-forecasting", aisle: "checkout", title: "System Design: Forecasting for 10k Stores", week: 11, summary: "The full design, built on your forecasting project.", prereqs: ["fc-mint", "fc-safety-stock", "mle-spark"] },
   { slug: "sd-search", aisle: "checkout", title: "System Design: Product Search", week: 12, summary: "Retrieval, ranking and evaluation at scale.", prereqs: ["search-ann", "mle-serving"] },
   { slug: "sd-mmm", aisle: "checkout", title: "System Design: An MMM Platform", week: 12, summary: "Data, modeling, calibration and the budget tool.", prereqs: ["mmm-budget"] },
   { slug: "stats-puzzles", aisle: "checkout", title: "Stats Puzzles Interviewers Love", week: 13, summary: "Base rates, coverage, likelihood and expected value, timed.", prereqs: ["counting-worlds", "ci-repeat", "likelihood-dial"] },
@@ -130,12 +133,12 @@ export const lessons = raw.map((l) => ({
 }));
 
 export const threads = [
-  { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "search-contrastive", "mle-drift"] },
+  { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "fc-pinball", "search-contrastive", "mle-drift"] },
   { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "bayes-mmm-bridge", "mmm-bayesian"] },
   { id: "geometric-decay", name: "Geometric Decay", idea: "Yesterday matters a fraction θ as much as today.", steps: ["mmm-adstock-saturation", "fc-ets", "dl-optimizers"] },
   { id: "softmax", name: "Softmax", idea: "Turn scores into probabilities by exponentiating and normalizing.", steps: ["cx-mnl", "search-contrastive", "dl-attention", "dl-transformer"] },
   { id: "projection", name: "Projection", idea: "Find the closest point in an allowed space.", steps: ["matrices-tables", "linear-regression", "fc-mint"] },
   { id: "gradient", name: "Gradient", idea: "Move a little in the direction that reduces the error.", steps: ["boosting-by-hand", "gradient-boosting", "dl-backprop", "dl-optimizers"] },
   { id: "dot-product", name: "Dot Product", idea: "Overlap between two lists of numbers.", steps: ["vectors-baskets", "linear-regression", "search-ann", "dl-attention"] },
-  { id: "sampling-distribution", name: "Repeat the World", idea: "Uncertainty is what changes when you re-run the world.", steps: ["ci-repeat", "ab-power-cuped", "why-sample", "bayes-ab"] },
+  { id: "sampling-distribution", name: "Repeat the World", idea: "Uncertainty is what changes when you re-run the world.", steps: ["ci-repeat", "ab-power-cuped", "why-sample", "bayes-ab", "fc-pinball"] },
 ];

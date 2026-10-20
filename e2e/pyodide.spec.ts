@@ -38,6 +38,10 @@ const lessons: [string, string][] = [
   ["/learn/retail/fc-intermittent", "Croston forecast after week 12: 1.027, SBA 0.924"],
   ["/learn/retail/fc-tweedie-lgbm", "step -0.667: leaf 2.00 -> 1.03 (leaf mean 1.00)"],
   ["/learn/retail/fc-mint", "MinT error sd: total 15.89, region 13.00, store 12.44"],
+  ["/learn/retail/fc-pinball", "pinball loss at q = 9, 10, 11, 12: 14.50, 14.00, 14.50, 15.00"],
+  ["/learn/retail/fc-promotions", "gross lift 120, dip 48, net 72, profit change -5240"],
+  ["/learn/retail/fc-deep", "tokens: [7, 10, 9, 12, 11, 8, 10, 12] scale 42, worst error 2.0"],
+  ["/learn/retail/fc-safety-stock", "critical ratio 0.643; best order 100, expected profit 16880"],
 ];
 
 for (const [path, expected] of lessons) {

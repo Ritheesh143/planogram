@@ -1,0 +1,288 @@
+<Section id="floor">
+
+The paint counter at Bolt & Beam tints a white base to order. Run out and the customer walks out with nothing: the store loses about **₹60** of margin. A spare tin isn't wasted, it just sits on the shelf, which costs about **₹20**. A forecast of the *average* day stocks the shelf to run out half the time, and a lost sale costs three times what a spare tin does.
+
+So the store doesn't want the mean. It wants the number of tins that covers demand on **75%** of days: a quantile. And when the forecast comes with an "80% interval", somebody needs to check that it really holds 80% of the weeks.
+
+<KeyIdea>
+
+**Pinball loss makes a model forecast a quantile.** It charges τ for each unit sold above the forecast and 1 − τ for each unit below it. Its minimum is the forecast with a share τ of sales at or below it: the τ-quantile. Set τ = cost of short ÷ (cost of short + cost of spare) and the loss is the store's own cost. **Conformal prediction** makes an interval honest: widen the forecast by the right order statistic of its errors on calibration weeks, and on future weeks it covers at least the promised share.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Ten days of tinting-base sales:
+
+| Day | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Tins | 6 | 12 | 3 | 9 | 18 | 7 | 10 | 5 | 8 | 6 |
+
+Sorted: 3, 5, 6, 6, 7, 8, 9, 10, 12, 18. The mean is **8.4**. Take **τ = 0.75**: a tin short costs 0.75, a spare tin 0.25 (the ₹60 and ₹20, divided by ₹80).
+
+<Steps>
+<Step>
+
+**Stock 10.** Two days sold more: 12 and 18, short by 2 and 8. That's $10 \times 0.75 = 7.5$. Seven days sold fewer, leaving 7 + 5 + 4 + 4 + 3 + 2 + 1 = 26 spare tins: $26 \times 0.25 = 6.5$. Total **14.0**.
+
+</Step>
+<Step>
+
+**Stock 9.** Now three days ran short (10, 12, 18), by 13 tins in all: 9.75. Six days left 19 spare: 4.75. Total **14.5**.
+
+</Step>
+<Step>
+
+**Stock 11:** short 8 tins (6.0), spare 34 (8.5), total **14.5**. **Stock 12:** short 6 (4.5), spare 42 (10.5), total **15.0**. The minimum is at **10**.
+
+</Step>
+<Step>
+
+**Why 10?** Raise the forecast by one tin. Every day that sold *more* saves 0.75; every day that sold *less* costs 0.25. From 9 to 10, three days are above and seven below: $-3(0.75) + 7(0.25) = -0.5$, so it pays. From 10 to 11, two above and eight below: $-1.5 + 2 = +0.5$, so it doesn't. The loss stops falling once **75%** of days are at or below the forecast. Ten tins covers 8 of the 10 days.
+
+</Step>
+<Step>
+
+**An interval, by calibration.** A weekly forecast says 20 tins. On nine past weeks, its absolute errors were 2, 7, 3, 11, 5, 14, 3, 8, 6. For an **80%** interval, sort them (2, 3, 3, 5, 6, 7, 8, 11, 14) and take the $\lceil (9 + 1) \times 0.8 \rceil =$ 8th smallest: **11**. The interval is 20 ± 11, so **9 to 31** tins. The model's own Poisson 80% interval, **14 to 26**, would have held only 5 of those 9 weeks.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Switch to 200 days of sales and set τ to 50%. Where is the pinball minimum compared with the mean?" options={["Above the mean", "At the mean", "Below the mean"]} answer={2}>
+
+**Below the mean.** τ = 50% gives the median, and daily sales have a long right tail: a few big days pull the mean (7.6) above the median (6).
+
+</Predict>
+
+<PinballDial />
+
+**Try this:**
+
+1. On the **10 hand days** at τ = 75%, the minimum is **10** tins, and 80% of days sold 10 or fewer (the share jumps in steps of 10%).
+2. Switch to **200 days**. At 75% the minimum is still **10**, and 76% of days sold that many or fewer.
+3. Slide τ to **90%**: **15** tins (90.5% of days). At **95%**: **17** (95%). Each step up in τ buys less and costs more: the tail is long.
+4. At **50%**, the minimum is **6**, while the mean is **7.6**. Squared error would stock 7.6, which covers fewer days than you'd guess.
+
+</Section>
+
+<Section id="simulate">
+
+Weekly demand for the base is really negative binomial: mean 20 but standard deviation 10, where a Poisson model would say 4.5. Rerun the calibration step 2,000 times, each time with fresh calibration weeks, and measure what share of *future* weeks each conformal interval actually covers.
+
+<ConformalCoverage />
+
+| Calibration weeks | 9 | 39 | 199 |
+|---|---|---|---|
+| Average coverage | 81.6% | 81.9% | 82.0% |
+| Reruns covering under 75% | 25.4% | 12.1% | 0.5% |
+| Average width (tins) | 27 | 25.6 | 25.3 |
+
+- **The Poisson interval covers 48.8% of weeks**, not 80%: the model's own spread is far too narrow.
+- **Conformal intervals cover at least 80% on average with any n**, even 9. That's the guarantee. Coverage is a little over 80% because sales are whole numbers: ties push it up.
+- **Small calibration sets are noisy.** With 9 weeks, a quarter of reruns give an interval that covers under 75%. The guarantee is an average over calibration sets, not a promise about yours.
+
+</Section>
+
+<Section id="formula">
+
+**Pinball loss** at level τ, for sales $y$ and forecast $q$:
+
+$$
+\rho_\tau(y - q) = \begin{cases} \tau\,(y - q) & y \gt q \text{ (short)} \\ (1 - \tau)\,(q - y) & y \le q \text{ (spare)} \end{cases}
+$$
+
+**Its minimum is the τ-quantile.** Over $n$ days, the slope of the total loss in $q$ is
+
+$$
+\frac{d}{dq} \sum_i \rho_\tau(y_i - q) = -\tau \cdot \#\{y_i \gt q\} + (1 - \tau) \cdot \#\{y_i \lt q\}
+$$
+
+which crosses zero where $\#\{y_i \lt q\}/n \approx \tau$: a share τ below, $1 - \tau$ above. For a distribution instead of a sample, set $-\tau(1 - F(q)) + (1 - \tau) F(q) = 0$, which gives $F(q) = \tau$. That is the definition of the τ-quantile.
+
+**Split conformal interval.** Fit the model on training data. On $n$ calibration points, compute scores $s_i = \lvert y_i - \hat y_i \rvert$. Then
+
+$$
+\hat q = s_{(k)}, \quad k = \lceil (n + 1)(1 - \alpha) \rceil, \qquad \text{interval} = \hat y \pm \hat q
+$$
+
+and for a new point exchangeable with the calibration points, $P(y_{\text{new}} \in \hat y \pm \hat q) \ge 1 - \alpha$.
+
+<Depth min={2}>
+
+**Pinball loss is a negative log-likelihood.** The asymmetric Laplace density with location $q$ is $f(y) \propto \exp(-\rho_\tau(y - q)/\sigma)$, so minimizing pinball loss is maximum likelihood for its location. This is the same pattern as squared error ↔ Gaussian and absolute error ↔ Laplace in [MLE and losses](/learn/bayes/mle-peak).
+
+**Score many quantiles at once.** Averaging pinball loss over τ = 0.05, 0.1, …, 0.95 approximates the **CRPS** (continuous ranked probability score), the standard score for a whole forecast distribution. The M5 competition's uncertainty track used a scaled pinball loss over nine quantiles.
+
+**Quantile regression and boosting.** LightGBM's `objective="quantile"` with `alpha=τ` fits one model per quantile: its gradient is −τ or 1 − τ for each row, and its leaf values are quantiles of the residuals. Separately fitted quantiles can cross (the P90 below the P80); sort them or fit them jointly.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why the conformal guarantee holds.** Put the new point's score among the $n$ calibration scores. If all $n + 1$ are exchangeable (any ordering is equally likely), the new score's rank is uniform on $1, \dots, n + 1$, so $P(s_{\text{new}} \le s_{(k)}) \ge k/(n + 1) \ge 1 - \alpha$. Nothing about the model or the distribution is used, only the symmetry. If $k \gt n$ (too few points for the level, such as $n = 9$ at 95%), the interval is infinite.
+
+**Conditional coverage is not promised.** The guarantee averages over all weeks. An interval can cover 95% of ordinary weeks and 40% of promo weeks and still average 80%. Fixes: calibrate separately by group (Mondrian conformal), or use **conformalized quantile regression** (CQR), which scores $\max(\hat q_{lo} - y,\; y - \hat q_{hi})$ so the interval follows the model's own width and skew.
+
+**Time series break exchangeability.** Errors drift with seasons and trends. Use the most recent calibration window, or adaptive conformal inference, which nudges α up after misses and down after hits so long-run coverage tracks the target.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="One day's pinball loss">
+
+τ = 0.9 and the forecast is 10. What is the loss if 14 sell? If 6 sell?
+
+<Solution>
+
+Short by 4: $0.9 \times 4 =$ **3.6**. Four spare: $0.1 \times 4 =$ **0.4**. Under-forecasting is nine times as expensive.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Pick τ from the costs">
+
+A lost sale costs ₹60 of margin and a spare unit costs ₹20 to carry. Which quantile should the forecast target?
+
+<Solution>
+
+$60/(60 + 20) =$ **0.75**: the 75th percentile.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Where the slope crosses zero">
+
+You have 20 days of sales and τ = 0.9. Between which sorted values does the pinball minimum fall?
+
+<Solution>
+
+With $k$ days below $q$ and $20 - k$ above, the slope is $0.1k - 0.9(20 - k) = k - 18$. It is negative until $k = 18$ and positive after, so any $q$ between the **18th and 19th smallest** values is a minimum (the loss is flat there).
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Conformal ranks">
+
+(a) With 19 calibration weeks, which sorted error sets a 90% interval? (b) Why can't 9 calibration weeks give a 95% interval?
+
+<Solution>
+
+(a) $\lceil 20 \times 0.9 \rceil =$ the **18th** smallest. (b) $\lceil 10 \times 0.95 \rceil = 10$, but there are only 9 errors, so the interval is infinite. You need at least **19** weeks for 95%.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Pinball is a likelihood">
+
+Show that maximizing the asymmetric Laplace likelihood $f(y) \propto \exp(-\rho_\tau(y - q)/\sigma)$ over $q$ gives the same $q$ as minimizing pinball loss.
+
+<Solution>
+
+The log-likelihood is $-\tfrac{1}{\sigma} \sum_i \rho_\tau(y_i - q) + \text{const}$. For any fixed σ, maximizing it over $q$ is minimizing $\sum_i \rho_\tau(y_i - q)$, so the MLE of the location is the sample **τ-quantile**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="The rank argument">
+
+Calibration errors are 2, 3, 3, 5, 6, 7, 8, 11, 14, and the next week's error is drawn from the same distribution. Using only exchangeability, bound the chance that it is at most 11.
+
+<Solution>
+
+11 is the 8th of 9 sorted errors. Among the 10 errors (nine old, one new), the new one is equally likely to take any rank from 1 to 10, and it is at most 11 whenever its rank is 8 or lower. So the chance is at least $8/10 =$ **80%**.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Pinball loss and split conformal from scratch in numpy. Expected: the hand losses 14.50, 14.00, 14.50, 15.00 with the minimum at 10; on simulated sales the pinball minimum lands on the quantile; the Poisson interval covers about half the future weeks and the conformal one about 80%.
+
+<PyRunner title="Pinball and conformal" code={`
+import numpy as np
+
+def pinball(y, q, tau):
+    d = y - q
+    return np.sum(np.where(d > 0, tau * d, (tau - 1) * d))
+
+hand = np.array([6, 12, 3, 9, 18, 7, 10, 5, 8, 6])
+losses = [pinball(hand, q, 0.75) for q in (9, 10, 11, 12)]
+print("pinball loss at q = 9, 10, 11, 12:", ", ".join(f"{l:.2f}" for l in losses))
+
+# Simulated daily sales: negative binomial, mean 8, dispersion 3
+rng = np.random.default_rng(6)
+days = rng.negative_binomial(3, 3 / (3 + 8), 200)
+for tau in (0.5, 0.75, 0.9):
+    grid = np.arange(0, days.max() + 1)
+    best = grid[np.argmin([pinball(days, q, tau) for q in grid])]
+    print(f"tau {tau}: pinball minimum {best}, share at or below {np.mean(days <= best):.3f}")
+
+# Weekly demand: forecast 20, true spread negative binomial (sd 10), model assumes Poisson
+def weeks(n):
+    return rng.negative_binomial(5, 5 / (5 + 20), n)
+
+lo, hi = 14, 26  # Poisson(20) 10th and 90th percentiles
+calib = np.abs(weeks(39) - 20)
+k = int(np.ceil((39 + 1) * 0.8))
+qhat = np.sort(calib)[k - 1]
+future = weeks(100_000)
+print(f"Poisson interval {lo}-{hi} covers {np.mean((future >= lo) & (future <= hi)):.3f}")
+print(f"conformal interval 20 +/- {qhat} covers {np.mean(np.abs(future - 20) <= qhat):.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Train the quantile you stock to.** LightGBM with `objective="quantile"` (or a global model with a pinball head, such as TFT) can forecast the P75 or P90 directly per store-SKU. Pick τ from the item's cost of being short against the cost of a spare: the [safety stock lesson](/learn/retail/fc-safety-stock) derives it.
+- **Score quantiles with pinball loss and coverage together.** Pinball loss rewards sharp, correct quantiles. Coverage (the share of actuals below the P90) checks calibration, and should be about 90% in every segment, not only overall.
+- **Calibrate on recent weeks, by segment.** Conformal scores from last year's calm weeks won't hold for this year's promo season. Keep a rolling calibration window and calibrate per category or per volume band.
+- **Watch the tails of slow movers.** A P90 of 1 unit and a P90 of 2 are a 100% difference in stock. For intermittent SKUs, check quantiles against the [intermittent demand](/learn/retail/fc-intermittent) distribution rather than a symmetric interval.
+- **Conformal is cheap insurance.** It wraps any model (a global booster, a deep net, a vendor's black box), costs one sort per segment, and turns "80% interval" from a hope into a checked promise.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why does minimizing pinball loss give a quantile?">
+
+Moving the forecast up by one unit saves τ for every observation above it and costs 1 − τ for every one below. The loss stops falling when the share below equals τ, and that point is the τ-quantile. For a distribution, setting the derivative to zero gives F(q) = τ.
+
+</QA>
+
+<QA q="How do you choose which quantile to forecast for replenishment?">
+
+From costs: τ = Cu / (Cu + Co), where Cu is the cost of a unit short (lost margin, lost goodwill) and Co the cost of a unit over (holding, markdown, waste). Expected cost is then exactly pinball loss scaled by Cu + Co.
+
+</QA>
+
+<QA q="What does a conformal prediction interval guarantee, and what doesn't it?">
+
+If calibration and future points are exchangeable, the interval covers the new point with probability at least 1 − α on average over calibration sets, for any model. It doesn't guarantee coverage within a subgroup (promo weeks, slow movers), and it doesn't hold under drift unless you recalibrate or use an adaptive variant.
+
+</QA>
+
+<QA q="Your 90% intervals cover 70% in a backtest. What do you do?">
+
+Check where they miss: by segment, by horizon and by season. Then recalibrate: conformalize the model's intervals on recent residuals (per segment if coverage varies), or fit quantile models with pinball loss instead of assuming a Gaussian or Poisson spread. Re-check coverage on a later window.
+
+</QA>
+
+<Trap>
+
+**"Forecast the mean, then add 1.28 standard deviations for the P90."** That works only if the errors are Gaussian with the right σ. Retail demand is skewed and overdispersed: here the Poisson-based 80% interval covered 48.8% of weeks. Fit the quantile directly with pinball loss, or calibrate the interval on real errors.
+
+</Trap>
+
+</Section>

@@ -35,6 +35,8 @@ import { ACFExplorer, Decomposer, HoldoutStudy, NoiseACF, RollingOrigin, SlowMov
 import { ACFPACFLab, AlphaStudy, ForecastFan, SESExplorer } from "@/components/viz/Smoothing";
 import { CensoredShelf, DrillForecasts, IntermittentStudy, ShelfSpiral } from "@/components/viz/HardDemand";
 import { GlobalBoost, MinTStudy, Reconciler, TweedieShape } from "@/components/viz/GlobalModels";
+import { ConformalCoverage, PinballDial, PromoShape, PromoStudy } from "@/components/viz/Uncertainty";
+import { GlobalLocal, LeadTimeErrors, Newsvendor, PolicyStudy, SamplePathFan } from "@/components/viz/ToProduction";
 
 // Lesson building blocks are available in every MDX file without imports.
 const components: MDXComponents = {
@@ -100,6 +102,15 @@ const components: MDXComponents = {
   GlobalBoost,
   Reconciler,
   MinTStudy,
+  PinballDial,
+  ConformalCoverage,
+  PromoShape,
+  PromoStudy,
+  SamplePathFan,
+  GlobalLocal,
+  Newsvendor,
+  LeadTimeErrors,
+  PolicyStudy,
   CountingWorlds,
   CIRepeat,
   LikelihoodDial,

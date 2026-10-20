@@ -1,0 +1,292 @@
+<Section id="floor">
+
+A vendor pitches Bolt & Beam a **time-series foundation model**: "zero-shot forecasts for every store-SKU, no training needed." The incumbent is a global LightGBM trained on the chain's own history. Somebody on the team has to explain what the new model actually does, where it could win (new SKUs with eight weeks of history, thousands of series nobody has time to tune), and how to test the claim before it touches an order.
+
+<KeyIdea>
+
+**DeepAR, TFT and the foundation models are all global models: one set of weights learned from many series.** Each first rescales every series by its own average, so a 2-a-week SKU and a 2,000-a-week SKU look alike. **DeepAR** predicts a distribution for next week, draws a value, feeds the draw back in, and repeats: its sample paths give lead-time totals. **TFT** outputs quantiles for every future week at once, using known-future inputs like the promo calendar. **Foundation models** (Chronos, TimesFM) are pre-trained on huge collections of other people's series and forecast yours without fitting. Pooling wins when your own history is short, and loses when your series behave unlike the training set.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Scale first.** A specialty router bit sells 1, 3, 2, 2 a week; deck screws sell 1,800, 2,200, 2,100, 1,900. Divide each by its own mean (2 and 2,000): **0.5, 1.5, 1, 1** and **0.9, 1.1, 1.05, 0.95**. Now one model can learn "a week above average tends to be followed by …" from both, and the screws don't drown out the router bit. Multiply the forecast back by the scale at the end.
+
+</Step>
+<Step>
+
+**Tokenize, as Chronos does.** Eight weeks of a sander: 31, 44, 38, 52, 47, 35, 40, 49 (mean **42**). Scaled: 0.738, 1.048, 0.905, 1.238, 1.119, 0.833, 0.952, 1.167. Round to bins 0.1 wide: tokens **7, 10, 9, 12, 11, 8, 10, 12**. Turning a token back into sales gives its bin centre × 42: 29.4, 42, 37.8, 50.4, … and the worst error is **2.0** sanders. The series is now a sentence, and forecasting is predicting the next word.
+
+</Step>
+<Step>
+
+**One DeepAR-style step.** A global model, fitted to 200 scaled series, says next week's scaled sales are $0.428 + 0.596 \times \text{this week} - 0.023 \times \text{last week}$, with spread 0.158. This week was 1.25 (50 sanders at scale 40) and last week 1.30. The mean forecast is $0.428 + 0.745 - 0.030 = 1.143$: **45.7** sanders.
+
+</Step>
+<Step>
+
+**Draw and feed back.** Draw one week from that distribution, say one spread above the mean: $1.143 + 0.158 = 1.301$, or **52** sanders. That draw becomes "this week" for the following step, whose mean is $0.428 + 0.596 \times 1.301 - 0.023 \times 1.25 \approx 1.17$: **about 47**. Had we fed in the mean instead, it would say about 43. A high week makes the next one likely high too, and each sample path keeps that memory.
+
+</Step>
+<Step>
+
+**Why paths matter.** Stock for two weeks of demand needs the 90th percentile of the *two-week total*. From 4,000 paths it's **104.1**. Adding each week's own 90th percentile gives **106.5**, too much stock. Treating the weeks as independent gives **101.2**, too little.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Lead time 8 weeks. Adding up each week's own P90 (what you get from a model that outputs per-week quantiles) gives how much, against the P90 of the 8-week total from paths?" options={["About the same", "About 8% more", "About 8% less"]} answer={1}>
+
+**About 8% more (410 against 379).** Each week's P90 is a bad week, and eight bad weeks in a row is much rarer than any one of them. Quantiles don't add; sample paths let you add the weeks first and take the quantile after.
+
+</Predict>
+
+<SamplePathFan />
+
+**Try this:**
+
+1. **Lead time 1**: all three numbers agree (**53.7**). There's only one week to add.
+2. **Lead time 4**: paths **199.8**, sum of weekly P90s **209.0**, independent **190.2**. The truth is in between: the weeks are positively correlated, but not perfectly.
+3. **Lead time 8**: **379.0**, **410.1** and **360.0**. The gap grows with the horizon.
+4. Watch the median: it starts at 45.7 and sinks toward 40, the series' level. The fan widens fast at first, then levels off: the series forgets its starting point at a rate of about 0.6 a week.
+
+</Section>
+
+<Section id="simulate">
+
+The pitch, in miniature. Train one model on 200 series, each scaled by its own mean. Then forecast 300 **new** series it has never seen, one week ahead for 13 weeks, without refitting (zero-shot). Compare it with the same model form fitted to each new series alone (local), and with the new series' average:
+
+<GlobalLocal />
+
+| New series | Weeks of history | Global (zero-shot) | Local | History average |
+|---|---|---|---|---|
+| Like training set | 8 | **13.5%** | 21.9% | 18.5% |
+| Like training set | 52 | **12.9%** | 13.3% | 16.8% |
+| Unlike (φ = 0.95) | 8 | **7.0%** | 10.0% | 12.6% |
+| Unlike (φ = 0.95) | 52 | 7.9% | **5.5%** | 15.7% |
+
+- **With 8 weeks of history, pooling wins either way.** A local model fits 3 numbers to 6 data points and chases the noise. The global model learned its 3 numbers from 11,600 windows.
+- **When the new series behave like the training set, global stays ahead**, even with a year of history.
+- **When they don't** (the new series drift slowly, with memory 0.95 instead of 0.6), the global model keeps reverting too fast. Its error doesn't improve with more history, and from about 26 weeks the local model is better. A foundation model is only as good as the match between its training corpus and your shelves.
+
+</Section>
+
+<Section id="formula">
+
+**Mean scaling.** For series $i$ with context window $y_{i,1..T}$: $s_i = \tfrac{1}{T}\sum_t y_{i,t}$ (DeepAR adds 1 to avoid dividing by zero), and the model sees $y_{i,t}/s_i$.
+
+**DeepAR** (an LSTM, trained by likelihood). At each step, the network reads the scaled history and covariates and outputs distribution parameters. For counts, a negative binomial with mean $\mu_t = s_i \cdot \text{softplus}(w^\top h_t)$ and shape $\alpha_t$. Training maximizes
+
+$$
+\sum_{i,t} \log \text{NB}\big(y_{i,t} \mid \mu_{i,t}, \alpha_{i,t}\big)
+$$
+
+and forecasting is **ancestral sampling**: draw $\tilde y_{T+1}$, feed it in, draw $\tilde y_{T+2}$, and so on. Any quantity of the path (the lead-time total, the week of the peak) gets its distribution by computing it on each path.
+
+**TFT** (Temporal Fusion Transformer) outputs quantiles $\hat q_{\tau, T+h}$ for every horizon $h$ at once and trains on the summed [pinball loss](/learn/retail/fc-pinball):
+
+$$
+\sum_{\tau} \sum_{h} \rho_\tau\big(y_{T+h} - \hat q_{\tau, T+h}\big)
+$$
+
+It separates **static** inputs (store, SKU), **observed past** inputs (sales) and **known future** inputs (prices, promo calendar, holidays), picks among them with learned gates, and attends over the past.
+
+**Chronos** (a language model over tokens). It scales by the mean, bins into a fixed vocabulary, and trains with cross-entropy on the next token: a classification loss, so the forecast distribution can take any shape, including two humps. It samples paths like DeepAR, token by token.
+
+<Depth min={2}>
+
+**What each one is good at.**
+
+| | Learns from | Outputs | Strength | Weakness |
+|---|---|---|---|---|
+| Global LightGBM | your series, with features | point or quantile per row | features, speed, interpretability | no joint paths; lag features by hand |
+| DeepAR | your series | sample paths | coherent multi-week totals, counts | slow sampling; tuning |
+| TFT | your series | quantiles per horizon | known-future inputs, attention you can inspect | heavy; quantiles don't add |
+| Foundation model | others' series | samples or quantiles | zero-shot, cold start, no training | no covariates (mostly); domain shift |
+
+In the M5 competition (2020, tens of thousands of retail series), the most accurate entries were mostly gradient-boosted trees (LightGBM) with careful features. The deep models' main edge in retail is joint sample paths and cold-start pooling, not raw accuracy on mature series.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why the sum of quantiles overshoots.** For any two weeks, $\text{sd}(Y_1 + Y_2) \le \text{sd}(Y_1) + \text{sd}(Y_2)$, with equality only for perfect correlation. For roughly normal weeks the P90 of the sum is $\mu_1 + \mu_2 + 1.28\, \text{sd}(Y_1 + Y_2)$, at most the sum of the P90s. Independence goes the other way: it assumes $\text{Var}(Y_1 + Y_2) = \text{Var}(Y_1) + \text{Var}(Y_2)$, which is too small when the weeks are positively correlated, as they are here.
+
+**Testing a zero-shot claim.** Backtest on your own series with rolling origins (as in [Baselines and Backtests](/learn/retail/fc-baselines)), with forecast origins *after* the model's pre-training cut-off: public benchmarks may already be in its training corpus. Score with the metrics your orders use (pinball at the stocking quantile, bias), against seasonal naive and your global booster, and split the results by history length and volume. Zero-shot models often win on short histories and lose on mature, promo-driven series, which is exactly what the simulation shows.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Scale and unscale">
+
+A SKU sold 4, 6, 5, 5. Scale it by its mean. If the model forecasts 1.1 in scaled units, how many units is that?
+
+<Solution>
+
+Mean 5, scaled **0.8, 1.2, 1, 1**. The forecast is $1.1 \times 5 =$ **5.5** units.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="One token">
+
+A series has mean 16 and bins 0.1 wide. Which token does a week of 21 get, and what does it decode to?
+
+<Solution>
+
+$21/16 = 1.3125$, which rounds to bin **13** and decodes to $1.3 \times 16 =$ **20.8**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Quantiles don't add">
+
+Two weeks each have mean 50 and sd 10, with correlation 0.5 between them. Give the P90 of the two-week total (normal approximation), the sum of the two P90s, and the "independent" answer.
+
+<Solution>
+
+$\text{Var}(\text{total}) = 100 + 100 + 2 \times 0.5 \times 100 = 300$, so sd 17.32 and P90 $= 100 + 1.2816 \times 17.32 =$ **122.2**. Sum of P90s: $2 \times (50 + 12.8) =$ **125.6**. Independent: $100 + 1.2816 \times \sqrt{200} =$ **118.1**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Why scale?">
+
+What goes wrong if a global network is trained on raw sales of router bits (about 2 a week) and deck screws (about 2,000 a week) together?
+
+<Solution>
+
+The loss is dominated by the big series: an error of 100 screws outweighs every router-bit error combined, so the model effectively ignores slow movers. The network also has to output numbers spanning three orders of magnitude. Scaling puts every series near 1, so they share patterns, and the model's output is multiplied back by each series' scale.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Why the local model loses at 8 weeks">
+
+The local model predicts next week from this week and last week (3 coefficients). With 8 weeks of history, how many training examples does it have? Why does more history help it, and why doesn't more history help the global model on the "unlike" series?
+
+<Solution>
+
+Predicting week $t + 1$ from weeks $t$ and $t - 1$ leaves **6** examples for 3 coefficients, so the fit chases noise. With 52 weeks it has 50 and estimates the series' own memory well. The global model's coefficients are fixed, learned from φ = 0.6 series, so on φ = 0.95 series its error is **bias, not variance**, and more history can't remove bias.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Design the bake-off">
+
+The vendor's foundation model will be compared with your global LightGBM. Describe a fair test in four steps.
+
+<Solution>
+
+(1) Rolling-origin backtest on your own store-SKUs, with origins after the vendor model's training cut-off. (2) Identical inputs where possible, and note that LightGBM gets promo and price features the foundation model may not. (3) Score with WAPE, bias and pinball at the stocking quantile, against seasonal naive too. (4) Split the results by history length, volume and promo exposure. Adopt it where it wins, such as new SKUs, rather than everywhere.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Mean scaling, Chronos-style tokens, a global model fitted to 200 scaled series, and DeepAR-style sample paths, in numpy. Expected: the tokens 7, 10, 9, 12, 11, 8, 10, 12 with a worst error of 2.0; a fitted memory of about 0.6; and a lead-time P90 from paths below the sum of the weekly P90s and above the independent answer.
+
+<PyRunner title="Scaling, tokens and sample paths" code={`
+import numpy as np
+
+sander = np.array([31, 44, 38, 52, 47, 35, 40, 49], dtype=float)
+scale = sander.mean()
+tokens = np.round(sander / scale / 0.1).astype(int)
+back = tokens * 0.1 * scale
+print("tokens:", tokens.tolist(), f"scale {scale:.0f}, worst error {np.max(np.abs(back - sander)):.1f}")
+
+# 200 training series: each its own level, AR(1) wiggles with memory 0.6
+rng = np.random.default_rng(21)
+X, y = [], []
+for _ in range(200):
+    level = np.exp(np.log(40) + rng.normal())
+    u = np.zeros(60)
+    u[0] = rng.normal() * 0.2
+    for t in range(1, 60):
+        u[t] = 0.6 * u[t - 1] + rng.normal() * 0.2 * np.sqrt(1 - 0.36)
+    s = level * (1 + u)
+    z = s / s.mean()
+    for t in range(1, 59):
+        X.append([1, z[t], z[t - 1]])
+        y.append(z[t + 1])
+X, y = np.array(X), np.array(y)
+coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+sd = np.std(y - (coef[0] + coef[1] * X[:, 1] + coef[2] * X[:, 2]))
+print(f"global model: {coef[0]:.3f} {coef[1]:+.3f} * this week {coef[2]:+.3f} * last week, spread {sd:.3f}")
+
+# Sample paths from this week 1.25 and last week 1.30, scale 40
+paths = np.zeros((4000, 8))
+for i in range(4000):
+    b, a = 1.30, 1.25
+    for h in range(8):
+        nxt = max(0.0, coef[0] + coef[1] * a + coef[2] * b + sd * rng.normal())
+        paths[i, h] = nxt * 40
+        b, a = a, nxt
+for L in (2, 4, 8):
+    total = paths[:, :L].sum(axis=1)
+    weekly = np.quantile(paths[:, :L], 0.9, axis=0).sum()
+    indep = paths[:, :L].mean(axis=0).sum() + 1.2816 * np.sqrt(paths[:, :L].var(axis=0).sum())
+    print(f"lead time {L}: paths {np.quantile(total, 0.9):.1f}, sum of weekly P90s {weekly:.1f}, independent {indep:.1f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Start with the global booster.** It is fast, takes features, and is hard to beat on mature series. Add a deep model where it buys something specific: joint sample paths for lead-time totals, or cold-start pooling for new items.
+- **Cold start is the foundation models' best case.** A new SKU with 8 weeks of history has too little for its own model; a zero-shot forecast, or a global model with product attributes as features, is better than the category average. Backtest it on last year's launches.
+- **Feed known-future inputs.** Promo depth, price and holidays are known ahead. TFT and LightGBM use them directly; many foundation models are univariate and can't, which costs them most where promos drive demand.
+- **Respect the scale.** Mean scaling breaks on series that are mostly zeros (the mean is tiny and noisy): use a floor, or route intermittent SKUs to [Croston-family](/learn/retail/fc-intermittent) or Tweedie models.
+- **Sample paths cost compute.** 4,000 paths × 10,000 store-SKUs × 8 weeks is 320 million draws a night. Keep paths for the SKUs whose orders depend on multi-week totals, and quantiles for the rest.
+- **Monitor drift in the match.** A foundation model's accuracy depends on how similar your series are to its training corpus. Track its error by segment against the incumbent every week, and keep the incumbent running as a fallback.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is DeepAR and how does it produce probabilistic forecasts?">
+
+An autoregressive recurrent network trained across many series. At each step it outputs the parameters of a likelihood (Gaussian or negative binomial) for the next value, trained by maximum likelihood on scaled series. To forecast, it samples a value, feeds it back as input, and repeats, giving sample paths whose quantiles, and whose sums over any window, are the forecast distribution.
+
+</QA>
+
+<QA q="How is TFT different from DeepAR?">
+
+TFT outputs quantiles for all horizons at once and trains on pinball loss, rather than a likelihood with ancestral sampling. It separates static, past-observed and known-future inputs, selects variables with gating, and uses attention you can inspect. Its per-horizon quantiles can't be summed to get a lead-time quantile.
+
+</QA>
+
+<QA q="When would you use a time-series foundation model in retail?">
+
+For cold starts and long tails: new SKUs or stores with little history, or many series nobody will tune. Also as a strong baseline. I'd still backtest it against a global booster on our own data after its training cut-off, since it usually lacks our covariates (price, promos) and its corpus may not resemble our demand.
+
+</QA>
+
+<QA q="Why do global models need scaling, and what are the options?">
+
+So series of very different sizes share patterns and the loss isn't dominated by the biggest ones. Options: divide by the context mean (DeepAR, Chronos), standardize by mean and sd, or model in logs. Multiply back at the end. Watch series that are mostly zero, where the mean is unstable.
+
+</QA>
+
+<Trap>
+
+**"Sum the P90 forecast for each of the next 4 weeks to get the P90 of lead-time demand."** Quantiles don't add. Here the sum was 209 against a true P90 of 200, and at 8 weeks 410 against 379: every SKU overstocked. Use sample paths, or model the lead-time total directly.
+
+</Trap>
+
+</Section>

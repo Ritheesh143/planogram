@@ -852,6 +852,42 @@
   "title": "Always sold out"
  },
  {
+  "slug": "fc-deep",
+  "n": 1,
+  "level": "easy",
+  "title": "Scale and unscale"
+ },
+ {
+  "slug": "fc-deep",
+  "n": 2,
+  "level": "easy",
+  "title": "One token"
+ },
+ {
+  "slug": "fc-deep",
+  "n": 3,
+  "level": "medium",
+  "title": "Quantiles don't add"
+ },
+ {
+  "slug": "fc-deep",
+  "n": 4,
+  "level": "medium",
+  "title": "Why scale?"
+ },
+ {
+  "slug": "fc-deep",
+  "n": 5,
+  "level": "hard",
+  "title": "Why the local model loses at 8 weeks"
+ },
+ {
+  "slug": "fc-deep",
+  "n": 6,
+  "level": "hard",
+  "title": "Design the bake-off"
+ },
+ {
   "slug": "fc-ets",
   "n": 1,
   "level": "easy",
@@ -958,6 +994,114 @@
   "n": 6,
   "level": "hard",
   "title": "Already coherent"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 1,
+  "level": "easy",
+  "title": "One day's pinball loss"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 2,
+  "level": "easy",
+  "title": "Pick τ from the costs"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 3,
+  "level": "medium",
+  "title": "Where the slope crosses zero"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 4,
+  "level": "medium",
+  "title": "Conformal ranks"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 5,
+  "level": "hard",
+  "title": "Pinball is a likelihood"
+ },
+ {
+  "slug": "fc-pinball",
+  "n": 6,
+  "level": "hard",
+  "title": "The rank argument"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 1,
+  "level": "easy",
+  "title": "Gross and net"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 2,
+  "level": "easy",
+  "title": "The promo margin"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 3,
+  "level": "medium",
+  "title": "Break-even lift"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 4,
+  "level": "medium",
+  "title": "An inflated baseline"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 5,
+  "level": "hard",
+  "title": "Elasticity from one promo"
+ },
+ {
+  "slug": "fc-promotions",
+  "n": 6,
+  "level": "hard",
+  "title": "A sold-out promo"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 1,
+  "level": "easy",
+  "title": "A critical ratio"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 2,
+  "level": "easy",
+  "title": "Safety stock"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 3,
+  "level": "medium",
+  "title": "Newsvendor is pinball"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 4,
+  "level": "medium",
+  "title": "Two weeks, correlated"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 5,
+  "level": "hard",
+  "title": "Cycle service vs fill rate"
+ },
+ {
+  "slug": "fc-safety-stock",
+  "n": 6,
+  "level": "hard",
+  "title": "Why the blanket policy loses"
  },
  {
   "slug": "fc-tweedie-lgbm",

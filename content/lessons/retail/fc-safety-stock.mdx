@@ -1,0 +1,310 @@
+<Section id="floor">
+
+Bolt & Beam buys Christmas wreaths once, in October. They sell for **₹300**, cost **₹120**, and anything left on 26 December is cleared at **₹20**. The forecast says 100. The buyer has to type one number into the order screen, and the forecast's 100 is not obviously it.
+
+Back in the main aisles, patio heaters are reordered every week with a 4-week lead time. There the question is how much **safety stock** to hold on top of the forecast, and the textbook formula quietly assumes this week's forecast error says nothing about next week's.
+
+<KeyIdea>
+
+**The order is a quantile of the forecast distribution, and costs pick which one.** A unit short costs the lost margin $C_u$, a unit over costs $C_o$; order the **critical ratio** $C_u/(C_u + C_o)$ quantile of demand (the newsvendor rule, which is pinball loss in money). For replenishment, safety stock is $z \cdot \sigma \cdot \sqrt{L}$, where σ is the sd of **forecast errors**, not of demand, and √L holds only if errors are independent from week to week. At scale, one blanket service level for every SKU is a costly mistake: each SKU's margin should set its own quantile.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The wreath forecast as a distribution:
+
+| Demand | 80 | 90 | 100 | 110 | 120 |
+|---|---|---|---|---|---|
+| Chance | 0.1 | 0.2 | 0.4 | 0.2 | 0.1 |
+| P(demand ≤ this) | 0.1 | 0.3 | 0.7 | 0.9 | 1.0 |
+
+<Steps>
+<Step>
+
+**Costs.** A wreath short loses $C_u = 300 - 120 =$ **₹180**. A wreath left over loses $C_o = 120 - 20 =$ **₹100**. Critical ratio: $180/280 =$ **0.643**.
+
+</Step>
+<Step>
+
+**Read the quantile.** The smallest order with P(demand ≤ order) ≥ 0.643 is **100** (0.7). So the order is 100: here it happens to equal the forecast.
+
+</Step>
+<Step>
+
+**Check by marginal analysis.** Going from 90 to 100 wreaths, the extra 10 sell if demand is above 90 (chance 0.7): each earns $0.7 \times 180 - 0.3 \times 100 = +96$ rupees. Going from 100 to 110, they sell only if demand is above 100 (0.3): $0.3 \times 180 - 0.7 \times 100 = -16$ rupees each. Expected profits for 80 to 120: ₹14,400, ₹15,920, **₹16,880**, ₹16,720, ₹16,000.
+
+</Step>
+<Step>
+
+**Safety stock for the heaters.** The weekly forecast is 40, and backtests put the sd of weekly forecast errors at **σ = 10**. The lead time is 4 weeks. If the errors are independent, the 4-week error has sd $10 \sqrt{4} = 20$, and for 95% service ($z = 1.645$) safety stock is **32.9**. Order up to $160 + 33 = 193$.
+
+</Step>
+<Step>
+
+**Correlated errors.** If this week's error predicts next week's with correlation 0.5 (and 0.25 two weeks apart, and so on), the variance of the 4-week sum is $10^2 \times (4 + 2(3 \times 0.5 + 2 \times 0.25 + 0.125)) = 100 \times 8.25$: sd **28.7**, not 20. The 32.9 tins of safety stock now cover only **87.4%** of lead times. It takes **47.2** to deliver 95%.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Wreaths now cost ₹250 instead of ₹120 (same ₹300 price, ₹20 clearance). Should the order go up or down from the forecast of 100?" options={["Up", "Stay at 100", "Down, well below 100"]} answer={2}>
+
+**Down, to 79.** A wreath short now loses only ₹50 and one left over loses ₹230, so the critical ratio is $50/280 = 0.18$: order the 18th percentile. Thin margins mean ordering *below* the forecast.
+
+</Predict>
+
+<Newsvendor />
+
+**Try this:**
+
+1. The defaults (price ₹300, cost ₹120, clearance ₹20) give a critical ratio of **0.643** and an order of **107**. Demand here is negative binomial with mean 100 and sd 22, so the quantile sits above the mean. Profit **₹15,620**, against **₹15,511** for ordering the mean.
+2. Raise **cost to ₹250**: ratio 0.179, order **79**, profit **₹3,474**. Ordering 100 would make ₹2,511.
+3. Back to cost ₹120, raise **clearance to ₹100**: ratio 0.9, order **129**. Leftovers are cheap, so cover nine demands out of ten.
+4. **Price ₹500**: ratio 0.792, order **118**, profit **₹34,769**.
+
+<LeadTimeErrors />
+
+5. With **L = 4** and **ρ = 0.5**, the √L rule says 20 when the truth is 28.7, and the promised 95% becomes **87.4%**.
+6. **L = 8, ρ = 0.8**: 28.3 against **62.2**, and service falls to **77.3%**. At **ρ = 0** the rule is exact at any lead time.
+
+</Section>
+
+<Section id="simulate">
+
+Now 1,000 seasonal SKUs, one buy each: a few fast sellers and a long tail of slow ones (median 8 units), margins from 20% to 60%, and negative binomial demand. Four ordering policies, with expected profit computed exactly for each SKU:
+
+<PolicyStudy />
+
+With clearance recovering 25% of cost:
+
+| Policy | Total profit | Units bought | Demand met |
+|---|---|---|---|
+| Order the mean | ₹9,59,432 | 12,891 | 77.8% |
+| Blanket 95% service | **−₹4,53,511** | 26,929 | 97.8% |
+| Each SKU's critical ratio | **₹10,25,760** | 11,074 | 70.2% |
+| Critical ratio, Poisson spread | ₹9,94,548 | 12,482 | 76.1% |
+
+- **A blanket 95% service level loses money.** It doubles the stock, and for 56% of these SKUs the critical ratio is below 0.5, so every unit past the median loses in expectation.
+- **The critical ratio makes 7% more than ordering the mean, while buying fewer units.** It meets less demand (70% against 78%), on purpose: it skips the low-margin sales that cost more in leftovers than they earn.
+- **The wrong spread costs too.** Assuming Poisson demand (variance = mean) when it's overdispersed puts the quantiles in the wrong place and gives back half the gain.
+- Slide clearance to **0%** and the 95% policy loses **₹11,94,306**. At **75%**, every policy profits and the critical ratio buys more than the mean.
+
+</Section>
+
+<Section id="formula">
+
+**Newsvendor.** With order $q$ and demand $D$, the expected cost of the mismatch is
+
+$$
+C_u \, \mathbb E(D - q)^+ + C_o \, \mathbb E(q - D)^+
+$$
+
+Raising $q$ by one unit saves $C_u$ if $D \gt q$ and costs $C_o$ otherwise, so the optimum is where $C_u (1 - F(q)) = C_o F(q)$:
+
+$$
+F(q^*) = \frac{C_u}{C_u + C_o}
+$$
+
+This is the [pinball loss](/learn/retail/fc-pinball) at $\tau = C_u/(C_u + C_o)$, multiplied by $C_u + C_o$. With price $p$, cost $c$ and salvage $s$: $C_u = p - c$, $C_o = c - s$.
+
+**Safety stock under periodic review.** Order up to the forecast over the lead time plus
+
+$$
+\text{SS} = z_{\alpha} \cdot \sigma_L, \qquad \sigma_L^2 = \sum_{i=1}^{L} \sum_{j=1}^{L} \text{Cov}(e_i, e_j)
+$$
+
+where the $e_i$ are weekly forecast errors. If they are independent with sd σ, $\sigma_L = \sigma\sqrt{L}$. If $\text{Corr}(e_i, e_j) = \rho^{\lvert i - j \rvert}$, then $\sigma_L^2 = \sigma^2 \sum_{i,j} \rho^{\lvert i - j \rvert}$, which is $8.25\sigma^2$ for $L = 4$, ρ = 0.5.
+
+<Depth min={2}>
+
+**Which σ?** The sd of *demand* measures how much sales vary. The sd of *forecast errors* measures how much you don't know. A good forecast that tracks seasonality and promos has errors much smaller than demand's sd, and using demand's sd overstocks. Take σ from backtest residuals at the right horizon. A 4-week-ahead forecast errs more than a 1-week-ahead one.
+
+**Service level has two meanings.**
+
+- **Cycle service level (CSL):** the chance of no stockout in a replenishment cycle. That is what $z_\alpha$ sets.
+- **Fill rate:** the share of demand met from the shelf.
+
+For a slow mover with mean 0.5 a cycle, stocking 1 gives a CSL of 91% but a fill rate of only 79%: when it does stock out, it misses half the demand. Say which one a target means.
+
+**Lead times vary too.** If the lead time $L$ is itself random with mean $\bar L$ and sd $\sigma_{LT}$, and weekly demand has mean $d$, then $\sigma^2_{\text{lead-time demand}} = \bar L \sigma^2 + d^2 \sigma^2_{LT}$. A supplier that is two weeks late one time in five can matter more than the forecast error.
+
+</Depth>
+
+<Depth min={3}>
+
+**Where correlated errors come from.** A forecast that is biased (it missed a trend, a competitor opened, a promo was cancelled) errs in the same direction week after week. That is correlation ρ well above zero, and the √L rule then underestimates lead-time risk exactly when risk is highest. Measure the autocorrelation of backtest errors, or compute $\sigma_L$ directly from L-week-ahead cumulative errors, or simulate sample paths ([DeepAR, TFT and foundation models](/learn/retail/fc-deep)) and take the quantile of the lead-time total.
+
+**Multi-period and budgets.** With carry-over stock, the per-period critical ratio uses the holding cost for one period as $C_o$, so ratios are high (often 0.95 or more) for durable goods. With a total inventory budget, a Lagrange multiplier $\lambda$ adds a charge per unit of stock to every SKU's $C_o$: each SKU's ratio becomes $C_u/(C_u + C_o + \lambda)$, and λ is raised until the budget fits. The same "equalize the marginal value" idea sets media budgets in Signature A.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A critical ratio">
+
+A garden hose sells for ₹250, costs ₹100, and leftovers can't be returned or sold. Which quantile should the order hit?
+
+<Solution>
+
+$C_u = 150$, $C_o = 100$: $150/250 =$ **0.6**, the 60th percentile.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Safety stock">
+
+Weekly forecast errors have sd 8 and are independent. The lead time is 9 weeks. How much safety stock gives 95% cycle service?
+
+<Solution>
+
+$1.645 \times 8 \times \sqrt 9 = 1.645 \times 24 \approx$ **39.5** units.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Newsvendor is pinball">
+
+Show that expected newsvendor cost $C_u \mathbb E(D - q)^+ + C_o \mathbb E(q - D)^+$ equals $(C_u + C_o)$ times the expected pinball loss at $\tau = C_u/(C_u + C_o)$.
+
+<Solution>
+
+Pinball loss is $\tau(D - q)$ when $D \gt q$ and $(1 - \tau)(q - D)$ otherwise. Multiply by $C_u + C_o$: $\tau(C_u + C_o) = C_u$ and $(1 - \tau)(C_u + C_o) = C_o$. So the two costs agree for every $D$, hence in expectation, and they have the **same minimizer**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Two weeks, correlated">
+
+Weekly error sd 10, lead time 2 weeks, correlation 0.5 between the two weeks. What is the sd of the lead-time error, and what service does $1.645 \times 10\sqrt 2$ deliver?
+
+<Solution>
+
+$\sigma_L^2 = 100(2 + 2 \times 0.5) = 300$, so $\sigma_L =$ **17.3** against the rule's 14.1. Service: $\Phi(1.645 \times 14.14 / 17.32) = \Phi(1.343) \approx$ **91%**, not 95%.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Cycle service vs fill rate">
+
+A slow mover has Poisson demand with mean 0.5 per cycle, and you stock 1. Compute the cycle service level and the fill rate.
+
+<Solution>
+
+CSL $= P(D \le 1) = e^{-0.5}(1 + 0.5) =$ **0.910**. Units sold $= P(D \ge 1) = 1 - e^{-0.5} = 0.393$, against mean demand 0.5, so the fill rate is **78.7%**. A 91% CSL meets only 79% of demand.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Why the blanket policy loses">
+
+A SKU sells for ₹200, costs ₹150, and clears at ₹0. What quantile should it be ordered at? What happens to each unit ordered between that quantile and the 95th percentile?
+
+<Solution>
+
+Ratio $50/200 =$ **0.25**. A unit between the 25th and 95th percentiles sells with probability below 0.75 but at least 0.05. At the 50th percentile, for instance, it earns $0.5 \times 50 - 0.5 \times 150 = -50$ rupees in expectation. Every unit past the 25th percentile **loses money on average**, and the 95% policy buys all of them.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Newsvendor and the policy comparison in numpy. Expected: the hand table's best order is 100 with expected profit ₹16,880; on simulated SKUs, ordering each at its critical ratio beats ordering the mean, and a blanket 95% loses money.
+
+<PyRunner title="Newsvendor at scale" code={`
+import numpy as np
+from math import lgamma
+
+# The hand table
+demand = np.array([80, 90, 100, 110, 120])
+prob = np.array([0.1, 0.2, 0.4, 0.2, 0.1])
+price, cost, salvage = 300, 120, 20
+def table_profit(q):
+    return np.sum(prob * (price * np.minimum(demand, q) + salvage * np.maximum(q - demand, 0))) - cost * q
+best = max(demand, key=table_profit)
+print(f"critical ratio {(price - cost) / (price - salvage):.3f}; best order {best}, expected profit {table_profit(best):.0f}")
+
+def nb_pmf(m, k, ymax):
+    y = np.arange(ymax)
+    logp = np.array([lgamma(v + k) - lgamma(k) - lgamma(v + 1) for v in y]) + k * np.log(k / (k + m)) + y * np.log(m / (k + m))
+    return np.exp(logp)
+
+rng = np.random.default_rng(17)
+totals = {"mean": 0.0, "blanket 95%": 0.0, "critical ratio": 0.0}
+for _ in range(300):
+    m = np.exp(np.log(8) + rng.normal())
+    k = int(rng.integers(1, 11))
+    p = 100 + 500 * rng.random()
+    c = p * (0.4 + 0.4 * rng.random())
+    s = 0.25 * c
+    pmf = nb_pmf(m, k, int(m * 20 + 200))
+    cdf = np.cumsum(pmf)
+    y = np.arange(len(pmf))
+    def profit(q):
+        return np.sum(pmf * (p * np.minimum(y, q) + s * np.maximum(q - y, 0))) - c * q
+    orders = {
+        "mean": round(m),
+        "blanket 95%": int(np.searchsorted(cdf, 0.95)),
+        "critical ratio": int(np.searchsorted(cdf, (p - c) / (p - s))),
+    }
+    for name, q in orders.items():
+        totals[name] += profit(q)
+for name, v in totals.items():
+    print(f"{name:15s} total expected profit {v:10,.0f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Set τ per SKU from economics, not a blanket target.** Margin, holding cost, markdown recovery and shelf life give each SKU its own critical ratio. Business targets such as "98% in stock on key items" are a deliberate override (traffic drivers, goodwill), so make them explicit and price them.
+- **σ comes from backtests at the lead-time horizon.** Compute errors of L-week cumulative forecasts on rolling origins, by segment, and refresh them as the model changes. Better forecasts shrink σ, which shows up as less safety stock: that is the forecast's value in dollars.
+- **Check the error autocorrelation.** If errors are correlated, use the empirical sd of L-week cumulative errors or simulated paths, not σ√L. Track achieved service against the target per segment; a gap means the formula's assumptions failed.
+- **At 10,000 store-SKUs the arithmetic is cheap and the inputs are hard.** Censored sales ([Demand ≠ Sales](/learn/retail/fc-censored-demand)), intermittent demand, supplier lead-time variability and pack sizes (order in cases of 12) all move the answer more than the choice of formula.
+- **Pooling cuts safety stock.** Holding stock at a distribution centre instead of in 40 stores lets errors cancel: σ grows like √N rather than N. It is the same addition-of-variances arithmetic, applied across locations instead of weeks.
+- **Close the loop.** The order a forecast drives becomes next season's sales data. Under-ordering censors demand, which lowers the next forecast. Monitor lost sales and stockouts alongside forecast accuracy.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Derive the newsvendor critical ratio.">
+
+Increase the order by one unit. It sells with probability 1 − F(q), gaining Cu, and is left over with probability F(q), costing Co. Stop when the expected gain hits zero: Cu(1 − F(q)) = Co F(q), so F(q*) = Cu/(Cu + Co). With price p, cost c and salvage s, that's (p − c)/(p − s).
+
+</QA>
+
+<QA q="What σ goes into the safety stock formula, and what are its assumptions?">
+
+The sd of forecast errors over the protection period (lead time plus review period), not the sd of demand. σ√L assumes the weekly errors are independent with constant variance, that the forecast is unbiased, and that the lead time is fixed. Biased or autocorrelated errors and variable lead times all make σ√L too small.
+
+</QA>
+
+<QA q="Why not set a 95% service level for every SKU?">
+
+Because the right service level depends on each SKU's costs. For low-margin items with poor salvage, the optimal quantile can be below 50%, and stocking to 95% loses money on every extra unit. In the simulation a blanket 95% turned ₹10.3 lakh of expected profit into a ₹4.5 lakh loss. Use each SKU's critical ratio, with explicit overrides where strategy demands it.
+
+</QA>
+
+<QA q="Your safety stock targets 95% but you achieve 85%. Why?">
+
+Likely causes: σ was taken from one-step errors but the lead time is several weeks; the errors are autocorrelated (forecast bias), so σ√L is too small; lead times vary; demand is skewed, so a normal z understates the tail; or stockouts censored the history, so the forecast is biased low. Measure the achieved service by segment to find which.
+
+</QA>
+
+<Trap>
+
+**"Safety stock = z × the standard deviation of demand × √L."** It's the standard deviation of *forecast errors*, and the √L assumes they're independent. With error correlation 0.5 over a 4-week lead time, the √L stock delivers 87.4% instead of 95%.
+
+</Trap>
+
+</Section>
