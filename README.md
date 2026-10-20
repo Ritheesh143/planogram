@@ -19,6 +19,12 @@ the **Model Arena**, a benchmark of ten real models on seven stress scenarios. B
 posteriors to hierarchical pooling), the Math Toolkit, and Plan, Exercises, Concept Graph and Golden
 Threads pages complete the milestone.
 
+**M3: the AI layer, with no API key.** Every lesson and model page has an **Ask Claude** panel that
+builds a prompt from the page's key ideas, the section you're in and your question, copies it and
+opens claude.ai. Four Claude Code skills work from a local `claude` session against the lesson
+sources: `/tutor`, `/feynman-grade`, `/mock-interview` and `/project-grill` (which reads your
+gitignored `private/dossier/`).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also
@@ -95,7 +101,6 @@ Import the repository and keep the defaults.
 
 | Milestone | Scope |
 |---|---|
-| M3 | AI layer with no API key: Claude Code skills (tutor, Feynman grader, mock interviewer, Project Grill) and an "Ask Claude" copy-prompt button |
 | M4+ | Weekly lesson batches in sprint order: MCMC → forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
 
 The full plan, current status and per-batch checklist are in [`docs/ROADMAP.md`](docs/ROADMAP.md).

@@ -6,9 +6,10 @@ browser's localStorage.
 
 ## Where we are
 
-M1 and M2 are done and live (Vercel deploys `main`). **Next is M3, the AI layer with no API key:**
-Claude Code skills plus an "Ask Claude" copy-prompt button. Read `docs/ROADMAP.md` before
-starting work. It holds the status, the M3 spec, the batch order for M4 onward and the per-batch
+M1, M2 and M3 (the no-API-key AI layer: the `tutor`, `feynman-grade`, `mock-interview` and
+`project-grill` skills plus the "Ask Claude" panel) are done and live (Vercel deploys `main`).
+**Next is M4: weekly lesson batches, starting with Bayes rungs 10–13.** Read `docs/ROADMAP.md`
+before starting work. It holds the status, the batch order for M4 onward and the per-batch
 checklist. Update its Status section after each batch.
 
 If `private/profile.md` exists, read it for the learner's career context and project details. It is

@@ -34,6 +34,7 @@ export async function renderLessonPage(slug: string) {
       return { title: l.title, href: lessonHref(l), ready: l.status === "ready", current: s === slug };
     }),
   }));
+  const cards = cardsForLesson(slug);
   const unlocks = unlockedBy(slug).map((l) => ({
     title: l.title,
     href: lessonHref(l),
@@ -52,11 +53,12 @@ export async function renderLessonPage(slug: string) {
       week={lesson.week}
       summary={lesson.summary}
       prereqs={prereqs}
+      keyIdeas={cards.map((c) => ({ front: c.front, back: c.back }))}
     >
       <Body />
       <Section id="recall">
         <ThreadsPanel threads={threads} unlocks={unlocks} />
-        <Recall cards={cardsForLesson(slug)} />
+        <Recall cards={cards} />
       </Section>
     </LessonShell>
   );

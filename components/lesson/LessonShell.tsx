@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { setDepth, setMastered, useProgress } from "@/lib/progress";
+import { AskClaude } from "./AskClaude";
 import { LessonContext } from "./LessonContext";
 import { sectionsFor, type LessonKind } from "./sections";
 
@@ -17,6 +18,7 @@ type Props = {
   week?: number;
   summary: string;
   prereqs: { title: string; href: string }[];
+  keyIdeas: { front: string; back: string }[];
   children: ReactNode;
 };
 
@@ -115,6 +117,8 @@ export function LessonShell(props: Props) {
               {mastered ? "Unmark mastered" : "Mark as mastered"}
             </button>
           </div>
+
+          <AskClaude kind={props.kind} title={props.title} summary={props.summary} keyIdeas={props.keyIdeas} />
         </article>
 
         <aside className="no-print hidden lg:block">

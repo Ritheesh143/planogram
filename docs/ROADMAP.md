@@ -12,8 +12,8 @@ context, project details and screening results. Never copy anything from it into
 |---|---|
 | **M1** Scaffold, Bolt & Beam generator, lesson template, store map, progress, FSRS review, Floor Check, the four Keystones | Done, live |
 | **M2** Model Lab (linear regression, decision tree, gradient boosting, XGBoost vs LightGBM vs CatBoost, MLP), Model Arena + Failure Matrix, Tree vs MLP, Bayes rungs 2–9, Math Toolkit, Plan / Exercises / Concept Graph / Threads pages | Done, live |
-| **M3** The AI layer, without an API key (spec below) | **Next** |
-| **M4 onward** Weekly lesson batches in sprint order | Not started |
+| **M3** The AI layer, without an API key (spec below): `tutor`, `feynman-grade`, `mock-interview`, `project-grill` skills and the Ask Claude panel | Done, live. A manual run of each skill in a local `claude` session is still to do |
+| **M4 onward** Weekly lesson batches in sprint order | **Next**: Bayes rungs 10–13 |
 
 The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys it.
 
