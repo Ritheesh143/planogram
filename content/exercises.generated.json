@@ -708,6 +708,150 @@
   "title": "Junk features"
  },
  {
+  "slug": "fc-anatomy",
+  "n": 1,
+  "level": "easy",
+  "title": "A week's trend"
+ },
+ {
+  "slug": "fc-anatomy",
+  "n": 2,
+  "level": "easy",
+  "title": "A weekday index"
+ },
+ {
+  "slug": "fc-anatomy",
+  "n": 3,
+  "level": "medium",
+  "title": "Forecast a Tuesday"
+ },
+ {
+  "slug": "fc-anatomy",
+  "n": 4,
+  "level": "medium",
+  "title": "Is the spike real?"
+ },
+ {
+  "slug": "fc-anatomy",
+  "n": 5,
+  "level": "hard",
+  "title": "An ACF by hand"
+ },
+ {
+  "slug": "fc-anatomy",
+  "n": 6,
+  "level": "hard",
+  "title": "Spikes in noise"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 1,
+  "level": "easy",
+  "title": "AR forecasts"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 2,
+  "level": "easy",
+  "title": "MA autocorrelation"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 3,
+  "level": "medium",
+  "title": "The ceiling on AR uncertainty"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 4,
+  "level": "medium",
+  "title": "Identify the model"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 5,
+  "level": "hard",
+  "title": "MA(1) can't be very sticky"
+ },
+ {
+  "slug": "fc-arima",
+  "n": 6,
+  "level": "hard",
+  "title": "How wide is the random walk?"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 1,
+  "level": "easy",
+  "title": "WAPE and bias"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 2,
+  "level": "easy",
+  "title": "Seasonal naive"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 3,
+  "level": "medium",
+  "title": "MAPE against WAPE"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 4,
+  "level": "medium",
+  "title": "Reading MASE"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 5,
+  "level": "hard",
+  "title": "Spot the leak"
+ },
+ {
+  "slug": "fc-baselines",
+  "n": 6,
+  "level": "hard",
+  "title": "When does zero win?"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 1,
+  "level": "easy",
+  "title": "One update"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 2,
+  "level": "easy",
+  "title": "A weight"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 3,
+  "level": "medium",
+  "title": "Half-life"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 4,
+  "level": "medium",
+  "title": "Catching a shift"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 5,
+  "level": "hard",
+  "title": "SES on a trend"
+ },
+ {
+  "slug": "fc-ets",
+  "n": 6,
+  "level": "hard",
+  "title": "Optimal α"
+ },
+ {
   "slug": "decision-tree",
   "n": 1,
   "level": "easy",

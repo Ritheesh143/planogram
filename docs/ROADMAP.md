@@ -13,7 +13,7 @@ context, project details and screening results. Never copy anything from it into
 | **M1** Scaffold, Bolt & Beam generator, lesson template, store map, progress, FSRS review, Floor Check, the four Keystones | Done, live |
 | **M2** Model Lab (linear regression, decision tree, gradient boosting, XGBoost vs LightGBM vs CatBoost, MLP), Model Arena + Failure Matrix, Tree vs MLP, Bayes rungs 2–9, Math Toolkit, Plan / Exercises / Concept Graph / Threads pages | Done, live |
 | **M3** The AI layer, without an API key (spec below): `tutor`, `feynman-grade`, `mock-interview`, `project-grill` skills and the Ask Claude panel | Done, live. A manual run of each skill in a local `claude` session is still to do |
-| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13) done, live. **Next**: Signature B, multi-store forecasting |
+| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13) and batch 2a (forecasting basics) done, live. **Next**: batch 2b, hard demand and global models |
 
 The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys it.
 
@@ -23,6 +23,7 @@ The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys
 - **Bayes:** mle-peak (rung 2), posterior-grid (3), beta-binomial (4), gamma-poisson (5),
   priors-defend (6), shrinkage (7), bayes-linreg (8), hierarchical-pooling (9), why-sample (10),
   mcmc-walker (11), bayes-ab (12), bayes-mmm-bridge (13)
+- **Retail (Signature B):** fc-anatomy, fc-baselines, fc-ets, fc-arima
 - **Models (lessons):** boosting-by-hand, tree-vs-mlp
 - **Model Lab (`/models/<slug>`):** linear-regression, decision-tree, gradient-boosting,
   xgb-lgbm-catboost, mlp, model-arena
@@ -114,16 +115,16 @@ pushed on its own.
      make a posterior ridge, and positive priors plus a geo-lift prior pick the point on it.
    - Done: the sampler code is in `lib/sim/mcmc.ts` (vitest: `tests/bayes-rungs-10-13.test.ts`) and
      `python/ladder/` (pytest: `python/tests/test_mcmc.py`).
-2. **Signature B (multi-store forecasting), about 12 lessons:**
-   - Forecasting basics: STL decomposition and the ACF; baselines and rolling-origin CV with
-     WAPE, MASE and bias; ETS as geometric weights; ARIMA intuition.
-   - Hard demand: censored demand from stockouts; Croston and TSB for intermittent demand.
-   - Global models: a global LightGBM with the Tweedie loss derived; MinT reconciliation as a
-     projection.
-   - Uncertainty: pinball loss → quantile (with proof) and conformal intervals.
-   - Promotions: promos and the post-promo dip.
-   - Modern models: DeepAR, TFT and foundation models (Chronos, TimesFM).
-   - At scale: forecasting at scale and the step from forecast to safety stock.
+2. **Signature B (multi-store forecasting), about 12 lessons, in three batches of about four:**
+   - **2a, done.** Forecasting basics: decomposition and the ACF (`fc-anatomy`); baselines and
+     rolling-origin CV with WAPE, MASE and bias (`fc-baselines`); ETS as geometric weights, with
+     the best α derived from the Kalman gain (`fc-ets`); ARIMA intuition from the ACF and PACF
+     (`fc-arima`). The math is in `lib/sim/forecast.ts` (vitest: `tests/forecast-batch-2a.test.ts`).
+   - **2b, next.** Censored demand from stockouts (`fc-censored-demand`); Croston and TSB for
+     intermittent demand; a global LightGBM with the Tweedie loss derived (`fc-tweedie-lgbm`);
+     MinT reconciliation as a projection (`fc-mint`).
+   - **2c.** Pinball loss → quantile and conformal intervals (`fc-pinball`); promotions and the
+     post-promo dip; DeepAR, TFT and foundation models; forecasting at scale and safety stock.
 3. **Signature D (cannibalization and halo):**
    - Definitions, and why item lift ≠ category incrementality.
    - Cross-price elasticity and the sign of substitutes vs complements.

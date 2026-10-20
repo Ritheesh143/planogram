@@ -331,3 +331,73 @@ test("MMM bridge: priors and a lift test pick the point on the ridge", async ({ 
   await expect(page.getByTestId("ms-ols")).toHaveText("1.35");
   await expect(page.getByTestId("ms-neg")).toHaveText("13.5%");
 });
+
+test("Forecasting anatomy: the moving average, the ACF and noise spikes", async ({ page }) => {
+  await page.goto("/learn/retail/fc-anatomy");
+  await expect(page.getByTestId("dc-sat")).toHaveText("+34.1");
+  await expect(page.getByTestId("dc-wiggle")).toHaveText("28.66");
+  await setRange(page, "dc-window", 2);
+  await expect(page.getByTestId("dc-sat")).toHaveText("+81.8");
+  await expect(page.getByTestId("dc-wiggle")).toHaveText("2.56");
+  await expect(page.getByTestId("dc-rem")).toHaveText("11.69");
+  await expect(page.getByTestId("acf-r")).toHaveText("0.676");
+  await setRange(page, "acf-lag", 7);
+  await expect(page.getByTestId("acf-r")).toHaveText("0.852");
+  await expect(page.getByTestId("acf-pairs")).toHaveText("105");
+  await expect(page.getByTestId("acf-pc")).toHaveText("0.962");
+  await page.getByRole("radio", { name: "Remainder" }).click();
+  await expect(page.getByTestId("acf-r")).toHaveText("-0.118");
+  await expect(page.getByTestId("acf-band")).toHaveText("0.190");
+  await expect(page.getByTestId("nz-share")).toHaveText("3.2%");
+  await expect(page.getByTestId("nz-any")).toHaveText("56.8%");
+});
+
+test("Forecasting baselines: rolling origin, the slow-mover trap and one-week holdouts", async ({ page }) => {
+  await page.goto("/learn/retail/fc-baselines");
+  await expect(page.getByTestId("ro-wape")).toHaveText("3.1%");
+  await expect(page.getByTestId("ro-bias")).toHaveText("-1.9%");
+  await expect(page.getByTestId("ro-mase")).toHaveText("0.93");
+  await expect(page.getByTestId("ro-fold-wape")).toHaveText("2.3%");
+  await page.getByRole("radio", { name: "Naive (yesterday)" }).click();
+  await expect(page.getByTestId("ro-wape")).toHaveText("12.7%");
+  await expect(page.getByTestId("ro-bias")).toHaveText("+10.4%");
+  await expect(page.getByTestId("sm-wape")).toHaveText("109.8%");
+  await setRange(page, "sm-f", 0);
+  await expect(page.getByTestId("sm-wape")).toHaveText("100.0%");
+  await expect(page.getByTestId("sm-bias")).toHaveText("-100.0%");
+  await expect(page.getByTestId("ho-single-wrong")).toHaveText("10.3%");
+  await expect(page.getByTestId("ho-rolling-wrong")).toHaveText("0.0%");
+  await expect(page.getByTestId("ho-single-sd")).toHaveText("0.94");
+});
+
+test("Exponential smoothing: α trades noise for speed, and the best α matches theory", async ({ page }) => {
+  await page.goto("/learn/retail/fc-ets");
+  await expect(page.getByTestId("ses-rmse")).toHaveText("104.1");
+  await expect(page.getByTestId("ses-half")).toHaveText("1.94");
+  await expect(page.getByTestId("ses-best")).toHaveText("0.42");
+  await setRange(page, "ses-alpha", 0.1);
+  await expect(page.getByTestId("ses-rmse")).toHaveText("121.1");
+  await expect(page.getByTestId("ses-90")).toHaveText("22");
+  await setRange(page, "ses-alpha", 1);
+  await expect(page.getByTestId("ses-rmse")).toHaveText("120.8");
+  await expect(page.getByTestId("as-fit-1")).toHaveText("0.610");
+});
+
+test("ARIMA: AR, MA and random-walk signatures, and the forecast fan", async ({ page }) => {
+  await page.goto("/learn/retail/fc-arima");
+  await expect(page.getByTestId("ap-r1")).toHaveText("0.64");
+  await expect(page.getByTestId("ap-t1")).toHaveText("0.60");
+  await expect(page.getByTestId("ap-p2")).toHaveText("-0.01");
+  await page.getByRole("radio", { name: "MA(1)" }).click();
+  await expect(page.getByTestId("ap-r1")).toHaveText("0.49");
+  await expect(page.getByTestId("ap-p2")).toHaveText("-0.21");
+  await page.getByRole("radio", { name: "Random walk", exact: true }).click();
+  await expect(page.getByTestId("ap-r1")).toHaveText("0.96");
+  await page.getByRole("radio", { name: "Walk, differenced" }).click();
+  await expect(page.getByTestId("ap-r1")).toHaveText("0.05");
+  await expect(page.getByTestId("ff-sd-26")).toHaveText("124");
+  await expect(page.getByTestId("ff-mid")).toHaveText("2,803");
+  await page.getByRole("radio", { name: "Random walk (φ = 1)" }).click();
+  await expect(page.getByTestId("ff-sd-26")).toHaveText("507");
+  await expect(page.getByTestId("ff-mid")).toHaveText("3,003");
+});

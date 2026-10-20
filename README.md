@@ -31,6 +31,12 @@ that the sampler recovers a known Beta posterior), *Bayesian A/B Testing* (P(B >
 loss by counting, and what peeking costs) and *The Bridge to Bayesian MMM* (collinear channels, a
 posterior ridge, and priors plus a lift test that pick the point on it).
 
+**M4, batch 2a: forecasting basics (Signature B).** *Anatomy of a Store Time Series* (trend,
+weekday pattern and remainder, and what the ACF computes), *Baselines and Backtests* (seasonal
+naive, rolling-origin folds, WAPE with bias and MASE, and why WAPE prefers zero for slow movers),
+*Exponential Smoothing as Geometric Weights* (α from the signal-to-noise ratio) and *ARIMA
+Intuition* (AR, MA and differencing read off the ACF and PACF, and the forecast fan).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also

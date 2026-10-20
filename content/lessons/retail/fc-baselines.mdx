@@ -1,0 +1,302 @@
+<Section id="floor">
+
+A vendor pitches a machine-learning forecast for the Pune store: **"WAPE of 6%"**. The planning head asks the only question that matters: *6% compared with what?* If "same as last week" already scores 3%, the model is worse than free.
+
+Every forecast gets two checks before anyone looks at a model. The first is a **baseline**, a forecast so simple it costs nothing. The second is a **backtest** that scores it honestly: on several stretches of history, using only the past each time, with one number for size of error and one for direction.
+
+<KeyIdea>
+
+**Beat seasonal naive, on rolling folds, and report WAPE with bias.** Seasonal naive ("same weekday last week") is the bar a store forecast has to clear. A **rolling-origin** backtest repeats the forecast from several past dates, so one lucky or unlucky week can't decide the winner. **WAPE** (total error ÷ total sales) measures size. **Bias** (total over-forecast ÷ total sales) measures direction. **MASE** below 1 means the forecast beats seasonal naive's own in-sample error.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The Pune store's weeks 1 and 2 (from [Anatomy of a Store Time Series](/learn/retail/fc-anatomy)) are history. Forecast week 3 two ways, then score both.
+
+| | Mon | Tue | Wed | Thu | Fri | Sat | Sun | Total |
+|---|---|---|---|---|---|---|---|---|
+| Week 2 (history) | 375 | 355 | 380 | 385 | 425 | 495 | 455 | 2,870 |
+| Week 3 (actual) | 398 | 364 | 409 | 382 | 449 | 512 | 480 | 2,994 |
+
+<Steps>
+<Step>
+
+**Naive: every day equals yesterday.** The last known day is Sunday's 455, so forecast 455 all week. Forecast − actual: +57, +91, +46, +73, +6, −57, −25. The absolute errors sum to **355**.
+
+</Step>
+<Step>
+
+**Seasonal naive: same weekday last week.** Forecast week 3 as week 2. Forecast − actual: −23, −9, −29, +3, −24, −17, −25. The absolute errors sum to **130**.
+
+</Step>
+<Step>
+
+**WAPE** is total absolute error over total sales:
+
+- Naive: $355 / 2994 =$ **11.86%**.
+- Seasonal naive: $130 / 2994 =$ **4.34%**.
+
+</Step>
+<Step>
+
+**Bias** is total (forecast − actual) over total sales:
+
+- Naive: $(7 \times 455 - 2994)/2994 = +191/2994 =$ **+6.38%**. It over-forecasts, because the week ended on a big Sunday.
+- Seasonal naive: $-124/2994 =$ **−4.14%**. It under-forecasts, because it misses a week of growth.
+
+</Step>
+<Step>
+
+**MASE** compares the forecast's average error with the average error seasonal naive made *on the history*. Week 2 against week 1: $|375 - 360|, |355 - 350|, \dots$ = 15, 5, 10, 5, 15, 15, 5, so the scale is $70/7 =$ **10**.
+
+- Naive: MAE $355/7 = 50.71$, MASE **5.07**.
+- Seasonal naive: MAE $130/7 = 18.57$, MASE **1.86**.
+
+Above 1, because week 2 happened to track week 1 unusually closely. One week of history is a shaky yardstick, which is why the next section uses eight.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Over eight weekly folds of the store's history, which baseline has the lowest WAPE?" options={["Naive (yesterday)", "Seasonal naive (last week)", "28-day average", "Same weekday, averaged over the last 4 weeks"]} answer={1}>
+
+**Seasonal naive**, at 3.1%. The 4-week weekday average is less noisy, but it is centred 2.5 weeks in the past, so it misses 2.5 weeks of growth: 4.7%, with a bias of −4.6%.
+
+</Predict>
+
+<RollingOrigin />
+
+**Try this:**
+
+1. **Seasonal naive** across all eight folds: WAPE **3.1%**, bias **−1.9%**, MASE **0.93**.
+2. **Naive**: WAPE **12.7%**, bias **+10.4%**, MASE **3.75**. Every fold starts on a Monday, so "yesterday" is always a big Sunday.
+3. **28-day average**: **8.3%**. A flat line ignores the weekday pattern entirely.
+4. **Same weekday, last 4 weeks**: **4.7%**, bias **−4.6%**. It is steadier than one week, but it lags the trend.
+5. Back on seasonal naive, slide through the folds. The fold WAPEs run from **2.3% to 3.8%**. A one-week test could have reported either.
+
+</Section>
+
+<Section id="simulate">
+
+How much can one holdout week mislead? Simulate 300 stores with the same recipe as Pune (trend, weekday pattern, noise), so every store has the same *expected* WAPE. Score seasonal naive on each store's last week only and on its eight rolling folds, and see how far each score lands from the expected value:
+
+<HoldoutStudy />
+
+- **One week carries a lot of luck.** Seasonal naive's expected WAPE here is about 3.5%, yet a last-week score lands **0.94** points (sd) from its expected value: one store's test could read anywhere from about 2% to 5%. Eight folds miss by **0.36**, roughly $1/\sqrt 8$ of the spread, from averaging eight weeks.
+- **Wrong winners.** In expectation seasonal naive beats the 4-week weekday average (3.6% against 5.1%). A last-week test still picks the 4-week average in **10.3%** of stores. Eight folds never did (**0.0%**).
+- **Same rule as an A/B test.** A backtest is an experiment on history: one fold is a sample of one week.
+
+</Section>
+
+<Section id="formula">
+
+For actuals $y_t$ and forecasts $\hat y_t$ over the test days:
+
+$$
+\text{WAPE} = \frac{\sum_t \lvert y_t - \hat y_t \rvert}{\sum_t y_t}, \qquad \text{bias} = \frac{\sum_t (\hat y_t - y_t)}{\sum_t y_t}, \qquad \text{MASE} = \frac{\frac1h \sum_t \lvert y_t - \hat y_t \rvert}{\frac{1}{n - m}\sum_{s=m+1}^{n} \lvert y_s - y_{s-m} \rvert}
+$$
+
+The MASE denominator is seasonal naive's error on the $n$ training days (season $m = 7$), so MASE has no units and compares fairly across a fast mover and a slow one.
+
+**Rolling origin.** Pick origins $o_1 \lt o_2 \lt \dots \lt o_K$. At each one, fit or compute the forecast using days before $o_k$ only, forecast days $o_k$ to $o_k + h - 1$, and record the errors. Pool all the errors into one WAPE and one bias.
+
+**WAPE needs bias beside it.** WAPE is mean absolute error divided by mean sales, and the forecast that minimizes absolute error is the **median**, not the mean. For a slow mover the median can be 0:
+
+<SlowMover />
+
+Forecasting **0** a day gives WAPE **100%**, lower than the true mean's **109.8%**. But its bias is **−100%**: the drill never gets stocked. RMSE points the other way, lowest at the mean (**0.775**). Report the pair.
+
+<Depth min={2}>
+
+**Why not MAPE?** MAPE averages $\lvert y_t - \hat y_t \rvert / y_t$ day by day. A day with 1 sale and an error of 2 counts as 200%, as much as a 200% miss on a 500-item day. It is undefined on zero days and rewards under-forecasting, since an over-forecast can be off by more than 100% but an under-forecast can't. WAPE weights each day by its sales instead, which is what the warehouse feels.
+
+**Which baseline?**
+
+| Series | Baseline to beat |
+|---|---|
+| Strong weekly pattern | Seasonal naive, m = 7 |
+| Weekly totals with yearly seasonality | Seasonal naive, m = 52 |
+| No pattern, stable level | Mean of the last few periods |
+| Trend, no season | Naive with drift: last value + average change |
+
+**Gaps and horizons.** If orders are placed on Monday for delivery on Thursday, the forecast that matters is made 3 to 9 days ahead. The backtest must use the same gap: score the forecast made on day $o$ for days $o + 3$ to $o + 9$, not the easier next day.
+
+</Depth>
+
+<Depth min={3}>
+
+**The median minimizes absolute error.** For a constant forecast $f$, $\frac{d}{df}\,\mathbb E\lvert y - f \rvert = P(y \lt f) - P(y \gt f)$, which is zero where half the mass lies on each side: the median. For a Poisson(0.6) drill, $P(y = 0) = e^{-0.6} = 0.549 \gt 0.5$, so the median is 0 and $\text{WAPE}(0) = \mathbb E[y]/\mathbb E[y] = 1$ exactly. Any Poisson rate below $\ln 2 = 0.693$ has median 0.
+
+**Squared error picks the mean.** $\mathbb E(y - f)^2 = \operatorname{Var}(y) + (f - \mathbb E y)^2$, smallest at $f = \mathbb E y$. For the drill, $\sqrt{0.6} = 0.775$. This is the Gaussian half of [MLE and Losses](/learn/bayes/mle-peak); the absolute-error half is the Laplace likelihood. When you choose a metric, you are choosing which summary of the forecast distribution to aim at.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="WAPE and bias">
+
+Actuals 8, 12, 10; forecasts 10, 10, 10. Find WAPE and bias.
+
+<Solution>
+
+Absolute errors 2, 2, 0 sum to 4 over 30 sold: WAPE **13.3%**. Forecast − actual sums to $2 - 2 + 0 = 0$: bias **0%**. A forecast can be unbiased and still miss every day.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Seasonal naive">
+
+Daily sales last Monday to Sunday were 380, 362, 395, 401, 440, 521, 470. What does seasonal naive forecast for next Saturday, and for the Saturday after?
+
+<Solution>
+
+**521** both times. With $m = 7$, a seasonal naive forecast for any horizon repeats the last week.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="MAPE against WAPE">
+
+Two days: actual 1 and 100, forecast 3 and 98. Compute MAPE and WAPE.
+
+<Solution>
+
+MAPE: $(200\% + 2\%)/2 =$ **101%**. WAPE: $(2 + 2)/101 =$ **3.96%**. One slow day dominates MAPE, while WAPE reflects the 4 items actually missed.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Reading MASE">
+
+A forecast has MASE 0.80 and the in-sample seasonal-naive MAE is 17.41 items. What is its MAE? Did it beat seasonal naive?
+
+<Solution>
+
+$0.80 \times 17.41 =$ **13.9 items** a day. It beat seasonal naive's *in-sample* error by 20%. For a head-to-head on the test days, also score seasonal naive itself on the same folds.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Spot the leak">
+
+A backtest uses a "7-day centred moving average of sales" as a feature for forecasting day $t$. Its WAPE is 1.8%. What's wrong?
+
+<Solution>
+
+A centred 7-day average on day $t$ uses days $t + 1$ to $t + 3$, which are the future. The model is partly reading the answer. At forecast time, only trailing windows (days $t - 7$ to $t - 1$, or earlier if there's an ordering gap) exist. Recompute the feature as trailing, and expect the WAPE to rise.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="When does zero win?">
+
+For a Poisson(λ) item, show that forecasting 0 has WAPE exactly 100%. For which λ is 0 also the forecast that minimizes WAPE?
+
+<Solution>
+
+With $f = 0$, $\sum \lvert y - 0 \rvert = \sum y$, so WAPE = 1. Zero minimizes absolute error when it is a median: $P(y = 0) = e^{-\lambda} \ge 0.5$, so $\lambda \le \ln 2 \approx$ **0.693**. Most slow movers in a DIY store (a sale every other day or less) are in that range, which is why WAPE alone pushes slow-mover forecasts toward zero.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand backtest in numpy, then rolling-origin scores for the four baselines on a simulated 16-week store, then the slow-mover scores. Expected: seasonal naive scores WAPE 4.34%, bias −4.14% and MASE 1.86 on week 3; on the simulated store it has the lowest rolling WAPE; and forecasting 0 for the drill gives WAPE 100.0% against 109.8% for the mean.
+
+<PyRunner title="Baselines, scored honestly" code={`
+import numpy as np
+from math import exp, factorial
+
+def wape(a, f):
+    return np.abs(a - f).sum() / a.sum()
+
+def bias(a, f):
+    return (f - a).sum() / a.sum()
+
+w1 = np.array([360, 350, 370, 380, 410, 480, 450.])
+w2 = np.array([375, 355, 380, 385, 425, 495, 455.])
+w3 = np.array([398, 364, 409, 382, 449, 512, 480.])
+scale = np.abs(w2 - w1).mean()           # seasonal naive's error on the history
+for name, fc in [("naive", np.full(7, w2[-1])), ("seasonal naive", w2)]:
+    mase = np.abs(w3 - fc).mean() / scale
+    print(f"{name}: WAPE {wape(w3, fc):.2%}, bias {bias(w3, fc):+.2%}, MASE {mase:.2f}")
+
+# A simulated 16-week store and eight rolling folds
+rng = np.random.default_rng(5)
+t = np.arange(112)
+y = np.round(400 + 10 / 7 * (t - 3) + np.array([-40, -50, -30, -20, 10, 80, 50])[t % 7] + rng.normal(0, 15, 112))
+
+def forecast(method, hist):
+    if method == "naive":
+        return np.full(7, hist[-1])
+    if method == "seasonal naive":
+        return hist[-7:]
+    if method == "28-day mean":
+        return np.full(7, hist[-28:].mean())
+    return hist[-28:].reshape(4, 7).mean(axis=0)  # same weekday, last 4 weeks
+
+for method in ["naive", "seasonal naive", "28-day mean", "weekday x4"]:
+    A, F = [], []
+    for o in range(56, 112, 7):          # origins: days 56, 63, ..., 105
+        A.append(y[o:o + 7])
+        F.append(forecast(method, y[:o]))
+    A, F = np.concatenate(A), np.concatenate(F)
+    print(f"{method:15s} rolling WAPE {wape(A, F):6.2%}   bias {bias(A, F):+.2%}")
+
+# The slow mover: Poisson(0.6) a day, scored exactly
+lam = 0.6
+p = np.array([exp(-lam) * lam ** k / factorial(k) for k in range(40)])
+k = np.arange(40)
+for f in [0, 0.6, 1.0]:
+    print(f"forecast {f:.1f}/day: WAPE {np.sum(p * np.abs(k - f)) / lam:.1%}, bias {(f - lam) / lam:+.0%}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Every model ships with its baseline.** Report "model WAPE 2.6%, seasonal naive 3.1%" side by side, per segment. A global model that wins overall can still lose to seasonal naive on the 30% of series that matter most.
+- **Aggregate where the decision is.** Replenishment is per store × SKU per week, and assortment is per category per month. Compute WAPE at the level where the money is decided: errors cancel as you sum up, so a chain-level WAPE flatters store-level forecasts.
+- **Bias is the costlier error.** A steady −5% bias means steady stockouts. Track bias per segment over time and alert on drift; a forecast that is noisy but unbiased is easier to buffer with safety stock.
+- **Backtest like you'll deploy.** Same horizon, same ordering gap, same data you'll have at forecast time (no sales corrections that only arrive later), and refit at each origin if production refits weekly.
+- **Slow movers need probabilistic scores.** For intermittent items, point WAPE is close to meaningless. Score quantile forecasts with pinball loss instead (a lesson in a later batch), and set stock from the quantile.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How do you evaluate a demand forecasting model?">
+
+Against a seasonal-naive baseline, with a rolling-origin backtest that matches the production horizon and gap. I'd report WAPE (or MASE for cross-series comparison) with bias, per segment, at the level where decisions are made, and for intermittent items, pinball loss on the quantiles used for stocking. One holdout week isn't enough: its error alone can swing the result.
+
+</QA>
+
+<QA q="Why WAPE rather than MAPE?">
+
+MAPE divides each day's error by that day's sales, so slow days and zero days blow it up. It also penalizes over-forecasts more than under-forecasts. WAPE divides the total error by total sales, which weights days by volume, matching what the supply chain feels.
+
+</QA>
+
+<QA q="Your model's WAPE beat the baseline, but the stores complain about empty shelves. What do you check?">
+
+Bias, per segment. WAPE is minimized by the median, so it can quietly reward under-forecasting skewed or intermittent demand. A model can win on WAPE with a −8% bias on the fast movers. I'd also check whether the training sales were censored by past stockouts, which teaches the model to under-forecast.
+
+</QA>
+
+<Trap>
+
+**"Our model's WAPE is 6%, which is good."** WAPE has no meaning without a baseline at the same level and horizon. For a strongly weekly store series, seasonal naive alone might score 3%, and for slow movers, forecasting zero can beat the true mean. Always quote the baseline's number and the bias beside it.
+
+</Trap>
+
+</Section>

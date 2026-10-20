@@ -1,0 +1,311 @@
+<Section id="floor">
+
+The Pune store orders stock every week from a forecast of its weekly total, about **2,800 items**. Then, in week 31, a competitor opens across the road and sales drop to about **2,500**. Nobody tells the forecasting system.
+
+The planner's old rule, "average the last 4 weeks", takes a month to notice. "Use last week", the opposite rule, notices at once but chases every noisy week. **Exponential smoothing** sits between them, with a single dial for how fast to react.
+
+<KeyIdea>
+
+**Exponential smoothing is a weighted average of every past week, with weights that shrink geometrically: α, α(1 − α), α(1 − α)², …** Large α reacts fast and is noisy; small α is smooth and slow. The best α depends on one ratio: how much the true level moves each week compared with week-to-week noise. These are the same geometric weights as advertising adstock and Adam's momentum.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Six weeks of sales. The competitor opens before week 4. Smooth with **α = 0.3**, starting from level₁ = week 1.
+
+| Week | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| Sales | 2,800 | 2,860 | 2,780 | 2,500 | 2,520 | 2,480 |
+
+<Steps>
+<Step>
+
+**The update.** New level = α × this week + (1 − α) × old level.
+
+- Week 2: $0.3 \times 2860 + 0.7 \times 2800 = 858 + 1960 =$ **2,818**.
+- Week 3: $0.3 \times 2780 + 0.7 \times 2818 =$ **2,806.6**.
+
+</Step>
+<Step>
+
+**The same update, as a correction.** New level = old level + α × (this week's surprise). In week 4 the surprise is $2500 - 2806.6 = -306.6$, so the level moves $0.3 \times (-306.6) = -91.98$, to **2,714.62**. Then week 5 gives **2,656.23** and week 6 gives **2,603.36**.
+
+</Step>
+<Step>
+
+**The forecast for week 7 is the last level: 2,603.** That is flat for every future week, because the method has no trend and no season. Three weeks after the drop it has absorbed $1 - 0.7^3 = 65.7\%$ of a 300-item shift.
+
+</Step>
+<Step>
+
+**Unroll it.** Substitute each level into the next and the week-6 level becomes a weighted average of all six weeks:
+
+| Weeks back | 0 | 1 | 2 | 3 | 4 | start |
+|---|---|---|---|---|---|---|
+| Weight | 0.3 | 0.21 | 0.147 | 0.1029 | 0.0720 | 0.168 |
+
+$0.3(2480) + 0.21(2520) + 0.147(2500) + 0.1029(2780) + 0.0720(2860) + 0.168(2800) =$ **2,603.36**, the same number. The weights sum to 1. Each is 0.7 times the one before it: they decay geometrically.
+
+</Step>
+<Step>
+
+**Half-life.** A weight halves every $\ln 0.5 / \ln 0.7 =$ **1.94 weeks**. The 4-week average, by contrast, gives weights ¼, ¼, ¼, ¼, 0: its memory ends abruptly, and it still has a quarter of its weight on pre-competitor weeks three weeks after the change.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="On the store's 52 weeks, which α gives the most accurate one-week-ahead forecasts?" options={["α = 0.05, very smooth", "About α = 0.4", "α = 1, just use last week"]} answer={1}>
+
+**About 0.4**: the minimum is at 0.42, with an RMSE of 102.7 items. At 0.05 the forecast takes months to accept the competitor (RMSE 140.6). At 1 it chases noise (120.8).
+
+</Predict>
+
+<SESExplorer />
+
+**Try this:**
+
+1. Start at **α = 0.3**. RMSE **104.1**, a half-life of **1.94** weeks, and the level catches 90% of a shift in **7** weeks.
+2. Drop to **α = 0.1**. The line is smooth but RMSE rises to **121.1**: three weeks after the competitor opened it still forecasts **2,711**, and it needs **22** weeks to catch 90% of the drop.
+3. Push to **α = 1**. The forecast is last week's sales: RMSE **120.8**, as bad as α = 0.1 for the opposite reason. Watch the weights panel collapse to one bar.
+4. Try **0.4 and 0.45**. Both read **102.7**, and the curve is flat between about 0.3 and 0.5. Any α in that range is defensible; α = 0.05 or 1 is not.
+
+</Section>
+
+<Section id="simulate">
+
+Why 0.4 for this store? Simulate the textbook world that exponential smoothing is optimal for. Each week the true level takes a random step (variance $q$), and each observed week adds noise (variance 1). Generate 200 series of 200 weeks at each $q$, fit α by grid search, and compare with theory:
+
+<AlphaStudy />
+
+| q (level movement ÷ noise) | 0.01 | 0.1 | 1 | 10 |
+|---|---|---|---|---|
+| Average fitted α | 0.103 | 0.277 | 0.610 | 0.913 |
+| Theory, $\alpha^* = (-q + \sqrt{q^2 + 4q})/2$ | 0.095 | 0.270 | 0.618 | 0.916 |
+
+- **α measures the signal-to-noise ratio.** A stable store with noisy weeks wants a small α. A store whose level really drifts wants a large one.
+- **Fitting α by minimizing one-step error finds the theory.** That's why libraries simply optimize it. The ±0.04 to 0.07 spread across series is why α varies from store to store even when the world is the same.
+
+</Section>
+
+<Section id="formula">
+
+**Simple exponential smoothing (SES)**, from the hand example:
+
+$$
+\ell_t = \alpha y_t + (1 - \alpha)\,\ell_{t-1} = \ell_{t-1} + \alpha\,(y_t - \ell_{t-1}), \qquad \hat y_{t+h} = \ell_t \text{ for every } h
+$$
+
+**Unrolled**, it is a weighted average with geometric weights:
+
+$$
+\ell_t = \sum_{j=0}^{t-2} \alpha (1 - \alpha)^j\, y_{t-j} + (1 - \alpha)^{t-1} \ell_1, \qquad \text{half-life} = \frac{\ln 0.5}{\ln(1 - \alpha)}
+$$
+
+After a sudden shift, the level has absorbed $1 - (1 - \alpha)^k$ of it $k$ weeks later.
+
+**Golden Thread: geometric decay.** The same weights appear in advertising adstock (this week's ad effect carries over at rate θ), in momentum optimizers (a running average of gradients) and in reinforcement learning's discount factor. Each time, it means "yesterday counts a fixed fraction of today".
+
+<Depth min={2}>
+
+**Holt: add a trend.** Keep a slope $b_t$ beside the level:
+
+$$
+\ell_t = \alpha y_t + (1 - \alpha)(\ell_{t-1} + b_{t-1}), \qquad b_t = \beta(\ell_t - \ell_{t-1}) + (1 - \beta)\, b_{t-1}, \qquad \hat y_{t+h} = \ell_t + h\, b_t
+$$
+
+A **damped trend** multiplies the slope by $\phi \lt 1$ each step ahead. That stops a forecast from extrapolating growth forever, and it usually wins on retail data.
+
+**Holt–Winters: add a season.** Keep $m$ seasonal terms (7 for days of the week) and smooth each one only when its weekday comes round:
+
+$$
+s_t = \gamma\,(y_t - \ell_t) + (1 - \gamma)\, s_{t-m}
+$$
+
+The level is then updated on deseasonalized sales, $y_t - s_{t-m}$.
+
+**The ETS family.** Each model is named by its **E**rror, **T**rend and **S**eason components, each one None, Additive or Multiplicative (with an optional damped trend). SES is ETS(A,N,N), and Holt–Winters on the daily store is ETS(A,A,A). Written as a state-space model, each has a likelihood. That gives you parameter fitting by maximum likelihood, model choice by AIC, and prediction intervals, not just point forecasts.
+
+</Depth>
+
+<Depth min={3}>
+
+**Where α* comes from.** In the local-level model, the level $\mu_t = \mu_{t-1} + \eta_t$ moves with variance $q$, and you observe $y_t = \mu_t + \varepsilon_t$ with variance 1. The Kalman filter is the optimal tracker, and in steady state its update is exactly SES, with α equal to the Kalman gain $K$.
+
+Let $P$ be the variance of your belief about the level just before seeing $y_t$. Then:
+
+- The gain is $K = P/(P + 1)$.
+- After the update, the variance is $P(1 - K) = P/(P + 1)$.
+- The next week adds $q$, and in steady state the result must equal $P$ again: $P = P/(P + 1) + q$, which rearranges to $P^2 = q(P + 1)$.
+- So $K = P/(P + 1) = q/P$, and solving the quadratic gives $\alpha^* = K = (-q + \sqrt{q^2 + 4q})/2$.
+
+At $q = 1$ this is $(\sqrt5 - 1)/2 = 0.618$, the golden ratio's reciprocal.
+
+**SES under a trend.** If sales grow by $b$ a week, SES settles into a steady lag. Each week the level must also rise by $b$, and it can only do that by being surprised: $b = \alpha \times \text{error}$. So the one-step forecast is **$b/\alpha$ too low**, every week, forever. Holt's slope term exists to remove exactly this bias.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="One update">
+
+The level is 2,600 and this week sold 2,400. With α = 0.25, what's the new level and the forecast for next week?
+
+<Solution>
+
+$2600 + 0.25 \times (2400 - 2600) =$ **2,550**, and the forecast for next week (and every later week) is 2,550.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A weight">
+
+With α = 0.4, what weight does the week from 3 weeks ago get?
+
+<Solution>
+
+$0.4 \times 0.6^3 =$ **0.0864**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Half-life">
+
+What is the half-life of α = 0.2? How does it compare with a 6-week moving average?
+
+<Solution>
+
+$\ln 0.5 / \ln 0.8 =$ **3.11 weeks**. A 6-week moving average has its centre of mass 2.5 weeks back. SES with α = 0.2 has its centre of mass at $(1 - \alpha)/\alpha = 4$ weeks back, but it still gives the newest week the largest weight (0.2 against ⅙).
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Catching a shift">
+
+With α = 0.3, how many weeks until the level has absorbed 90% of a sudden drop?
+
+<Solution>
+
+You need $0.7^k \le 0.1$, so $k \ge \ln 0.1 / \ln 0.7 = 6.46$: **7 weeks** ($0.7^7 = 0.082$).
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="SES on a trend">
+
+Weekly sales grow steadily by 10 items a week. SES with α = 0.3 has run for a long time. How far off is its one-step forecast, and in which direction?
+
+<Solution>
+
+In steady state the level rises by 10 a week, and SES moves the level by α × error, so the error is $10/0.3 =$ **33.3 items, under-forecast** every week. Holt's method (or a drift term) fixes it.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Optimal α">
+
+A category's true weekly level moves with variance 0.25 (in units of its noise variance). What α should SES use?
+
+<Solution>
+
+$\alpha^* = (-0.25 + \sqrt{0.0625 + 1})/2 = (-0.25 + 1.0308)/2 \approx$ **0.39**.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand-worked smoothing, the weights, a grid search for α on a simulated competitor year, and a check of α* against simulation. Expected: the week-7 forecast is 2603.36, the weights times the sales give the same number, and the grid-searched α for q = 1 is close to 0.618.
+
+<PyRunner title="Exponential smoothing from scratch" code={`
+import numpy as np
+
+def ses(y, alpha):
+    level = [y[0]]
+    for v in y[1:]:
+        level.append(alpha * v + (1 - alpha) * level[-1])
+    return np.array(level)
+
+def one_step_sse(y, alpha):
+    lv = ses(y, alpha)
+    return np.sum((y[1:] - lv[:-1]) ** 2)
+
+# By hand: six weeks, competitor opens before week 4
+y6 = np.array([2800, 2860, 2780, 2500, 2520, 2480.])
+lv = ses(y6, 0.3)
+print("levels:", ", ".join(f"{v:.2f}" for v in lv))
+print(f"week 7 forecast: {lv[-1]:.2f}")
+
+# The same number as a weighted average with geometric weights
+wts = 0.3 * 0.7 ** np.arange(5)
+check = np.dot(wts, y6[::-1][:5]) + 0.7 ** 5 * y6[0]
+print(f"weights {np.round(wts, 4)} + start {0.7 ** 5:.3f}: {check:.2f}")
+
+# A simulated year: 2,800 a week, then a competitor takes 300 from week 31
+rng = np.random.default_rng(4)
+level = np.where(np.arange(52) < 30, 2800, 2500)
+year = np.round(level + rng.normal(0, 80, 52))
+alphas = np.round(np.arange(0.01, 1.001, 0.01), 2)
+sse = [one_step_sse(year, a) for a in alphas]
+best = alphas[int(np.argmin(sse))]
+print(f"best alpha on the year: {best:.2f}, RMSE {np.sqrt(min(sse) / 51):.1f}")
+
+# The local-level world: best alpha against the Kalman-filter formula
+for q in [0.1, 1.0]:
+    fits = []
+    for _ in range(100):
+        mu = np.cumsum(rng.normal(0, np.sqrt(q), 200))
+        ys = mu + rng.normal(0, 1, 200)
+        fits.append(alphas[int(np.argmin([one_step_sse(ys, a) for a in alphas]))])
+    print(f"q = {q}: fitted alpha {np.mean(fits):.3f}, theory {(-q + np.sqrt(q * q + 4 * q)) / 2:.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **ETS is the workhorse baseline.** statsforecast's `AutoETS` fits every ETS variant by maximum likelihood and picks one by AIC, for millions of series in minutes. Strong global models are judged against it as well as against seasonal naive.
+- **Structural breaks beat any α.** A competitor opening, a remodel or a range reset shifts the level once. A high α adapts, but it also amplifies noise for the rest of the year. Better practice is to flag the event, reset the level or add an intervention term, and keep a modest α.
+- **New stores and new items have no history.** Start the level from a similar store or the category average (the [shrinkage](/learn/bayes/shrinkage) idea), not from the first noisy week.
+- **Weekly totals versus daily.** Holt–Winters on daily data with weekly seasonality works for replenishment by day. For weekly ordering, smooth weekly totals, and add yearly seasonality (m = 52) only if you have at least two years.
+- **Intervals come from the state space.** ETS(A,N,N) has $h$-step error variance $\sigma^2\,(1 + (h - 1)\alpha^2)$. Those widening intervals become safety stock, and they are only as honest as the error model.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain exponential smoothing in one sentence, then explain how to choose α.">
+
+The forecast is a weighted average of all past observations, with weights that decay geometrically by a factor of (1 − α) per period. I'd choose α by minimizing one-step-ahead error, or by maximum likelihood in the ETS state-space form, on a rolling-origin backtest. Conceptually, α grows with the ratio of true level movement to noise.
+
+</QA>
+
+<QA q="What's the relationship between exponential smoothing and the Kalman filter?">
+
+SES is the steady-state Kalman filter for the local-level model: a random-walk level observed with noise. The optimal α is the steady-state Kalman gain, $(-q + \sqrt{q^2 + 4q})/2$, where $q$ is the ratio of level variance to noise variance.
+
+</QA>
+
+<QA q="Your SES forecast under-forecasts a growing category every single week. Why, and what do you change?">
+
+SES has no trend term. Under steady growth $b$ per period it lags by $b/\alpha$ in steady state. I'd switch to Holt's method with a damped trend (ETS(A,Ad,N)), or add seasonality too if the data has it, and check bias on a rolling backtest.
+
+</QA>
+
+<Trap>
+
+**"Set α high so the forecast reacts quickly to changes."** It also reacts to every noisy week. On the store's year, α = 1 (pure last week) scores about the same RMSE as the sluggish α = 0.1: 120.8 against 121.1. Choose α by backtest, and treat known one-off shifts (a competitor, a remodel) as events rather than turning α up for the whole year.
+
+</Trap>
+
+</Section>

@@ -1,0 +1,300 @@
+<Section id="floor">
+
+A DIY video goes viral and weekly sales of a tile adhesive jump to **3,000**, against a normal **2,800**. The buyer has to place a 13-week order today. If the jump is a passing spike, demand drifts back to 2,800 and an order sized for 3,000 a week can leave up to 2,600 bags on the shelf. If it's a new normal, an order for 2,800 a week runs out.
+
+The question is about memory. **Does a surprise fade, or does it stay?** ARIMA models are a vocabulary for exactly that, and the ACF and PACF are how you read which kind of memory a series has.
+
+<KeyIdea>
+
+**AR remembers the level, MA remembers recent shocks, and I (differencing) handles surprises that never fade.** In an AR(1), a gap from the mean shrinks by φ each week: the ACF tails off as φ, φ², φ³, … and the PACF has a single spike. In an MA(1), a shock echoes for one week: the ACF has one spike, then nothing. A random walk never forgets: its ACF stays near 1. Difference it (this week minus last) and what's left is plain noise.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Weekly adhesive sales, in bags. The long-run mean is **2,800**, and the viral week sold **3,000**: a gap of **+200**.
+
+<Steps>
+<Step>
+
+**AR(1) with φ = 0.6: the gap shrinks by 0.6 each week.** Gaps of 120, 72, 43.2 and 25.9 give forecasts of **2,920, 2,872, 2,843.2, 2,825.9**. By week 13 the gap is $200 \times 0.6^{13} = 0.3$ bags: the spike is gone.
+
+</Step>
+<Step>
+
+**Its ACF is the same arithmetic.** Two weeks k apart share a fraction φᵏ of their gap, so the autocorrelations are $0.6, 0.6^2 = 0.36, 0.6^3 = 0.216, \dots$ They tail off; they never stop dead.
+
+</Step>
+<Step>
+
+**Its PACF stops dead.** The lag-2 correlation of 0.36 is fully explained by two hops of 0.6 (week t−2 → t−1 → t). Once you account for last week, the week before adds nothing. So the *partial* autocorrelation is 0.6 at lag 1 and **0** from lag 2 on.
+
+</Step>
+<Step>
+
+**MA(1) with θ = 0.5: a shock echoes once.** Sales = 2,800 + this week's shock + 0.5 × last week's shock. If the +200 was a shock, next week gets +100 (forecast **2,900**), and from the week after, nothing (**2,800, 2,800, …**). Its lag-1 autocorrelation is $\theta / (1 + \theta^2) = 0.5/1.25 =$ **0.4**, and every later lag is **0**.
+
+</Step>
+<Step>
+
+**Random walk: the surprise is permanent.** This week = last week + a shock. The forecast is **3,000 for every future week**, and the uncertainty grows with the horizon: with weekly shocks of sd 100, the sd 13 weeks out is $100\sqrt{13} \approx$ **361 bags**.
+
+</Step>
+<Step>
+
+**Differencing tells them apart.** Four weeks of a random walk, 3,000, 3,040, 2,990, 3,050, have week-on-week changes of **+40, −50, +60**: no memory left in them. That's the "I" in ARIMA: difference once (d = 1), then model what remains.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="For an AR(1) with φ = 0.6, what does the PACF look like?" options={["It tails off: 0.6, 0.36, 0.22, …", "One spike at lag 1, then near zero", "Every lag near zero"]} answer={1}>
+
+**One spike at lag 1.** The ACF tails off, because the memory passes through each week in turn. The PACF asks what each lag adds *after* the shorter lags, and for an AR(1) nothing beyond last week adds anything.
+
+</Predict>
+
+<ACFPACFLab />
+
+**Try this:**
+
+1. **AR(1), φ = 0.6.** The ACF tails off: r₁ = **0.64**, r₂ = **0.40** (theory 0.60, 0.36). The PACF has one spike, and its lag-2 bar is **−0.01**.
+2. Push **φ to 0.9**. The series wanders in long swells and the ACF decays slowly (0.89, 0.78, …). It's starting to look like a random walk.
+3. Try **φ = −0.6**. The ACF alternates (−0.58, +0.38, …): a high week tends to be followed by a low one, like a shelf that's overstocked and then pulled back.
+4. Switch to **MA(1)** at θ = 0.6. The ACF has one spike (**0.49**, theory 0.44) and then sits inside the band. Now the *PACF* tails off, alternating from **−0.21** at lag 2. AR and MA swap patterns.
+5. **Random walk.** The ACF hugs 1: **0.96, 0.92, …**, still 0.59 at lag 12. The PACF has a single spike near 1, which says "AR with φ ≈ 1". That is the cue to difference.
+6. **Walk, differenced.** Every bar sits inside the ±0.14 band (r₁ = **0.05**). One difference turned a series with endless memory into noise.
+
+</Section>
+
+<Section id="simulate">
+
+Back to the buyer. Simulate 2,000 futures from the viral week under each model, with weekly shocks of sd 100, and watch the spread:
+
+<ForecastFan />
+
+| Weeks ahead | 1 | 4 | 13 | 26 |
+|---|---|---|---|---|
+| AR(1), φ = 0.6: simulated sd | 102 | 129 | 125 | 124 |
+| AR(1) theory | 100 | 124 | 125 | 125 |
+| Random walk: simulated sd | 102 | 206 | 365 | 507 |
+| Random walk theory, $100\sqrt h$ | 100 | 200 | 361 | 510 |
+
+- **AR forgets, so its uncertainty levels off.** After a month the AR fan stops widening, at $\sigma/\sqrt{1 - \varphi^2} = 125$, and its median is back to **2,803** by week 26.
+- **A random walk never forgets, so its fan keeps opening.** Its median stays at **3,003**, and its 26-week sd is four times the AR's.
+- **Safety stock follows the fan.** Choosing between AR and a random walk changes both the order quantity and the buffer. That is why "spike or new normal?" has to be answered from data, using the ACF of the history and a backtest, not from the last week.
+
+</Section>
+
+<Section id="formula">
+
+**AR(p), autoregressive.** Each week is a weighted sum of the last p weeks' gaps from the mean, plus a new shock:
+
+$$
+y_t - \mu = \varphi_1 (y_{t-1} - \mu) + \dots + \varphi_p (y_{t-p} - \mu) + e_t
+$$
+
+**MA(q), moving average of shocks.** Each week is the mean plus this week's shock plus echoes of the last q shocks:
+
+$$
+y_t = \mu + e_t + \theta_1 e_{t-1} + \dots + \theta_q e_{t-q}
+$$
+
+**ARIMA(p, d, q):** difference the series d times, then fit an AR(p) and an MA(q) together to what remains. Seasonal ARIMA adds the same terms at the seasonal lag (7 for days, 52 for weeks), written $(P, D, Q)_m$.
+
+**Reading the plots:**
+
+| Model | ACF | PACF |
+|---|---|---|
+| AR(p) | Tails off | Cuts off after lag p |
+| MA(q) | Cuts off after lag q | Tails off |
+| ARMA(p, q) | Tails off | Tails off |
+| Needs differencing | Stays near 1 and decays very slowly | Spike near 1 at lag 1 |
+
+**Forecast uncertainty**, h weeks ahead, with shock sd σ:
+
+$$
+\text{AR(1)}: \ \sigma\sqrt{\frac{1 - \varphi^{2h}}{1 - \varphi^2}} \ \to \ \frac{\sigma}{\sqrt{1 - \varphi^2}}, \qquad \text{random walk}: \ \sigma\sqrt h
+$$
+
+<Depth min={2}>
+
+**The AR(1) ACF, derived.** Multiply $y_t - \mu = \varphi (y_{t-1} - \mu) + e_t$ by $y_{t-k} - \mu$ and take expectations. For $k \ge 1$ the shock $e_t$ is independent of the past, so $\gamma_k = \varphi\, \gamma_{k-1}$, giving $\rho_k = \varphi^k$. With $k = 0$: $\gamma_0 = \varphi^2 \gamma_0 + \sigma^2$, so $\operatorname{Var}(y) = \sigma^2/(1 - \varphi^2)$. That is the level the AR fan settles at.
+
+**The MA(1) ACF, derived.** $\operatorname{Var}(y) = \sigma^2 (1 + \theta^2)$ and $\operatorname{Cov}(y_t, y_{t-1}) = \theta\sigma^2$, the shared shock. So $\rho_1 = \theta/(1 + \theta^2)$, and lags beyond 1 share no shocks, so their autocorrelation is 0. The largest $\rho_1$ can be is 0.5, at θ = 1.
+
+**Fitting φ.** For an AR(1), the Yule–Walker estimate is simply $\hat\varphi = r_1$, the lag-1 autocorrelation. Least squares of $y_t$ on $y_{t-1}$ gives almost the same number. Libraries fit general ARIMA by maximum likelihood and choose p, d and q by AIC (auto-ARIMA).
+
+</Depth>
+
+<Depth min={3}>
+
+**The PACF is a regression coefficient.** $\varphi_{kk}$ is the coefficient on $y_{t-k}$ when you regress $y_t$ on $y_{t-1}, \dots, y_{t-k}$. The Durbin–Levinson recursion gets it from the ACF without refitting each time:
+
+$$
+\varphi_{kk} = \frac{r_k - \sum_{j=1}^{k-1} \varphi_{k-1,j}\, r_{k-j}}{1 - \sum_{j=1}^{k-1} \varphi_{k-1,j}\, r_j}
+$$
+
+For an AR(1), $\varphi_{22} = (\varphi^2 - \varphi \cdot \varphi)/(1 - \varphi^2) = 0$.
+
+**Stationarity and unit roots.** An AR(1) is stationary only if $\lvert \varphi \rvert \lt 1$. At φ = 1 it becomes a random walk: the variance grows without limit and the sample ACF is meaningless. Unit-root tests (ADF, whose null is a unit root; KPSS, whose null is stationarity) formalize "should I difference?". In practice, run both and look at the ACF.
+
+**MA invertibility.** θ and 1/θ give the same ACF. Libraries pick $\lvert \theta \rvert \lt 1$ so the shocks can be recovered from the past data, which is why the lab's slider stays inside (−0.9, 0.9).
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="AR forecasts">
+
+An AR(1) has μ = 100, φ = 0.5, and this week sold 140. Forecast the next two weeks.
+
+<Solution>
+
+The gap is +40, so the gaps ahead are 20 and 10: **120, then 110**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="MA autocorrelation">
+
+What is the lag-1 autocorrelation of an MA(1) with θ = 0.8? And at lag 2?
+
+<Solution>
+
+$0.8/(1 + 0.64) = 0.8/1.64 \approx$ **0.488**. At lag 2: **0**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="The ceiling on AR uncertainty">
+
+An AR(1) has φ = 0.8 and shock sd 50. What does the forecast sd settle at far ahead? And at 1 week?
+
+<Solution>
+
+Far ahead: $50/\sqrt{1 - 0.64} = 50/0.6 \approx$ **83.3**. At one week it is just the shock sd, **50**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Identify the model">
+
+A differenced weekly series has a significant ACF bar at lags 1 and 2 and none after. Its PACF decays gradually. What would you fit?
+
+<Solution>
+
+ACF cutting off after lag 2 with a tailing PACF means **MA(2)** on the differenced series: **ARIMA(0, 1, 2)**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="MA(1) can't be very sticky">
+
+Show that the lag-1 autocorrelation of an MA(1) can never exceed 0.5 in absolute value. What does a sample r₁ = 0.7 with a sharp cutoff suggest?
+
+<Solution>
+
+$f(\theta) = \theta/(1 + \theta^2)$ has derivative $(1 - \theta^2)/(1 + \theta^2)^2$, which is zero at θ = ±1, where $\lvert f \rvert = 1/2$. So an MA(1) can't produce 0.7. A sharp cutoff with r₁ = 0.7 points to a higher-order MA, to sampling noise on a short series, or to an over-differenced series (differencing white noise gives ρ₁ = −0.5: a classic sign you differenced once too often).
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="How wide is the random walk?">
+
+If weekly demand is a random walk with shock sd 100, what is the 90% interval for the week 13 weeks ahead? How does that compare with the AR(1), φ = 0.6?
+
+<Solution>
+
+$\pm 1.645 \times 100\sqrt{13} = \pm 1.645 \times 360.6 \approx$ **±593 bags**. For the AR(1), the sd at 13 weeks is $100/\sqrt{0.64} = 125$, so the interval is **±206**. The random-walk view needs almost three times the buffer.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand forecasts, then simulate an AR(1) and a random walk in numpy, estimate φ two ways, and check that differencing removes the walk's memory. Expected: forecasts of 2920.0, 2872.0, 2843.2 and 2825.9; both estimates of φ near 0.6; and the walk's lag-1 ACF near 1 before differencing and near 0 after.
+
+<PyRunner title="AR, MA and differencing" code={`
+import numpy as np
+
+def acf(y, k):
+    d = y - y.mean()
+    return np.dot(d[k:], d[:len(d) - k]) / np.dot(d, d)
+
+# By hand: AR(1) around 2,800 with phi = 0.6, after a 3,000 week
+mu, phi, last = 2800, 0.6, 3000
+fc = [mu + phi ** h * (last - mu) for h in range(1, 5)]
+print("AR(1) forecasts:", ", ".join(f"{v:.1f}" for v in fc))
+print("MA(1) theta = 0.5: lag-1 autocorrelation", 0.5 / (1 + 0.5 ** 2))
+
+# Simulate 500 weeks of AR(1) and estimate phi two ways
+rng = np.random.default_rng(6)
+e = rng.normal(0, 100, 600)
+x = np.zeros(600)
+for t in range(1, 600):
+    x[t] = phi * x[t - 1] + e[t]
+y = mu + x[100:]
+d = y - y.mean()
+ls = np.dot(d[1:], d[:-1]) / np.dot(d[:-1], d[:-1])
+print(f"phi from r1: {acf(y, 1):.3f}   phi from least squares: {ls:.3f}")
+print("AR(1) ACF, lags 1-4:", np.round([acf(y, k) for k in range(1, 5)], 2), " theory:", [0.6, 0.36, 0.22, 0.13])
+
+# A random walk: memory that never fades, until you difference it
+walk = 3000 + np.cumsum(rng.normal(0, 100, 500))
+print(f"random walk lag-1 ACF {acf(walk, 1):.2f};  after differencing {acf(np.diff(walk), 1):+.2f}")
+
+# The forecast fan: AR uncertainty levels off, the walk's keeps growing
+for h in [1, 4, 13, 26]:
+    ar_sd = 100 * np.sqrt((1 - phi ** (2 * h)) / (1 - phi ** 2))
+    print(f"{h:2d} weeks ahead: AR sd {ar_sd:5.1f}   random-walk sd {100 * np.sqrt(h):5.1f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Per-series ARIMA is a strong local baseline,** and statsforecast's `AutoARIMA` fits it quickly at scale. But each series is fitted alone. A global model trained across thousands of stores (the next batch's LightGBM lesson) can learn shared patterns that no single short series reveals.
+- **Retail series break ARIMA's assumptions.** Promotions, stockouts (zeros that aren't zero demand), price changes and moving holidays are not "shocks". Add them as regressors (ARIMAX), or clean the history first, or the fitted memory will be wrong.
+- **Differencing choices matter most.** Over-differencing adds a fake −0.5 at lag 1 and inflates intervals. Under-differencing leaves a slow-decaying ACF and forecasts that revert to a mean that has moved. Check with unit-root tests and a rolling backtest of both choices.
+- **Weekly seasonality at m = 52 is expensive.** Seasonal ARIMA with m = 52 needs years of data and is slow to fit. Use Fourier terms as regressors, or let ETS or a global model handle the season.
+- **Intervals drive stock, so check them.** Backtest the coverage of the 90% interval: if real sales fall outside it 25% of the time, the safety stock is too thin, whatever the point WAPE.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How do you choose p, d and q for an ARIMA model?">
+
+First d: difference until the ACF decays quickly, backed by ADF and KPSS tests. Then look at the ACF and PACF of the differenced series. An ACF that cuts off after q suggests MA(q), and a PACF that cuts off after p suggests AR(p). In practice I'd let auto-ARIMA search by AIC and then check the residual ACF and a rolling-origin backtest, since the plots only give a starting point.
+
+</QA>
+
+<QA q="What's the practical difference between an AR(1) and a random walk for forecasting?">
+
+An AR(1) with |φ| below 1 reverts to its mean: forecasts decay toward it by φ per step, and the uncertainty levels off at σ/√(1 − φ²). A random walk never reverts: the forecast is the last value forever, and the uncertainty grows like σ√h. That changes both the order size after a spike and the safety stock at long horizons.
+
+</QA>
+
+<QA q="When would you not use ARIMA for retail demand?">
+
+For intermittent or very short series, many related series (where a global ML model shares strength), or demand driven by promotions and prices that need many regressors. ARIMA is a good local baseline and a good way to reason about memory, but rarely the production model for thousands of store-SKU series.
+
+</QA>
+
+<Trap>
+
+**"The ACF decays slowly, so it's a strong AR process. Fit an AR with many lags."** An ACF that stays near 1 and decays slowly is the signature of a unit root (a random walk or a trend), not of a strong AR. Difference first. Fitting a high-order AR to a non-stationary series gives forecasts that revert to a mean the series has already left.
+
+</Trap>
+
+</Section>

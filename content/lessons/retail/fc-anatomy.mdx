@@ -1,0 +1,317 @@
+<Section id="floor">
+
+Sales at the Pune store jumped from **425 items on Friday to 495 on Saturday**. The new regional manager reads that as 16% growth and wants a bigger order. The planner reads it as "it's Saturday". Both need one number by tonight: **how many items to stock for next Saturday?**
+
+Before any model can forecast this store, someone has to answer three questions about its history. How much is the store really growing? How much of each day is the weekday? And what's left over, the part nobody can predict? Taking a series apart into those three pieces is the first thing every forecaster does.
+
+<KeyIdea>
+
+**A store's daily sales are trend + weekday pattern + remainder.** A 7-day moving average gives the trend, because every 7-day window contains each weekday once. Averaging what's left by weekday gives the pattern, and whatever is left after that is the remainder. The **autocorrelation function (ACF)** says which past days look like today: line each day up with the day k days earlier and correlate. In a store, the lag-7 bar towers over the others.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The Pune store's first two weeks, Monday to Sunday:
+
+| | Mon | Tue | Wed | Thu | Fri | Sat | Sun | Total |
+|---|---|---|---|---|---|---|---|---|
+| Week 1 | 360 | 350 | 370 | 380 | 410 | 480 | 450 | 2,800 |
+| Week 2 | 375 | 355 | 380 | 385 | 425 | 495 | 455 | 2,870 |
+
+<Steps>
+<Step>
+
+**Trend.** A 7-day average has every weekday exactly once, so the weekday pattern cancels. Week 1 averages $2800/7 =$ **400** and week 2 averages $2870/7 =$ **410**. The store is growing by **10 items a week**, about 2.5%, not 16%.
+
+</Step>
+<Step>
+
+**Detrend.** Subtract each week's average from its days:
+
+| | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+|---|---|---|---|---|---|---|---|
+| Week 1 − 400 | −40 | −50 | −30 | −20 | +10 | +80 | +50 |
+| Week 2 − 410 | −35 | −55 | −30 | −25 | +15 | +85 | +45 |
+
+</Step>
+<Step>
+
+**Weekday pattern.** Average the two rows: Mon **−37.5**, Tue **−52.5**, Wed **−30**, Thu **−22.5**, Fri **+12.5**, Sat **+82.5**, Sun **+47.5**. They sum to 0, as a pattern should: it moves sales between days without adding any.
+
+</Step>
+<Step>
+
+**Remainder.** What's left after the trend and the pattern. Saturday of week 2: $495 - 410 - 82.5 =$ **+2.5**. Tuesday of week 2: $355 - 410 - (-52.5) =$ **−2.5**. So the jump from Friday to Saturday (+70) is $82.5 - 12.5 = 70$ of weekday pattern and nothing else.
+
+</Step>
+<Step>
+
+**Next Saturday.** Trend in week 3 is $410 + 10 = 420$, plus Saturday's +82.5: about **502**. (It sold 512.)
+
+</Step>
+<Step>
+
+**Autocorrelation at lag 7.** All 14 days average **405**. Centre each day on that: week 1 becomes −45, −55, −35, −25, 5, 75, 45 and week 2 becomes −30, −50, −25, −20, 20, 90, 50. The squares sum to **30,000**. Multiply each day of week 2 by the same weekday of week 1, the pairs 7 days apart:
+
+$(-45)(-30) + (-55)(-50) + (-35)(-25) + (-25)(-20) + (5)(20) + (75)(90) + (45)(50) = 14{,}575$
+
+So $r_7 = 14575 / 30000 =$ **0.486**. The seven pairs are almost perfectly in step (their own correlation is 0.995), but only 7 of the 14 days have a partner 7 days back, and the ACF divides by all 14 squares. On 112 days the same lag gives **0.852**.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="On 16 weeks of this store's daily sales, which lag has the highest autocorrelation?" options={["Lag 1: yesterday is most like today", "Lag 7: the same weekday last week", "Lag 28: the same weekday four weeks ago"]} answer={1}>
+
+**Lag 7**, at 0.852, against 0.676 for lag 1 and 0.534 for lag 28. Yesterday shares today's trend but not its weekday. Four weeks back shares the weekday, but fewer days have a partner that far back, so the bar shrinks.
+
+</Predict>
+
+<Decomposer />
+
+**Try this:**
+
+1. Start at a **3-day** window. The trend line wiggles by 28.66 items a day and Saturday's effect reads only **+34.1**: a short window lets the weekend leak into the trend.
+2. Move to **7 days**. The wiggle drops to **2.56**, Saturday reads **+81.8** (planted: +80) and the remainder sd is **11.69**.
+3. Try **9 days**. Saturday overshoots to **+90.9** and the wiggle climbs back to 8.68. A window that isn't a whole number of weeks counts some weekdays twice.
+4. Try **14** and **28**. Both are whole weeks, so Saturday stays near +82. The trend gets smoother (wiggles of 0.84 and 0.40) but would be slower to notice a real change.
+
+<ACFExplorer />
+
+**Try this:**
+
+1. At **lag 1**, the cloud tilts up: r₁ = **0.676**. Yesterday shares today's trend level, but Saturday follows Friday and Monday follows Sunday, so the cloud is loose.
+2. Move to **lag 7**. The 105 pairs line up along the diagonal and r₇ = **0.852**, while the pairs' own correlation is **0.962**.
+3. At **lag 3**, r₃ = **0.111**: Thursday against Monday, Saturday against Wednesday. The weekdays clash.
+4. Step through **14, 21 and 28**. The bars fall (0.741, 0.625, 0.534) while the pairs stay just as correlated (about 0.96): fewer pairs, same denominator.
+5. Switch to the **remainder**. Lag 7 drops to **−0.118**, inside the ±0.190 band: the decomposition took the weekly memory out. Lag 1 reads −0.344; *The Formula* (Depth 3) explains why a moving average leaves that behind.
+
+</Section>
+
+<Section id="simulate">
+
+Is the remainder's −0.118 at lag 7 "really zero"? Here is what the ACF of pure noise looks like: 500 series of 112 independent days, with no memory at all:
+
+<NoiseACF />
+
+- **Noise isn't zero.** Pure noise gives lag-7 autocorrelations with an sd of **0.0909**, close to $1/\sqrt{112} = 0.0945$. That is where the ±1.96/√n band comes from.
+- **The band catches about 1 in 20, a bit fewer at far lags.** **3.2%** of the 14,000 bars fall outside. Far lags have fewer pairs, so they sit a little tighter than the band assumes.
+- **Look at 28 lags and something will spike.** **56.8%** of these memoryless series show at least one "significant" bar. Before believing a spike, ask whether that lag means anything to a store: 7, 14 and 364 days do; 11 days doesn't.
+
+</Section>
+
+<Section id="formula">
+
+**The decomposition.** Additive, one season of length $m$ (7 for days of the week):
+
+$$
+y_t = T_t + S_t + R_t, \qquad T_t = \frac17 \sum_{j=-3}^{3} y_{t+j}, \qquad S_t = \overline{(y - T)}_{\text{same weekday}}, \qquad R_t = y_t - T_t - S_t
+$$
+
+The weekday averages are shifted so the seven $S$ values sum to 0. For an even window such as 14, the two end days get half weight (a "2 × 14" average) so the window stays centred.
+
+**The autocorrelation function.** With $\bar y$ the mean of all $n$ days:
+
+$$
+r_k = \frac{\sum_{t=k+1}^{n} (y_t - \bar y)(y_{t-k} - \bar y)}{\sum_{t=1}^{n} (y_t - \bar y)^2}
+$$
+
+The top sums $n - k$ products, while the bottom always sums all $n$ squares. That is the 0.486 by hand: 14,575 over 30,000.
+
+**It's a dot product.** Centre the series into a vector $d$. Then $r_k$ is the dot product of $d$ with itself shifted by $k$, divided by $d \cdot d$, the same overlap measure as in [Vectors as Baskets](/learn/foundations/vectors-baskets). A lag where the shifted series still points the same way has a large $r_k$.
+
+**The noise band.** For a series with no memory, $r_k$ is roughly Normal with mean 0 and sd $1/\sqrt n$, so 95% of bars land inside $\pm 1.96/\sqrt n$: ±0.185 for 112 days.
+
+<Depth min={2}>
+
+**Additive or multiplicative?** If Saturdays add a fixed +80 items whatever the level, the pattern is additive. If Saturdays are always 20% above the week, the swing grows as the store grows, so use $y_t = T_t \times S_t \times R_t$, or decompose $\log y_t$, which turns the products into sums.
+
+**STL.** *Seasonal–Trend decomposition using Loess* replaces the moving average with local weighted regressions (loess). It differs in three ways that matter in a store:
+
+- The seasonal pattern can drift: Saturdays can slowly get stronger over the year.
+- Robustness weights downweight outliers, so a Diwali spike or a stockout doesn't bend the trend.
+- It handles any period, and **MSTL** stacks several (weekly inside yearly).
+
+Its two main knobs are the trend window (how fast growth can change) and the seasonal window (how fast the pattern can change).
+
+**Seasonal strength.** A one-number summary used to triage thousands of series is $F_S = \max(0,\, 1 - \operatorname{Var}(R)/\operatorname{Var}(S + R))$. Near 1 means a strong weekday pattern, near 0 means none.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why divide every lag by the full sum of squares?** It keeps the ACF a valid correlation sequence: the matrix built from it is positive semi-definite, which ARIMA fitting relies on. The price is a pull toward zero at long lags, by about $(n - k)/n$: half, for the 14 days at lag 7.
+
+**Bartlett's formula.** If the true ACF is zero beyond lag $q$, then for $k > q$, $\operatorname{Var}(r_k) \approx \frac1n\,(1 + 2\sum_{j=1}^{q} \rho_j^2)$. The plain ±1.96/√n band is the $q = 0$ case. Bars beyond a real spike need a wider band.
+
+**The moving average leaves fingerprints.** If the true remainder is noise $e_t$, the estimated remainder is roughly $e_t - \frac17\sum_{j=-3}^{3} e_{t+j}$. Its lag-1 correlation is $(-\tfrac27 + \tfrac{6}{49}) / \tfrac67 = -\tfrac{8}{42} \approx$ **−0.19**, and lags 2 and 3 are similar. Some of the remainder's −0.344 at lag 1 comes from the method, not the store.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A week's trend">
+
+A store sells 210, 190, 200, 205, 230, 290, 275 from Monday to Sunday. What is the centred 7-day moving average on Thursday?
+
+<Solution>
+
+The window is Monday to Sunday: $1600/7 \approx$ **228.6**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A weekday index">
+
+Saturday sat 82, 88 and 77 items above the trend in three weeks. What is Saturday's index, and what must the other six indices sum to?
+
+<Solution>
+
+$(82 + 88 + 77)/3 =$ **82.3**. The seven indices sum to 0, so the other six sum to **−82.3**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Forecast a Tuesday">
+
+Using the hand example (trend +10 a week from 410 in week 2, Tuesday index −52.5), forecast Tuesday of week 3. It sold 364. What is the remainder?
+
+<Solution>
+
+$420 - 52.5 =$ **367.5**. The remainder is $364 - 367.5 =$ **−3.5**, well within the day-to-day noise.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Is the spike real?">
+
+A year of daily sales (365 days) shows $r_5 = 0.09$. Is it outside the noise band? Would you build a lag-5 feature?
+
+<Solution>
+
+The band is $1.96/\sqrt{365} =$ **±0.103**, so 0.09 is inside it. There's also no store reason for a 5-day cycle. **No.**
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="An ACF by hand">
+
+Compute $r_1$, $r_2$ and $r_4$ for the series 2, 4, 6, 4, 2, 4, 6, 4.
+
+<Solution>
+
+The mean is 4 and the centred values are −2, 0, 2, 0, −2, 0, 2, 0, whose squares sum to 16.
+
+- Lag 1: every product has a 0 in it, so $r_1 =$ **0**.
+- Lag 2: the products are $(2)(-2)$, $(-2)(2)$ and $(2)(-2)$, which sum to −12, so $r_2 =$ **−0.75**.
+- Lag 4: the products are $(-2)(-2)$ and $(2)(2)$, which sum to 8, so $r_4 =$ **0.5**.
+
+The series repeats every 4, yet $r_4$ is only 0.5: just 4 of the 8 values have a partner 4 back.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Spikes in noise">
+
+If the 28 bars of a noise ACF were independent and each had a 5% chance of leaving the band, what share of series would show at least one spike? The simulation found 56.8%. Why lower?
+
+<Solution>
+
+$1 - 0.95^{28} =$ **0.762**. The simulation is lower for two reasons. The far lags have fewer pairs, so each one leaves the band less than 5% of the time (3.2% on average). And neighbouring bars from the same series are slightly correlated, so their spikes cluster rather than each getting its own chance.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand decomposition and the lag-7 autocorrelation in numpy, then a simulated 16-week store: its trend, weekday pattern and ACF. Expected: the trend is 400 then 410, the Saturday index is +82.5, the hand-worked lag-7 autocorrelation is 0.486, and the simulated store's ACF peaks at lag 7.
+
+<PyRunner title="Take a store's sales apart" code={`
+import numpy as np
+
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+w = np.array([[360, 350, 370, 380, 410, 480, 450],
+              [375, 355, 380, 385, 425, 495, 455]], dtype=float)
+
+# By hand: trend = weekly mean, pattern = average deviation by weekday
+trend = w.mean(axis=1)
+dev = w - trend[:, None]
+index = dev.mean(axis=0)
+print("trend by week:", trend)
+print("weekday index:", ", ".join(f"{d} {v:+.1f}" for d, v in zip(days, index)))
+print(f"remainder, Saturday of week 2: {w[1, 5] - trend[1] - index[5]:+.1f}")
+
+# The ACF: centre once, then each lag sums n - k products over all n squares
+def acf(y, k):
+    d = y - y.mean()
+    return np.dot(d[k:], d[:len(d) - k]) / np.dot(d, d)
+
+y14 = w.ravel()
+print(f"lag 7 by hand: r = {acf(y14, 7):.3f}")
+
+# A simulated 16-week store: trend + weekday pattern + noise
+rng = np.random.default_rng(5)
+t = np.arange(112)
+season = np.array([-40, -50, -30, -20, 10, 80, 50])
+y = np.round(400 + 10 / 7 * (t - 3) + season[t % 7] + rng.normal(0, 15, 112))
+
+ma = np.convolve(y, np.ones(7) / 7, mode="valid")      # centred 7-day trend
+detr = y[3:-3] - ma
+idx = np.array([detr[(np.arange(len(detr)) + 3) % 7 == d].mean() for d in range(7)])
+idx -= idx.mean()
+print("simulated Saturday index:", round(idx[5], 1), "(planted +80)")
+
+r = [acf(y, k) for k in range(1, 29)]
+print("highest ACF at lag", int(np.argmax(r)) + 1)
+print(f"r1 {r[0]:.2f}  r7 {r[6]:.2f}  r14 {r[13]:.2f}   noise band +/-{1.96 / np.sqrt(112):.3f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Decompose before you model.** For thousands of store × category series, compute trend strength and seasonal strength for each one and sort. Strong weekly series suit seasonal baselines and ETS. Weak ones are mostly noise, and a simple average will do.
+- **Several seasons at once.** Daily retail sales carry a weekly pattern, a yearly one (summer, Diwali, wedding season) and moving holidays. MSTL handles the fixed ones. Holidays that move (Diwali, Eid) need calendar features, because no fixed period catches them.
+- **The ACF is a feature-engineering tool.** Lags 7, 14, 28 and 364 are the usual lag features in a global gradient-boosting forecaster, and the ACF of your own data says which of them carry signal.
+- **Stockouts and closures fake the pattern.** A store that runs out every Sunday afternoon will show a "weak Sunday" in its decomposition. That is censored demand, not low demand: the next batch's [Demand ≠ Sales](/learn/retail/fc-censored-demand) lesson handles it.
+- **Weekly totals hide the weekday.** Summing to weeks removes the weekday pattern, which is useful for weekly replenishment. But it also hides when in the week the store runs out.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What does the ACF of a retail daily series typically look like, and what do you do with it?">
+
+Tall bars at lags 7, 14, 21 that shrink slowly, with smaller bars in between: a weekly pattern on top of a trend. A trend alone makes every bar large, so I'd decompose or difference first and look at the ACF of the remainder. The surviving lags tell me which lag features or seasonal terms the model needs.
+
+</QA>
+
+<QA q="How would you separate a store's growth from its weekly pattern?">
+
+Take a centred moving average whose window is a whole number of weeks. Each window then contains each weekday equally often, so the pattern cancels and what's left is the trend. Average sales minus trend by weekday to get the pattern. Use STL when the pattern drifts or there are outliers, and a multiplicative or log model if the weekend swing grows with the level.
+
+</QA>
+
+<QA q="Your ACF has a significant bar at lag 11. Do you add a lag-11 feature?">
+
+Not on that evidence alone. With 28 lags, more than half of pure-noise series show at least one bar outside the band. I'd want a business reason (an 11-day promo cycle?) and stability across stores and years before trusting it.
+
+</QA>
+
+<Trap>
+
+**"The lag-7 autocorrelation is only 0.49, so the weekly pattern is weak."** On a short series, the ACF is pulled toward zero by $(n - k)/n$: with 14 days, only 7 have a partner a week back. The same store gives 0.852 on 112 days. Compare ACFs at the same length, or look at the pairs' own correlation.
+
+</Trap>
+
+</Section>

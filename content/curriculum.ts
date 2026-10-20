@@ -68,11 +68,14 @@ const raw: LessonInput[] = [
   { slug: "model-arena", aisle: "models", kind: "model", title: "Model Arena and the Failure Matrix", status: "ready", week: 4, minutes: 60, summary: "Every model on one demand task, scored on each failure scenario.", prereqs: ["xgb-lgbm-catboost", "mlp"] },
 
   // Aisle 3: Retail Science (signatures)
-  { slug: "fc-anatomy", aisle: "retail", title: "Forecasting: Anatomy of a Store Time Series", week: 5, summary: "STL decomposition and what the ACF really computes.", prereqs: ["clt-weekly-sales"] },
+  { slug: "fc-anatomy", aisle: "retail", title: "Forecasting: Anatomy of a Store Time Series", status: "ready", week: 5, minutes: 45, summary: "Trend, weekday pattern and remainder, and what the ACF really computes.", prereqs: ["ci-repeat", "vectors-baskets"] },
+  { slug: "fc-baselines", aisle: "retail", title: "Baselines and Backtests: WAPE, MASE and Bias", status: "ready", week: 5, minutes: 50, summary: "Seasonal naive as the bar to clear, rolling-origin backtests, and why WAPE needs bias beside it.", prereqs: ["fc-anatomy"] },
+  { slug: "fc-ets", aisle: "retail", title: "Exponential Smoothing as Geometric Weights", status: "ready", week: 5, minutes: 45, summary: "SES, Holt and Holt–Winters, and the best α derived from the signal-to-noise ratio.", prereqs: ["fc-baselines"] },
+  { slug: "fc-arima", aisle: "retail", title: "ARIMA Intuition: Reading Memory From the ACF", status: "ready", week: 5, minutes: 50, summary: "AR, MA and differencing read off the ACF and PACF, and why a random walk's forecast fan keeps opening.", prereqs: ["fc-ets"] },
   { slug: "fc-censored-demand", aisle: "retail", title: "Demand ≠ Sales: Stockouts Censor Demand", week: 5, summary: "Correcting forecasts when the shelf ran empty.", prereqs: ["fc-anatomy", "likelihood-dial"] },
   { slug: "fc-tweedie-lgbm", aisle: "retail", title: "Global LightGBM and the Tweedie Loss", week: 5, summary: "Why sales with many zeros need Tweedie, derived.", prereqs: ["gradient-boosting", "mle-peak"] },
   { slug: "fc-mint", aisle: "retail", title: "Hierarchical Reconciliation as Projection", week: 6, summary: "Store, region and national forecasts made coherent with MinT.", prereqs: ["fc-anatomy", "matrices-tables"] },
-  { slug: "fc-pinball", aisle: "retail", title: "Pinball Loss Gives Quantiles", week: 6, summary: "A proof that minimizing pinball loss yields a quantile, and conformal intervals.", prereqs: ["fc-anatomy"] },
+  { slug: "fc-pinball", aisle: "retail", title: "Pinball Loss Gives Quantiles", week: 6, summary: "A proof that minimizing pinball loss yields a quantile, and conformal intervals.", prereqs: ["fc-baselines"] },
   { slug: "cx-cross-elasticity", aisle: "retail", title: "Cannibalization vs Halo: Cross-Price Elasticity", week: 5, summary: "The sign of the cross-elasticity tells substitutes from complements.", prereqs: ["elasticity-derivative"] },
   { slug: "cx-mnl", aisle: "retail", title: "Choice Models: Gumbel Errors Give Softmax", week: 6, summary: "The multinomial logit from random utility, IIA and nested logit.", prereqs: ["cx-cross-elasticity", "mle-peak"] },
   { slug: "cx-double-ml", aisle: "retail", title: "Double ML for Elasticities", week: 6, summary: "What orthogonalization actually means, visualized.", prereqs: ["cx-cross-elasticity", "linear-regression"] },
@@ -128,7 +131,7 @@ export const lessons = raw.map((l) => ({
 export const threads = [
   { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "search-contrastive", "mle-drift"] },
   { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "bayes-mmm-bridge", "mmm-bayesian"] },
-  { id: "geometric-decay", name: "Geometric Decay", idea: "Yesterday matters a fraction θ as much as today.", steps: ["mmm-adstock-saturation", "fc-anatomy", "dl-optimizers"] },
+  { id: "geometric-decay", name: "Geometric Decay", idea: "Yesterday matters a fraction θ as much as today.", steps: ["mmm-adstock-saturation", "fc-ets", "dl-optimizers"] },
   { id: "softmax", name: "Softmax", idea: "Turn scores into probabilities by exponentiating and normalizing.", steps: ["cx-mnl", "search-contrastive", "dl-attention", "dl-transformer"] },
   { id: "projection", name: "Projection", idea: "Find the closest point in an allowed space.", steps: ["matrices-tables", "linear-regression", "fc-mint"] },
   { id: "gradient", name: "Gradient", idea: "Move a little in the direction that reduces the error.", steps: ["boosting-by-hand", "gradient-boosting", "dl-backprop", "dl-optimizers"] },

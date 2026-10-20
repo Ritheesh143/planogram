@@ -31,6 +31,8 @@ import { LikelihoodDial, LikelihoodSimulation } from "@/components/viz/Likelihoo
 import { BagStudy, ChainDiagnostics, MetropolisWalker, RollingBall, SampleBag, StepSizeStudy } from "@/components/viz/Sampling";
 import { ABTest, PeekingStudy } from "@/components/viz/BayesAB";
 import { MMMBridge, MMMStudy, SpendTogether } from "@/components/viz/MMMBridge";
+import { ACFExplorer, Decomposer, HoldoutStudy, NoiseACF, RollingOrigin, SlowMover } from "@/components/viz/ForecastBasics";
+import { ACFPACFLab, AlphaStudy, ForecastFan, SESExplorer } from "@/components/viz/Smoothing";
 
 // Lesson building blocks are available in every MDX file without imports.
 const components: MDXComponents = {
@@ -78,6 +80,16 @@ const components: MDXComponents = {
   SpendTogether,
   MMMBridge,
   MMMStudy,
+  Decomposer,
+  ACFExplorer,
+  NoiseACF,
+  RollingOrigin,
+  SlowMover,
+  HoldoutStudy,
+  SESExplorer,
+  AlphaStudy,
+  ACFPACFLab,
+  ForecastFan,
   CountingWorlds,
   CIRepeat,
   LikelihoodDial,

@@ -30,6 +30,10 @@ const lessons: [string, string][] = [
   ["/learn/bayes/mcmc-walker", "step  0.3: accept 35%, mean 0.248, R-hat 1.001"],
   ["/learn/bayes/bayes-ab", "look daily            fake winners 21.9%"],
   ["/learn/bayes/bayes-mmm-bridge", "lift    : TV ROI  1.28 (90%  0.80 to 1.73), P(TV pays back) 0.84"],
+  ["/learn/retail/fc-anatomy", "lag 7 by hand: r = 0.486"],
+  ["/learn/retail/fc-baselines", "seasonal naive: WAPE 4.34%, bias -4.14%, MASE 1.86"],
+  ["/learn/retail/fc-ets", "week 7 forecast: 2603.36"],
+  ["/learn/retail/fc-arima", "AR(1) forecasts: 2920.0, 2872.0, 2843.2, 2825.9"],
 ];
 
 for (const [path, expected] of lessons) {
