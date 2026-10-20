@@ -1,5 +1,41 @@
 [
  {
+  "slug": "bayes-ab",
+  "n": 1,
+  "level": "easy",
+  "title": "Posterior from counts"
+ },
+ {
+  "slug": "bayes-ab",
+  "n": 2,
+  "level": "easy",
+  "title": "Count it"
+ },
+ {
+  "slug": "bayes-ab",
+  "n": 3,
+  "level": "medium",
+  "title": "Expected loss"
+ },
+ {
+  "slug": "bayes-ab",
+  "n": 4,
+  "level": "medium",
+  "title": "From a z-test to P(B > A)"
+ },
+ {
+  "slug": "bayes-ab",
+  "n": 5,
+  "level": "hard",
+  "title": "Why peeking breaks the 5%"
+ },
+ {
+  "slug": "bayes-ab",
+  "n": 6,
+  "level": "hard",
+  "title": "A skeptical prior"
+ },
+ {
   "slug": "bayes-linreg",
   "n": 1,
   "level": "easy",
@@ -34,6 +70,42 @@
   "n": 6,
   "level": "hard",
   "title": "Ridge is MAP, in general"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 1,
+  "level": "easy",
+  "title": "Walk along the ridge"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 2,
+  "level": "easy",
+  "title": "Count a decision"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 3,
+  "level": "medium",
+  "title": "Variance inflation"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 4,
+  "level": "medium",
+  "title": "Combine the data with a lift test"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 5,
+  "level": "hard",
+  "title": "Move the budget?"
+ },
+ {
+  "slug": "bayes-mmm-bridge",
+  "n": 6,
+  "level": "hard",
+  "title": "Design it out"
  },
  {
   "slug": "beta-binomial",
@@ -142,6 +214,42 @@
   "n": 6,
   "level": "hard",
   "title": "A geo-level media mix model"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 1,
+  "level": "easy",
+  "title": "One step"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 2,
+  "level": "easy",
+  "title": "Acceptance rate from a trace"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 3,
+  "level": "medium",
+  "title": "Effective sample size"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 4,
+  "level": "medium",
+  "title": "R-hat by hand"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 5,
+  "level": "hard",
+  "title": "The constant cancels"
+ },
+ {
+  "slug": "mcmc-walker",
+  "n": 6,
+  "level": "hard",
+  "title": "Collinear channels slow the ball"
  },
  {
   "slug": "mle-peak",
@@ -286,6 +394,42 @@
   "n": 6,
   "level": "hard",
   "title": "The penalty view"
+ },
+ {
+  "slug": "why-sample",
+  "n": 1,
+  "level": "easy",
+  "title": "Count a probability"
+ },
+ {
+  "slug": "why-sample",
+  "n": 2,
+  "level": "easy",
+  "title": "Grid size"
+ },
+ {
+  "slug": "why-sample",
+  "n": 3,
+  "level": "medium",
+  "title": "A derived quantity"
+ },
+ {
+  "slug": "why-sample",
+  "n": 4,
+  "level": "medium",
+  "title": "How many draws?"
+ },
+ {
+  "slug": "why-sample",
+  "n": 5,
+  "level": "hard",
+  "title": "Totals need draws, not intervals"
+ },
+ {
+  "slug": "why-sample",
+  "n": 6,
+  "level": "hard",
+  "title": "The corners of the cube"
  },
  {
   "slug": "ci-repeat",

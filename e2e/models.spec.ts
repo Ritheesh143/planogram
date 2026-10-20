@@ -280,3 +280,54 @@ test("hierarchical pooling: partial pooling cuts the error by two-thirds", async
   await expect(page.getByTestId("hp-tau-peak")).toHaveText("8.9");
   await expect(page.getByTestId("hp-study-partial")).toHaveText("37.3");
 });
+
+test("why sample: a bigger bag gets closer to the exact answers", async ({ page }) => {
+  await page.goto("/learn/bayes/why-sample");
+  await expect(page.getByTestId("bag-p")).toHaveText("0.300");
+  await setRange(page, "bag-size", 7);
+  await expect(page.getByTestId("bag-mean")).toHaveText("0.249");
+  await expect(page.getByTestId("bag-p")).toHaveText("0.281");
+  await expect(page.getByTestId("bag-lo")).toHaveText("0.110");
+  await expect(page.getByTestId("bag-spread-4000")).toHaveText("0.0071");
+});
+
+test("MCMC: step size, diagnostics and divergences", async ({ page }) => {
+  await page.goto("/learn/bayes/mcmc-walker");
+  await expect(page.getByTestId("mw-accept")).toHaveText("34.6%");
+  await expect(page.getByTestId("mw-ess")).toHaveText("739");
+  await page.getByRole("radio", { name: "Tiny steps (0.01)" }).click();
+  await expect(page.getByTestId("mw-accept")).toHaveText("96.5%");
+  await expect(page.getByTestId("mw-ess")).toHaveText("15");
+  await expect(page.getByTestId("cd-rhat")).toHaveText("1.004");
+  await page.getByRole("radio", { name: "Too timid" }).click();
+  await expect(page.getByTestId("cd-rhat")).toHaveText("9.223");
+  await expect(page.getByTestId("ss-ess-0.3")).toHaveText("778");
+  await expect(page.getByTestId("rb-div")).toHaveText("0");
+  await expect(page.getByTestId("rb-jump")).toHaveText("1.87");
+  await setRange(page, "rb-eps", 0.45);
+  await expect(page.getByTestId("rb-div")).toHaveText("464");
+});
+
+test("Bayesian A/B: P(B > A) by counting, and the cost of peeking", async ({ page }) => {
+  await page.goto("/learn/bayes/bayes-ab");
+  await expect(page.getByTestId("ab-p")).toHaveText("92.4%");
+  await expect(page.getByTestId("ab-exact")).toHaveText("92.7%");
+  await expect(page.getByTestId("ab-loss-b")).toHaveText("0.029");
+  await setRange(page, "ab-buys-b", 48);
+  await expect(page.getByTestId("ab-p")).toHaveText("49.5%");
+  await expect(page.getByTestId("pk-28")).toHaveText("22.6%");
+  await page.getByRole("radio", { name: "Look once, at day 28" }).click();
+  await expect(page.getByTestId("pk-drawn")).toHaveText("1");
+});
+
+test("MMM bridge: priors and a lift test pick the point on the ridge", async ({ page }) => {
+  await page.goto("/learn/bayes/bayes-mmm-bridge");
+  await expect(page.getByTestId("mm-corr")).toHaveText("0.95");
+  await expect(page.getByTestId("mm-tv")).toHaveText("-0.49");
+  await expect(page.getByTestId("mm-p0")).toHaveText("63.2%");
+  await page.getByRole("radio", { name: "Positive + TV lift test" }).click();
+  await expect(page.getByTestId("mm-tv")).toHaveText("1.29");
+  await expect(page.getByTestId("mm-p1")).toHaveText("85.3%");
+  await expect(page.getByTestId("ms-ols")).toHaveText("1.35");
+  await expect(page.getByTestId("ms-neg")).toHaveText("13.5%");
+});

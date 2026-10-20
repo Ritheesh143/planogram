@@ -1,0 +1,285 @@
+<Section id="floor">
+
+The forecasting team has a hierarchical model of paint demand: one true weekly average for each of the 40 stores, plus the chain mean μ and the store spread τ. That's **42 unknowns**. In [A Grid of Hypotheses](/learn/bayes/posterior-grid) you got a posterior by scoring every value on a grid. Try that here with a modest 100 values per unknown and the grid has $100^{42} = 10^{84}$ points, more than there are atoms in the observable universe.
+
+The merchandising lead doesn't want a 42-dimensional curve anyway. They want answers: *how likely is store 17 to beat 60 litres a week? What's the chain's total demand, with a range?* Every one of those questions is answered by **counting** in a bag of plausible values.
+
+<KeyIdea>
+
+**Keep a bag of draws from the posterior instead of the posterior itself.** If the bag has 4,000 draws, its histogram *is* the posterior, its average is the posterior mean, and "how likely is X?" is "what share of the draws satisfy X?". Any quantity you can compute from one draw (a total, a ratio, an ROI) gets its own posterior for free: compute it for every draw. The bag's error shrinks like $1/\sqrt N$, however many unknowns there are.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The new endcap from [Beta–Binomial](/learn/bayes/beta-binomial): 3 of 10 shoppers bought, the prior was Beta(2, 8), and the posterior is **Beta(5, 15)**. We know its exact answers, so we can check the bag against them: mean **0.250**, P(rate above 0.3) **0.282**, 90% interval **0.110 to 0.419**.
+
+<Steps>
+<Step>
+
+**Count grid points.** With 100 values per unknown, a grid needs $100^d$ points:
+
+| Unknowns | 1 (one endcap) | 2 | 3 | 42 (the 40-store model) |
+|---|---|---|---|---|
+| Grid points | 100 | 10,000 | 1,000,000 | $10^{84}$ |
+
+At a billion points a second, $10^{84}$ points would take $10^{75}$ seconds. The universe is about $4 \times 10^{17}$ seconds old.
+
+</Step>
+<Step>
+
+**A bag of ten.** Here are ten draws from Beta(5, 15) (one per shopper-afternoon you could have seen):
+
+| Draw | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Rate | 0.21 | 0.17 | 0.26 | 0.20 | **0.34** | 0.22 | **0.38** | **0.32** | **0.38** | 0.23 |
+
+Their average is $2.71/10 =$ **0.271**, an estimate of the posterior mean (exact: 0.250).
+
+</Step>
+<Step>
+
+**A question is a count.** "How likely is the endcap to convert above 30%?" Four of the ten draws are above 0.3 (in bold), so the estimate is **4/10 = 0.4** (exact: 0.282). Rough, because ten draws is a tiny bag.
+
+</Step>
+<Step>
+
+**A derived quantity is a transformation.** The endcap sees about 120 shoppers a week. Buyers per week is $120 \times \text{rate}$, so multiply every draw by 120: 25.2, 20.4, 31.2, … Their average, $120 \times 0.271 \approx$ **32.5**, estimates expected weekly buyers, and the spread of the ten products is the uncertainty in buyers. No new math: the posterior of buyers is just the bag, rescaled.
+
+</Step>
+<Step>
+
+**How big a bag?** The estimate 4/10 is a proportion from 10 draws, so its standard error is $\sqrt{p(1 - p)/N} = \sqrt{0.282 \times 0.718/10} \approx$ **0.142**. With 4,000 draws it's $\sqrt{0.282 \times 0.718/4000} \approx$ **0.0071**. That formula doesn't mention the number of unknowns: 4,000 draws give the same precision for the 42-unknown model as for one endcap.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="With 4,000 draws, roughly how far from the exact 0.282 should the estimate of P(rate above 0.3) be?" options={["About 0.07", "About 0.007", "Exactly 0, with enough draws"]} answer={1}>
+
+**About 0.007.** The standard error is $\sqrt{0.282 \times 0.718/4000} \approx 0.0071$. It's never exactly zero with a finite bag, but 400 times more draws than the ten-draw bag makes it 20 times smaller.
+
+</Predict>
+
+<SampleBag />
+
+**Try this:**
+
+1. Start at **10 draws**. The histogram is a few lonely bars and the share above 0.3 reads **0.300**. Not bad, but by luck.
+2. Step up to **100**. The share drops to **0.220**: ten draws and a hundred draws can disagree by more than the effect you care about.
+3. Go to **4,000**. The bars hug the curve, the mean reads **0.249**, the share **0.281** and the 90% interval **0.110 to 0.417**, against exact answers of 0.250, 0.282 and 0.110 to 0.419.
+4. Watch the orange bars at each size: the share above 0.3 is literally the orange area. Counting draws is the bag's version of an integral.
+
+</Section>
+
+<Section id="simulate">
+
+One bag is one draw of luck. Here are 200 bags at each size, each giving its own estimate of P(rate above 0.3):
+
+<BagStudy />
+
+| Draws in the bag | 10 | 100 | 1,000 | 4,000 |
+|---|---|---|---|---|
+| Spread of the 200 estimates | 0.1365 | 0.0488 | 0.0155 | **0.0071** |
+| Theory, $\sqrt{p(1-p)/N}$ | 0.142 | 0.045 | 0.0142 | 0.0071 |
+
+- **Ten times the draws, about a third of the wobble.** $\sqrt{10} \approx 3.2$.
+- **Every column is centred on the truth.** The bag isn't biased; it's noisy, and the noise is under your control.
+- **4,000 is a common default** (4 chains × 1,000 draws in PyMC) because it puts the Monte Carlo error well below the posterior's own spread: 0.007 against a posterior sd of 0.09.
+
+</Section>
+
+<Section id="formula">
+
+**Monte Carlo.** If $\theta_1, \dots, \theta_N$ are draws from the posterior $p(\theta \mid y)$, then for any function $g$:
+
+$$
+\mathbb E[g(\theta) \mid y] = \int g(\theta)\, p(\theta \mid y)\, d\theta \;\approx\; \frac1N \sum_{s=1}^N g(\theta_s)
+$$
+
+Take $g(\theta) = \theta$ for the mean, $g(\theta) = \mathbb 1[\theta > 0.3]$ for a probability (the share of draws above 0.3), and $g(\theta) = 120\,\theta$ for buyers per week. One bag answers all of them.
+
+**It's still Σ of bars.** In [Integrals as Σ of Thin Bars](/learn/foundations/integrals-thin-bars) you summed height × width on an even grid. The bag is a grid that puts its "bars" where the posterior has mass: every draw is one bar of weight $1/N$.
+
+**The error.** Draws are independent, so the average has standard error
+
+$$
+\text{se} = \frac{\text{sd}(g(\theta))}{\sqrt N}, \qquad \text{e.g. } \frac{0.0945}{\sqrt{4000}} = 0.0015 \text{ for the endcap mean}
+$$
+
+No $d$ (the number of unknowns) appears anywhere. That's why sampling beats grids in high dimensions.
+
+<Depth min={2}>
+
+**Where the posterior lives in high dimensions.** Grids waste points because almost all of a high-dimensional box is "corner", far from where the posterior has mass. The share of the cube $[-1, 1]^d$ that lies inside the ball of radius 1 is $\pi^{d/2} / (\Gamma(d/2 + 1)\, 2^d)$:
+
+| Dimensions $d$ | 2 | 3 | 5 | 10 | 20 |
+|---|---|---|---|---|---|
+| Share of the cube inside the ball | 0.785 | 0.524 | 0.164 | 0.0025 | $2.5 \times 10^{-8}$ |
+
+With 20 unknowns, only 1 grid point in 40 million is near the middle. Draws don't have this problem: every draw lands where the posterior is.
+
+**Derived quantities keep their correlations.** If a draw has store 3 high and the chain mean high together, their sum in that draw is high too. Summing posterior means and summing posterior *intervals* are different: the interval of a total must come from totalling within each draw.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why not draw directly?** For Beta(5, 15) there's a recipe (the ratio of two gamma draws). For most posteriors there isn't: we can compute prior × likelihood at any point, but not the normalizing constant, and not a recipe for draws. Markov chain Monte Carlo builds draws using only ratios of prior × likelihood, so the unknown constant cancels. That's the next rung, [MCMC](/learn/bayes/mcmc-walker).
+
+**Correlated draws count less.** MCMC draws are correlated with their neighbours, so 4,000 of them carry less information than 4,000 independent draws. The **effective sample size** replaces $N$ in the standard-error formula; the next rung measures it.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Count a probability">
+
+A bag of 8 draws for a store's weekly paint sales: 52, 61, 47, 58, 66, 55, 49, 63. Estimate the chance its true average is above 60.
+
+<Solution>
+
+Three draws (61, 66, 63) are above 60: **3/8 = 0.375**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Grid size">
+
+A model has 6 unknowns. How many points does a grid with 50 values per unknown need?
+
+<Solution>
+
+$50^6 = 15{,}625{,}000{,}000 \approx$ **1.6 × 10¹⁰**: feasible on a big machine, but every extra unknown multiplies it by 50.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="A derived quantity">
+
+Draws of two stores' conversion rates (A, B): (0.20, 0.25), (0.22, 0.21), (0.18, 0.24), (0.25, 0.27). Estimate P(B > A) and the expected difference B − A.
+
+<Solution>
+
+B is higher in 3 of 4 draws: **P ≈ 0.75**. Differences 0.05, −0.01, 0.06, 0.02 average **0.03**. Both come from the same pairs, which is why you compute the difference within each draw.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="How many draws?">
+
+You want P(ROI above 1) to within ±0.01 (one standard error) when the true value is near 0.5. How many independent draws do you need?
+
+<Solution>
+
+$\sqrt{0.5 \times 0.5/N} = 0.01$ gives $N = 0.25/0.0001 =$ **2,500**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Totals need draws, not intervals">
+
+Two stores each have weekly demand with posterior mean 50 and 90% interval 40 to 60, independently. A colleague says the total's interval is 80 to 120. Is that right?
+
+<Solution>
+
+No. Adding the interval ends assumes both stores are at their extremes together. Each store has sd about $10/1.645 \approx 6.1$; the total of independent stores has sd $6.1\sqrt2 \approx 8.6$, so its 90% interval is about $100 \pm 1.645 \times 8.6 \approx$ **86 to 114**. Summing within each draw gives this automatically.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="The corners of the cube">
+
+Using the formula in *The Formula* (Depth 2), what share of $[-1, 1]^3$ lies inside the unit ball? Check it another way.
+
+<Solution>
+
+$\pi^{3/2}/(\Gamma(5/2)\, 2^3)$ with $\Gamma(5/2) = 3\sqrt\pi/4$ gives $\pi^{3/2} \cdot 4/(3\sqrt\pi \cdot 8) = \pi/6 \approx$ **0.524**. Check: the ball's volume is $\tfrac43\pi$ and the cube's is 8; $\tfrac43\pi/8 = \pi/6$.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+A bag of 4,000 draws with numpy, every answer by counting, and the wobble at four bag sizes. Expected: the ten-draw bag gives mean 0.271 and share 0.4; the 4,000-draw bag gives mean 0.2510, P(rate above 0.3) 0.2848 and interval 0.113 to 0.418, all within Monte Carlo error of the exact answers; the spread at 4,000 draws is 0.0069 against a theory of 0.0071.
+
+<PyRunner title="A bag of posterior draws" code={`
+import numpy as np
+from scipy import stats
+
+# By hand: ten draws from the endcap posterior Beta(5, 15)
+ten = np.array([0.21, 0.17, 0.26, 0.20, 0.34, 0.22, 0.38, 0.32, 0.38, 0.23])
+print(f"ten draws: mean {ten.mean():.3f}, share above 0.3 {np.mean(ten > 0.3):.1f}")
+
+# A bag of 4,000 draws, and every question becomes a count
+rng = np.random.default_rng(10)
+bag = rng.beta(5, 15, 4000)
+exact = stats.beta(5, 15)
+lo, hi = np.quantile(bag, [0.05, 0.95])
+print(f"mean           {bag.mean():.4f}   exact {exact.mean():.4f}")
+print(f"P(rate > 0.3)  {np.mean(bag > 0.3):.4f}   exact {exact.sf(0.3):.4f}")
+print(f"90% interval   {lo:.3f} to {hi:.3f}   exact {exact.ppf(0.05):.3f} to {exact.ppf(0.95):.3f}")
+
+# A derived quantity is the same transformation applied to every draw
+buyers = 120 * bag
+print(f"buyers from 120 shoppers: mean {buyers.mean():.1f}, P(more than 40) {np.mean(buyers > 40):.3f}")
+
+# The wobble shrinks like 1 / sqrt(N)
+p = exact.sf(0.3)
+for n in [10, 100, 1000, 4000]:
+    est = [np.mean(rng.beta(5, 15, n) > 0.3) for _ in range(200)]
+    print(f"{n:5d} draws: spread of the estimate {np.std(est, ddof=1):.4f}   theory {np.sqrt(p * (1 - p) / n):.4f}")
+
+# The grid alternative needs 100 points per unknown
+for d in [1, 2, 3, 42]:
+    print(f"{d:2d} unknowns: {100.0 ** d:.0e} grid points")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Every Bayesian library hands you a bag.** PyMC, NumPyro and Stan return draws (in ArviZ's `InferenceData`, shaped chains × draws × parameters). Summaries like `az.summary` are just means, quantiles and counts over that array.
+- **Answer business questions inside the bag.** ROI, total demand, P(new store beats target), the best channel: compute the quantity for each draw, then summarize. Never compute it from posterior means (the mean of a ratio isn't the ratio of means).
+- **The posterior predictive is a bag too.** For each parameter draw, simulate one future week. The result is a forecast distribution that includes both parameter uncertainty and week-to-week noise.
+- **Report the Monte Carlo error when it matters.** A P(ROI above 1) of 0.51 from 500 effective draws (± 0.022) is not evidence that ROI is above 1. ArviZ reports the MCSE alongside each estimate.
+- **Storage.** 4,000 draws × 42 parameters is tiny; 4,000 draws × 40 stores × 52 weeks of predictions is 8 million numbers. Keep the parameter draws and regenerate predictions on demand, or store thinned quantiles.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Why do Bayesian libraries return samples instead of a formula for the posterior?">
+
+For almost any realistic model the posterior has no closed form, and with more than a few parameters you can't evaluate it on a grid (100 values per unknown is $100^d$ points). Samples work in any dimension: means, intervals and probabilities become averages and counts over the draws, and their error shrinks like $1/\sqrt N$ regardless of the number of parameters.
+
+</QA>
+
+<QA q="You have 4,000 posterior draws of two channels' ROI. How do you estimate the probability that TV beats search?">
+
+Count the draws where the TV ROI is greater than the search ROI and divide by 4,000. Use the pairs as they come (each draw is one joint plausible world), so any correlation between the two estimates is respected. Don't compare their two marginal intervals.
+
+</QA>
+
+<QA q="How many posterior draws are enough?">
+
+Enough that the Monte Carlo error is small relative to the posterior's own uncertainty and to the decision at stake. The standard error of a mean is sd/√ESS and of a probability is √(p(1 − p)/ESS). A few hundred effective draws suffice for means; tail quantiles (like a 99th percentile) need thousands.
+
+</QA>
+
+<Trap>
+
+**"Average the posterior means of two stores, then the interval of the total is the sum of their intervals."** Intervals don't add: adding the 5th percentiles assumes both stores are at their worst together. Compute the total within each draw, then take the 5th and 95th percentiles of the totals.
+
+</Trap>
+
+</Section>

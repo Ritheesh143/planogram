@@ -1,0 +1,309 @@
+<Section id="floor">
+
+The North region's marketing lead has a year of weekly numbers: sales, TV spend and search spend. Their analyst ran a regression and reported: **TV ROI −0.31, search ROI 4.02**. Taken at face value, every rupee on TV *loses* sales, and the budget should move to search.
+
+Nobody believes TV destroys sales. The problem is the plan: TV and search both ramp up for Diwali and both drop in the monsoon, so they move almost in lockstep (correlation 0.95). When sales rise, both channels were up, and the data can't say which one did it. This is the central problem of media mix modelling, and the whole Bayes ladder so far is the toolkit for it.
+
+<KeyIdea>
+
+**When two channels move together, the data pin down their combined effect but not the split.** The posterior is a long ridge: many (TV, search) pairs fit equally well. Priors decide where on the ridge you land: "ROI is positive and below about 6" cuts off the absurd part, and a geo-lift test on TV pins one end. Fit by sampling (rung 11), answer with counts (rungs 10 and 12): *P(TV pays back) = the share of draws with TV ROI above 1.*
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Four weeks where search spend is exactly half of TV spend (₹ lakh), and sales (₹ lakh) with no noise at all:
+
+| Week | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| TV | 4 | 6 | 8 | 10 |
+| Search | 2 | 3 | 4 | 5 |
+| Sales | 112 | 118 | 124 | 130 |
+
+<Steps>
+<Step>
+
+**The data only know the combination.** Each extra ₹1 lakh of TV comes with ₹0.5 lakh of search and ₹3 lakh of sales. So any ROIs with $\beta_{TV} + 0.5\,\beta_{S} = 3$ fit every week perfectly:
+
+| TV ROI | 3 | 1.5 | 0 | −1 |
+|---|---|---|---|---|
+| Search ROI | 0 | 3 | 6 | 8 |
+| Week 1 check: $100 + 4\beta_{TV} + 2\beta_S$ | 112 | 112 | 112 | 112 |
+
+With real noise, least squares picks one point on this line more or less by luck. That's how North got −0.31.
+
+</Step>
+<Step>
+
+**A positive prior cuts the line.** ROI below 0 means ads destroy sales; nobody believes it. A Half-Normal prior on each ROI removes the pair (−1, 8) and everything like it, leaving the segment from (0, 6) to (3, 0). Still wide, but no longer absurd.
+
+</Step>
+<Step>
+
+**An experiment pins one end.** A geo-lift test (TV switched off in a few matched cities for four weeks) measured TV ROI **1.4 ± 0.3**. Put that on the line: search ROI $= (3 - 1.4)/0.5 =$ **3.2**. One clean experiment on one channel identifies the other.
+
+</Step>
+<Step>
+
+**Answer by counting.** Suppose the sampler returns 10 draws of the TV ROI: 1.1, 1.6, 0.9, 1.4, 1.3, 1.8, 1.2, 0.7, 1.5, 1.4. P(TV pays back, ROI above 1) $= 8/10 =$ **0.8**. The answer to "should we cut TV?" is a probability, not a coefficient.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Least squares says TV ROI is −0.31. What's the safest conclusion?" options={["TV loses money: cut it", "TV's ROI is genuinely uncertain because it moved with search; the data can't separate them", "The regression is broken and should be ignored entirely"]} answer={1}>
+
+**The ROI is uncertain, not negative.** The flat posterior below spans roughly −2.9 to +1.9, while the *combined* effect of the two channels is pinned down well. The regression isn't broken; it's answering a question the data can't settle on their own.
+
+</Predict>
+
+<SpendTogether />
+
+<MMMBridge />
+
+**Try this:**
+
+1. With **Flat priors**, the cloud is a long diagonal ridge: high TV with low search, or low TV with high search, fit about equally. TV ROI: mean **−0.49**, 90% interval **−2.88 to 1.92**, and a **63.2%** chance it's negative. The sampler struggles along the ridge too: R-hat **1.013** and only **181** effective draws from 20,000 (rung 11's random walk on a correlated posterior).
+2. Choose **Positive priors**. The cloud is cut to the positive corner; TV ROI **0.83** (**0.07 to 1.83**), P(pays back) **36.0%**. Better, but the prior can only rule out the impossible.
+3. Choose **Positive + TV lift test**. TV ROI **1.29** (**0.84 to 1.74**), P(pays back) **85.3%**, and the planted truth (TV 1.5, search 2.5) sits inside the cloud. R-hat 1.003, 2,297 effective draws: a well-identified posterior is also an easy one to sample.
+4. Look at search in that last setting: mean **1.31**, still uncertain. The lift test pins TV; search is inferred from the ridge, so its uncertainty is inherited.
+
+</Section>
+
+<Section id="simulate">
+
+One region is one draw of luck. Here are 200 regions with the same planted truth (TV 1.5, search 2.5), each fitted three ways:
+
+<MMMStudy />
+
+| Method | Typical error in TV ROI | TV called a money-loser |
+|---|---|---|
+| Least squares | 1.35 | **13.5%** of regions |
+| Positive priors | 0.44 | 0% |
+| Positive priors + lift test | **0.10** | 0% |
+
+- **Least squares is unbiased and useless here.** On average it's right; in any one region it's off by about 1.35, and in 1 region in 7 it says TV loses money.
+- **Priors you can defend do most of the work.** Positivity alone cuts the error by two-thirds ([Priors You Can Defend](/learn/bayes/priors-defend)).
+- **One experiment beats a year of observational data.** The lift test cuts the error to 0.10, because it measures TV while search is held fixed, exactly what the collinear history can't show.
+
+</Section>
+
+<Section id="formula">
+
+**The model** (one region, weekly):
+
+$$
+\text{sales}_t = \text{base} + \beta_{TV}\, \text{TV}_t + \beta_S\, \text{search}_t + \varepsilon_t, \qquad \varepsilon_t \sim \mathcal N(0, \sigma^2)
+$$
+
+**Why a ridge.** With centred spends, the likelihood for $\beta = (\beta_{TV}, \beta_S)$ is Normal around the least-squares answer with covariance $\sigma^2 (X^\top X)^{-1}$. For two predictors, the correlation between the two ROI estimates is minus the correlation between the spends: here **−0.95**, a narrow diagonal ellipse. Its long axis is the split the data can't see; its short axis is the combination they can.
+
+**The priors** multiply in, exactly as in rung 3's grid:
+
+$$
+p(\beta \mid y) \;\propto\; \underbrace{p(y \mid \beta)}_{\text{52 weeks}} \times \underbrace{\text{HalfNormal}(\beta_{TV}; 3)\,\text{HalfNormal}(\beta_S; 3)}_{\text{positive, rarely above 6}} \times \underbrace{\mathcal N(\beta_{TV};\ 1.4,\ 0.3^2)}_{\text{geo-lift test}}
+$$
+
+The lift test enters as a prior because it *is* data: an independent measurement of $\beta_{TV}$ with standard error 0.3.
+
+**Sample, then count.** There's no closed form once the positivity constraint is in, so four Metropolis chains (rung 11) produce 20,000 draws; R-hat and ESS check them. Every business answer is then a count or an average over draws (rungs 10 and 12):
+
+$$
+P(\text{TV pays back}) \approx \frac1N \sum_s \mathbb 1\big[\beta_{TV}^{(s)} \gt 1\big],
+\qquad
+\mathbb E[\text{gain from moving ₹1 lakh TV → search}] \approx \frac1N \sum_s \big(\beta_S^{(s)} - \beta_{TV}^{(s)}\big)
+$$
+
+<Depth min={2}>
+
+**How much collinearity costs.** The variance of each ROI estimate is inflated by $1/(1 - r^2)$ compared with uncorrelated spends, the variance inflation factor. With $r = 0.95$: $1/(1 - 0.894) \approx$ **9.4**, so the standard error is about 3 times larger. The exact flat posterior here has TV ROI sd **1.49** and search ROI sd **2.77**.
+
+**A prior is pseudo-data, again.** The lift test's $\mathcal N(1.4, 0.3^2)$ adds precision $1/0.09 \approx 11$ to $\beta_{TV}$, against the data's own $1/1.49^2 \approx 0.45$: the experiment carries about 25 times as much information about TV as the whole year of observational data. That's the [shrinkage](/learn/bayes/shrinkage) weight from rung 7, in a regression ([Bayesian Linear Regression](/learn/bayes/bayes-linreg): ridge is a Normal prior centred at 0; here the prior is centred at the experiment).
+
+</Depth>
+
+<Depth min={3}>
+
+**The full Bayesian MMM** adds three things to this model, each covered in Signature A:
+
+- **Adstock:** this week's effect includes a decaying share of past weeks' spend (geometric or Weibull memory).
+- **Saturation:** each extra rupee does less (a Hill curve), so ROI and *marginal* ROI differ, and budget optimization means equalizing marginal ROI.
+- **Hierarchy across regions:** each region's ROIs are drawn from national distributions (rung 9), so regions with flat spend borrow strength.
+
+That's dozens to hundreds of parameters with strong correlations (adstock decay trades off against saturation), which is why production MMMs use NUTS and report R-hat, ESS and divergences for every channel. The identification problem you saw here doesn't go away with more parameters; it gets worse, and priors and experiments become more important, not less.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Walk along the ridge">
+
+In the four-week example, the data say $\beta_{TV} + 0.5\,\beta_S = 3$. If TV's ROI is 2, what must search's be?
+
+<Solution>
+
+$2 + 0.5\,\beta_S = 3$, so $\beta_S =$ **2**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Count a decision">
+
+Draws of the TV ROI: 0.6, 1.2, 1.5, 0.9, 1.1, 1.7, 0.8, 1.3. Estimate P(TV pays back).
+
+<Solution>
+
+Five draws exceed 1 (1.2, 1.5, 1.1, 1.7, 1.3): **5/8 = 0.625**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Variance inflation">
+
+Two channels' spends have correlation 0.9. By what factor does collinearity widen each ROI's standard error?
+
+<Solution>
+
+VIF $= 1/(1 - 0.81) \approx 5.26$; the standard error grows by $\sqrt{5.26} \approx$ **2.3×**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Combine the data with a lift test">
+
+The data alone say TV ROI 0.5 with sd 1.5. A geo-lift test says 1.4 with sd 0.3. Combine them (both Normal).
+
+<Solution>
+
+Precisions $1/2.25 = 0.44$ and $1/0.09 = 11.1$. Weight on the data $0.44/11.56 = 0.038$. Posterior mean $1.4 + 0.038 \times (0.5 - 1.4) \approx$ **1.37**, sd $\sqrt{1/11.56} \approx$ **0.29**. The experiment dominates, as it should.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Move the budget?">
+
+Four posterior draws of (TV ROI, search ROI): (1.2, 2.9), (1.6, 2.1), (1.4, 2.6), (1.9, 1.7). Estimate P(search beats TV) and the expected gain in sales from moving ₹1 lakh from TV to search.
+
+<Solution>
+
+Search is higher in 3 of 4 draws: **0.75**. Gains per draw: 1.7, 0.5, 1.2, −0.2; average **₹0.8 lakh**. (In a real MMM with saturation, the gain depends on where each channel sits on its curve: use marginal ROI.)
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Design it out">
+
+The marketing lead can change next year's media plan. How could they make TV's and search's effects separable without any experiment?
+
+<Solution>
+
+Break the lockstep: vary the two channels independently (flighting), for example TV-heavy weeks with flat search and vice versa, or stagger them across regions. Lower correlation between spends shrinks the VIF, so the data themselves identify each ROI. Media plans designed for measurement are the cheapest fix for collinearity.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The whole ladder in one script: simulate a region with planted ROIs, see least squares fail, then sample the posterior under three priors and answer with counts. Expected (a different random region from the visual above): spend correlation 0.93; least squares TV −0.78, search 5.97; TV ROI −0.74 with flat priors, 0.86 with positive priors and **1.28** (90% interval 0.80 to 1.73) with the lift test, where P(TV pays back) is 0.84.
+
+<PyRunner title="A two-channel Bayesian MMM by Metropolis" code={`
+import numpy as np
+
+# One region, 52 weeks. TV and search follow the same seasonal plan, so they move together.
+rng = np.random.default_rng(3)
+week = np.arange(52)
+season = np.maximum(0, np.cos(2 * np.pi * (week - 43) / 52))
+tv = 4 + 6 * season + rng.normal(0, 0.6, 52)
+search = 2 + 3 * season + rng.normal(0, 0.3, 52)
+sales = 100 + 1.5 * tv + 2.5 * search + rng.normal(0, 8, 52)   # planted ROIs: TV 1.5, search 2.5
+print(f"correlation of TV and search spend: {np.corrcoef(tv, search)[0, 1]:.2f}")
+
+X = np.column_stack([np.ones(52), tv, search])
+ols = np.linalg.lstsq(X, sales, rcond=None)[0]
+print(f"least squares: TV ROI {ols[1]:.2f}, search ROI {ols[2]:.2f}")
+
+# Centre everything so the baseline drops out, then sample the two ROIs with Metropolis.
+t, s, y = tv - tv.mean(), search - search.mean(), sales - sales.mean()
+
+def log_post(b_tv, b_s, prior):
+    lp = -np.sum((y - b_tv * t - b_s * s) ** 2) / (2 * 8 ** 2)
+    if prior != "flat":
+        if b_tv < 0 or b_s < 0:
+            return -np.inf
+        lp -= (b_tv ** 2 + b_s ** 2) / (2 * 3 ** 2)        # half-Normal(0, 3): positive, rarely above 6
+    if prior == "lift":
+        lp -= (b_tv - 1.4) ** 2 / (2 * 0.3 ** 2)           # geo-lift test: TV ROI 1.4 +/- 0.3
+    return lp
+
+def sample(prior, n=6000, warmup=1000, step=1.0):
+    cur, lp, out = np.array([1.0, 1.0]), log_post(1.0, 1.0, prior), []
+    for i in range(n):
+        prop = cur + rng.normal(0, step, 2)
+        lq = log_post(prop[0], prop[1], prior)
+        if np.log(rng.uniform()) < lq - lp:
+            cur, lp = prop, lq
+        if i >= warmup:
+            out.append(cur)
+    return np.array(out)
+
+for prior in ["flat", "positive", "lift"]:
+    d = sample(prior)
+    lo, hi = np.quantile(d[:, 0], [0.05, 0.95])
+    print(f"{prior:8s}: TV ROI {d[:, 0].mean():5.2f} (90% {lo:5.2f} to {hi:4.2f}), P(TV pays back) {np.mean(d[:, 0] > 1):.2f}, P(TV below 0) {np.mean(d[:, 0] < 0):.2f}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **This is what MMM libraries do.** PyMC-Marketing, Google's Meridian and Meta's Robyn all fit a regression of sales on transformed media spend; the Bayesian ones (PyMC-Marketing, Meridian) put priors on ROIs and sample with NUTS. Meridian parameterizes priors directly on ROI, which makes "positive and rarely above 6" easy to state.
+- **Calibrate with experiments.** Geo-lift tests, holdouts and conversion-lift studies become priors (or likelihood terms) on the channels they measured. Plan a rolling programme of tests on the biggest, most collinear channels.
+- **Check prior sensitivity.** Refit with wider and narrower priors. If a channel's ROI follows the prior wherever you put it, the data aren't informing it, and the honest report is "set by the experiment" or "unknown".
+- **Report decisions, not coefficients.** P(ROI above 1) per channel, the expected gain from a budget move, and the uncertainty in each, all computed per draw.
+- **Read the diagnostics.** Collinear channels show up as poor ESS, long NUTS trajectories and strongly correlated pair plots: the sampler is telling you about identification.
+- **Fix the design, not just the model.** Varying channels independently (flighting, staggered regional plans) makes next year's data informative on their own.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Your MMM gives a negative ROI for TV. What do you do?">
+
+First suspect identification, not TV. Check the correlation between TV and other spend, seasonality and promotions; look at the posterior (or the coefficient's standard error), which will be wide. Use priors that rule out impossible values (positive ROI), calibrate with a lift test if one exists, and report the uncertainty. If no experiment exists, recommend one on TV, and vary next year's plan so channels aren't in lockstep.
+
+</QA>
+
+<QA q="Why use Bayesian methods for MMM?">
+
+Media data are few (two or three years of weeks), noisy and collinear, so channel effects are weakly identified. Priors encode what's known (effects are positive; adstock decays; saturation exists), experiments enter as priors, and hierarchical structure lets regions borrow strength. The posterior gives every decision quantity (ROI, marginal ROI, the gain from a budget shift) with honest uncertainty.
+
+</QA>
+
+<QA q="How do you incorporate a geo-lift test into an MMM?">
+
+Treat the lift estimate as data on that channel: a Normal prior (or an extra likelihood term) on its ROI centred at the lift result with the test's standard error. Make sure the definitions match (the same ROI window and the same KPI) and that the test period is representative. Because the experiment varied one channel with others held fixed, it identifies exactly what the collinear history can't.
+
+</QA>
+
+<QA q="Two channels have a posterior correlation of −0.95. What does that tell you?">
+
+The data constrain their combined effect but not the split: high TV with low search fits about as well as the reverse. Individual ROIs are unreliable; their sum (or the effect of moving both together) is well determined. Budget decisions that shift money between the two channels are exactly the ones the data can't support without priors or an experiment.
+
+</QA>
+
+<Trap>
+
+**"The Bayesian MMM gave TV ROI 1.29, so TV returns ₹1.29 per rupee."** Look at where that number came from: with flat priors the same data gave −0.49, and the 1.29 is mostly the lift test speaking. Report it as "calibrated to the geo-lift test", with its interval (0.84 to 1.74) and P(pays back) of 85%, not as a fact the sales history revealed.
+
+</Trap>
+
+</Section>

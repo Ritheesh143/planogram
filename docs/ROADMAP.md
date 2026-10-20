@@ -13,7 +13,7 @@ context, project details and screening results. Never copy anything from it into
 | **M1** Scaffold, Bolt & Beam generator, lesson template, store map, progress, FSRS review, Floor Check, the four Keystones | Done, live |
 | **M2** Model Lab (linear regression, decision tree, gradient boosting, XGBoost vs LightGBM vs CatBoost, MLP), Model Arena + Failure Matrix, Tree vs MLP, Bayes rungs 2–9, Math Toolkit, Plan / Exercises / Concept Graph / Threads pages | Done, live |
 | **M3** The AI layer, without an API key (spec below): `tutor`, `feynman-grade`, `mock-interview`, `project-grill` skills and the Ask Claude panel | Done, live. A manual run of each skill in a local `claude` session is still to do |
-| **M4 onward** Weekly lesson batches in sprint order | **Next**: Bayes rungs 10–13 |
+| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13) done, live. **Next**: Signature B, multi-store forecasting |
 
 The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys it.
 
@@ -21,7 +21,8 @@ The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys
 - **Foundations:** counting-worlds, ci-repeat, likelihood-dial, integrals-thin-bars,
   vectors-baskets, matrices-tables
 - **Bayes:** mle-peak (rung 2), posterior-grid (3), beta-binomial (4), gamma-poisson (5),
-  priors-defend (6), shrinkage (7), bayes-linreg (8), hierarchical-pooling (9)
+  priors-defend (6), shrinkage (7), bayes-linreg (8), hierarchical-pooling (9), why-sample (10),
+  mcmc-walker (11), bayes-ab (12), bayes-mmm-bridge (13)
 - **Models (lessons):** boosting-by-hand, tree-vs-mlp
 - **Model Lab (`/models/<slug>`):** linear-regression, decision-tree, gradient-boosting,
   xgb-lgbm-catboost, mlp, model-arena
@@ -109,7 +110,10 @@ pushed on its own.
      - R-hat, ESS and divergences shown visually.
      - A pytest check that the Metropolis sampler recovers a known Beta posterior.
    - **12, Bayesian A/B testing:** P(B > A) by counting samples.
-   - **13:** the bridge into Bayesian MMM.
+   - **13 (`bayes-mmm-bridge`):** the bridge into Bayesian MMM: collinear TV and search spend
+     make a posterior ridge, and positive priors plus a geo-lift prior pick the point on it.
+   - Done: the sampler code is in `lib/sim/mcmc.ts` (vitest: `tests/bayes-rungs-10-13.test.ts`) and
+     `python/ladder/` (pytest: `python/tests/test_mcmc.py`).
 2. **Signature B (multi-store forecasting), about 12 lessons:**
    - Forecasting basics: STL decomposition and the ACF; baselines and rolling-origin CV with
      WAPE, MASE and bias; ETS as geometric weights; ARIMA intuition.

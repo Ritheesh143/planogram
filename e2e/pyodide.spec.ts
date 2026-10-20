@@ -26,6 +26,10 @@ const lessons: [string, string][] = [
   ["/learn/bayes/bayes-linreg", "grid posterior: mean -4.000, sd 0.447"],
   ["/learn/bayes/hierarchical-pooling", "partial pooling  mean squared error   22.1"],
   ["/learn/bayes/priors-defend", "lift: weight on new test 0.20, posterior 7.20% +/- 1.79"],
+  ["/learn/bayes/why-sample", "4000 draws: spread of the estimate 0.0069   theory 0.0071"],
+  ["/learn/bayes/mcmc-walker", "step  0.3: accept 35%, mean 0.248, R-hat 1.001"],
+  ["/learn/bayes/bayes-ab", "look daily            fake winners 21.9%"],
+  ["/learn/bayes/bayes-mmm-bridge", "lift    : TV ROI  1.28 (90%  0.80 to 1.73), P(TV pays back) 0.84"],
 ];
 
 for (const [path, expected] of lessons) {

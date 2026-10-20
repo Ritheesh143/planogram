@@ -1,0 +1,353 @@
+<Section id="floor">
+
+[Why We Sample](/learn/bayes/why-sample) said: keep a bag of draws from the posterior and answer every question by counting. For Beta(5, 15) there's a recipe for those draws. For the 40-store model, a media mix model, or almost anything real, there isn't. What you *can* do is score any candidate: prior × likelihood at one point is a formula you can compute. You just can't divide by the total, because the total is the impossible integral.
+
+So send a walker. It wanders over the possible values, prefers higher ground, and its footprints pile up in proportion to the posterior. That's **Markov chain Monte Carlo**, and it's what runs every time you call `pm.sample()`.
+
+<KeyIdea>
+
+**Metropolis: propose a nearby step; always go uphill; go downhill with probability equal to the ratio of heights; if you don't move, record where you are again.** Only the *ratio* p(new)/p(old) is ever used, so the unknown normalizing constant cancels. Run it long enough and the share of time spent at each value is the posterior. Then check two things before trusting the bag: do independent walkers agree (**R-hat**), and how many independent draws is the correlated walk worth (**ESS**)?
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+The target is the endcap posterior from [Beta–Binomial](/learn/bayes/beta-binomial). Pretend we don't know it's a Beta: all we have is its height, $f(\theta) = \theta^4 (1 - \theta)^{14}$, with no constant. The ratio of two heights is
+
+$$
+\frac{f(\theta')}{f(\theta)} = \left(\frac{\theta'}{\theta}\right)^4 \left(\frac{1 - \theta'}{1 - \theta}\right)^{14}
+$$
+
+<Steps>
+<Step>
+
+**Start somewhere silly.** The walker starts at θ = 0.5 (a 50% conversion rate, far out in the tail). Each step it proposes a jump, computes the ratio, and flips a coin $u$ between 0 and 1: it moves if $u$ is below the ratio.
+
+</Step>
+<Step>
+
+**Walk five steps.**
+
+| Step | At | Propose | Ratio $f(\theta')/f(\theta)$ | Coin $u$ | Result |
+|---|---|---|---|---|---|
+| 1 | 0.50 | 0.40 | $(0.8)^4 (1.2)^{14} =$ **5.26** | 0.62 | uphill: **move to 0.40** |
+| 2 | 0.40 | 0.25 | **3.47** | 0.35 | uphill: **move to 0.25** |
+| 3 | 0.25 | 0.30 | **0.79** | 0.85 | 0.85 is above 0.79: **stay at 0.25** |
+| 4 | 0.25 | 0.15 | **0.75** | 0.41 | downhill, but 0.41 is below 0.75: **move to 0.15** |
+| 5 | 0.15 | 0.10 | **0.44** | 0.90 | **stay at 0.15** |
+
+The recorded chain is **0.40, 0.25, 0.25, 0.15, 0.15**. Three of five proposals were accepted.
+
+</Step>
+<Step>
+
+**Why "stay" must be recorded.** When step 3 is rejected, 0.25 is written down a second time. That repetition is how the walker spends *more time* at likely values. Dropping rejected steps would erase exactly the information that makes the histogram match the posterior.
+
+</Step>
+<Step>
+
+**Why downhill moves must be allowed.** Step 4 proposed a point only 75% as high and was accepted. If the walker only went uphill it would climb to the peak (θ = 0.222, the MAP) and stop: an optimizer, not a sampler. Accepting a 0.75 drop 75% of the time is what makes it visit 0.15 about 75% as often as 0.25, the right proportion.
+
+</Step>
+<Step>
+
+**Why the first steps are thrown away.** Steps 1 and 2 are the walker walking in from 0.5, a place it would almost never visit at equilibrium. Samplers discard an initial **warm-up** (PyMC: 1,000 "tune" steps) so the bag doesn't remember where the walker started.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="The walker proposes tiny steps of 0.01. What happens to the acceptance rate and to the usefulness of the draws?" options={["Acceptance near 100%, and the draws are excellent", "Acceptance near 100%, but the draws are nearly copies of each other", "Acceptance near 0%"]} answer={1}>
+
+**Near 100% acceptance, nearly useless draws.** A step of 0.01 barely changes the height, so almost everything is accepted, but the walker crawls: 3,500 kept draws are worth only about 15 independent ones. A high acceptance rate is not a sign of a good sampler.
+
+</Predict>
+
+<MetropolisWalker />
+
+**Try this:**
+
+1. With **Medium steps (0.3)**, press **Replay the walk**. The trace starts at 0.5, falls into the bulk within a few steps, then wanders. After warm-up the histogram matches the exact Beta(5, 15): mean **0.249**, acceptance **34.6%**, effective sample size **739** of 3,500 draws.
+2. Choose **Tiny steps (0.01)**. The trace is a slow, smooth snake. Acceptance **96.5%**, but the effective sample size collapses to **15**, and the histogram is lumpy wherever the snake happened to linger.
+3. Choose **Giant steps (3)**. Almost every proposal lands outside 0 to 1 or in the far tail, so the trace is flat for long stretches. Acceptance **3.4%**, effective sample size **91**.
+4. Notice that all three means are close to 0.25 eventually. The difference is how much you paid for that answer, and how much you'd be fooled with fewer steps.
+
+</Section>
+
+<Section id="simulate">
+
+Twenty chains of 4,000 steps at each of six step sizes:
+
+<StepSizeStudy />
+
+| Step size | 0.01 | 0.03 | 0.1 | 0.3 | 1 | 3 |
+|---|---|---|---|---|---|---|
+| Acceptance | 97% | 90% | 69% | **36%** | 12% | 4% |
+| Effective draws (of 4,000) | 16 | 94 | 467 | **778** | 285 | 90 |
+
+The best step size accepts about a third of proposals (theory says about 44% is optimal for a one-dimensional target, and 23% in many dimensions). Both extremes waste 95% of the work.
+
+**Do independent walkers agree?** Four chains from 0.05, 0.35, 0.65 and 0.95:
+
+<ChainDiagnostics />
+
+| Scenario | R-hat | Effective draws |
+|---|---|---|
+| Healthy: step 0.3, 1,000 draws each | **1.004** | **836** of 4,000 |
+| Too timid: step 0.003 | 9.223 | 14 |
+| Stopped too soon: step 0.3, 40 draws each | 1.413 | 31 of 160 |
+
+The timid chains each explore their own neighbourhood, so their averages (0.13 to 0.79) disagree wildly and R-hat is far above 1. The short chains have barely left their starting points. Neither failure is visible from a single chain's histogram; both are obvious from four chains side by side.
+
+</Section>
+
+<Section id="formula">
+
+**The Metropolis rule.** From θ, propose $\theta' = \theta + \varepsilon$ with a symmetric jump (here $\varepsilon \sim \mathcal N(0, s^2)$). Accept with probability
+
+$$
+\alpha(\theta \to \theta') = \min\!\left(1,\ \frac{p(\theta' \mid y)}{p(\theta \mid y)}\right) = \min\!\left(1,\ \frac{p(y \mid \theta')\, p(\theta')}{p(y \mid \theta)\, p(\theta)}\right)
+$$
+
+The evidence $p(y)$ appears in both posteriors and cancels. On the log scale (how code does it): accept if $\log u \lt \log f(\theta') - \log f(\theta)$.
+
+**R-hat.** Run $m$ chains of $n$ draws (split each in half first). With $W$ the average within-chain variance and $B/n$ the variance of the chain means:
+
+$$
+\hat R = \sqrt{\frac{\tfrac{n - 1}{n} W + \tfrac{B}{n}}{W}}
+$$
+
+If the chains have mixed, between-chain and within-chain spread agree and $\hat R \approx 1$. Modern practice: trust nothing above **1.01**.
+
+**Effective sample size.** Neighbouring draws are correlated (autocorrelation $\rho_k$ at lag $k$), so $N$ draws are worth
+
+$$
+\text{ESS} = \frac{N}{1 + 2\sum_{k \ge 1} \rho_k}
+$$
+
+independent ones. ESS replaces $N$ in the Monte Carlo error from rung 10: $\text{se} = \text{sd}/\sqrt{\text{ESS}}$. Aim for at least 400 in total.
+
+**HMC: a ball rolling in a bowl.** Random-walk proposals are blind: in many dimensions, or when parameters are correlated, most directions lead uphill on $-\log p$ and get rejected. Hamiltonian Monte Carlo uses the slope. Turn the posterior into a landscape with height $U(\theta) = -\log p(\theta \mid y)$ (likely values are low ground), give a ball a random flick (momentum $r$), and let it roll for a while under the physics of
+
+$$
+H(\theta, r) = U(\theta) + \tfrac12 \lvert r \rvert^2
+$$
+
+Exact physics conserves $H$, so the end point would always be accepted. A computer approximates the roll with **leapfrog** steps of size ε; the small energy error $\Delta H$ sets the acceptance probability $\min(1, e^{-\Delta H})$. The ball travels far along the bowl in one iteration, so successive draws are nearly independent.
+
+<RollingBall />
+
+The two parameters here are standardized and correlated at 0.95, the shape you get whenever the data can't tell two effects apart (the TV and search ROIs of [rung 13](/learn/bayes/bayes-mmm-bridge) form the same narrow ridge, tilted the other way). With ε = 0.15 the ball accepts **96%** of trajectories and moves an average of **1.87** per iteration; the random walk on the same correlated posterior moves **0.20** and its 500 draws are worth about 10 independent ones. Push ε to **0.45** and **464** of 500 trajectories diverge: the leapfrog steps overshoot the narrow direction of the bowl and the energy explodes.
+
+**NUTS** (the No-U-Turn Sampler, the default in PyMC and Stan) is HMC that chooses the roll length itself: it keeps doubling the trajectory until the path starts to turn back on itself, and tunes ε during warm-up to hit an acceptance target (0.8 by default).
+
+<Depth min={2}>
+
+**Why the walker's footprints match the posterior.** A chain leaves a distribution unchanged if, at equilibrium, the flow from θ to θ′ equals the flow back (**detailed balance**). With a symmetric proposal $q$:
+
+$$
+p(\theta)\, q(\theta' \mid \theta)\, \min\!\left(1, \frac{p(\theta')}{p(\theta)}\right) = q(\theta' \mid \theta)\, \min\big(p(\theta), p(\theta')\big)
+$$
+
+The right side is symmetric in θ and θ′, so the flow back is identical. Hence $p$ is the chain's equilibrium distribution; combined with being able to reach every region, the chain converges to it from any start.
+
+**Estimating ESS in practice.** The autocorrelation sum is noisy at long lags, so estimators stop early. The one used on this page sums $\rho_{2m} + \rho_{2m+1}$ in pairs and stops at the first negative pair (Geyer's initial positive sequence); ArviZ's `ess_bulk` does the same after rank-normalizing the draws, and `ess_tail` checks the 5% and 95% quantiles separately.
+
+</Depth>
+
+<Depth min={3}>
+
+**The leapfrog stability limit.** For a Normal target with precision matrix $\Lambda$, leapfrog is stable only if $\varepsilon \lt 2/\sqrt{\lambda_{\max}}$, where $\lambda_{\max}$ is the largest eigenvalue of $\Lambda$. The correlated pair above has $\Lambda$ eigenvalues $1/(1 \pm \rho)$, so the limit is $2\sqrt{1 - \rho} = 2\sqrt{0.05} \approx$ **0.447**: exactly where the divergences begin. The narrowest direction of the posterior sets the step size for every direction, which is why highly correlated parameters make NUTS take many tiny steps.
+
+**Divergences are a warning about geometry, not noise.** In the hierarchical funnel of [rung 9](/learn/bayes/hierarchical-pooling), the bowl is wide when τ is large and razor-thin when τ is small; no single ε works for both, so trajectories diverge in the neck and the sampler never explores it. The posterior summaries are then biased, not just noisy. The non-centred parameterization $\theta_j = \mu + \tau z_j$ makes the geometry uniform, and the divergences disappear.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="One step">
+
+On the endcap posterior, the walker is at 0.20 and proposes 0.30. Compute the ratio and decide with coin $u = 0.5$.
+
+<Solution>
+
+$(0.3/0.2)^4 (0.7/0.8)^{14} = 5.0625 \times 0.1542 \approx$ **0.78**. The coin 0.5 is below 0.78: **move** to 0.30.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Acceptance rate from a trace">
+
+A walker starting at 0.25 recorded: 0.25, 0.31, 0.31, 0.22, 0.22, 0.22, 0.27, 0.27. What's its acceptance rate?
+
+<Solution>
+
+Moves happened at steps 2, 4 and 7 (step 1 stayed at 0.25): **3 of 8 = 37.5%**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Effective sample size">
+
+A chain of 4,000 draws has autocorrelation $\rho_k = 0.9^k$. Estimate its ESS.
+
+<Solution>
+
+$\sum_{k \ge 1} 0.9^k = 0.9/0.1 = 9$, so ESS $= 4000/(1 + 18) \approx$ **211**. Nineteen correlated draws are worth one independent draw.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="R-hat by hand">
+
+Two chains of four draws (no splitting): A = 0.2, 0.3, 0.2, 0.3 and B = 0.6, 0.7, 0.6, 0.7. Compute R-hat.
+
+<Solution>
+
+Each chain's draws sit 0.05 either side of its mean, so its variance is $4 \times 0.05^2/3 \approx 0.00333$: $W = 0.00333$. Chain means 0.25 and 0.65 have variance 0.08, so $B = 4 \times 0.08 = 0.32$. $\hat R = \sqrt{(\tfrac34 \times 0.00333 + 0.08)/0.00333} = \sqrt{24.75} \approx$ **4.97**. The chains clearly sit in different places.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="The constant cancels">
+
+The posterior is $f(\theta)/Z$ with $Z$ unknown. Show that Metropolis never needs $Z$, and say what would go wrong for a sampler that accepted with probability $p(\theta')$ instead of a ratio.
+
+<Solution>
+
+$\dfrac{f(\theta')/Z}{f(\theta)/Z} = \dfrac{f(\theta')}{f(\theta)}$: $Z$ divides out. A rule using $p(\theta')$ alone needs $Z$ to be a probability at all, and even with it the result isn't the posterior: the move would ignore where the walker is, so detailed balance fails.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Collinear channels slow the ball">
+
+Two standardized ROIs have posterior correlation ρ. Using the Depth 3 limit, what's the largest stable leapfrog step for ρ = 0.8 and ρ = 0.99? What does that mean for a media mix model with collinear channels?
+
+<Solution>
+
+$2\sqrt{1 - \rho}$: **0.894** for ρ = 0.8 and **0.2** for ρ = 0.99. Crossing the long axis of the bowl then takes roughly 4–5 times as many leapfrog steps (each needing a gradient), so sampling gets slower, and NUTS reports long trajectories ("max tree depth"). Fixes: informative priors that break the ridge, or reparameterizing, for example modelling the sum and the difference of the two channels.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Metropolis from scratch: the five hand steps, then four chains at three step sizes with R-hat and ESS. Expected: the hand table exactly (ratios 5.26, 3.47, 0.79, 0.75, 0.44); at step 0.3, acceptance 35%, R-hat 1.001 and about 2,000 effective draws from 10,000; at step 0.01, R-hat 1.287 and an ESS of 31, a clear "don't trust this".
+
+<PyRunner title="Metropolis, R-hat and ESS from scratch" code={`
+import numpy as np
+
+def log_post(t):
+    # log of t^4 (1 - t)^14: the endcap posterior Beta(5, 15), without its constant
+    if t <= 0 or t >= 1:
+        return -np.inf
+    return 4 * np.log(t) + 14 * np.log(1 - t)
+
+# By hand: five steps from 0.5 with the jumps and coin flips written out
+t = 0.5
+for jump, u in zip([-0.1, -0.15, 0.05, -0.1, -0.05], [0.62, 0.35, 0.85, 0.41, 0.90]):
+    prop = round(t + jump, 2)
+    ratio = np.exp(log_post(prop) - log_post(t))
+    move = u < ratio
+    print(f"at {t:.2f} propose {prop:.2f}: ratio {ratio:5.2f}, coin {u:.2f} -> {'accept' if move else 'stay'}")
+    if move:
+        t = prop
+
+def metropolis(start, step, n, rng):
+    x, lp, draws, acc = start, log_post(start), np.empty(n), 0
+    for i in range(n):
+        prop = x + rng.normal(0, step)
+        lq = log_post(prop)
+        if np.log(rng.uniform()) < lq - lp:
+            x, lp, acc = prop, lq, acc + 1
+        draws[i] = x
+    return draws, acc / n
+
+def ess(x):
+    d = x - x.mean()
+    acf = np.correlate(d, d, mode="full")[len(x) - 1:] / np.sum(d * d)
+    total = 0.0
+    for m in range((len(x) - 1) // 2):
+        pair = acf[2 * m] + acf[2 * m + 1]
+        if pair <= 0:
+            break
+        total += pair
+    return len(x) / (2 * total - 1)
+
+def rhat(chains):
+    halves = [h for c in chains for h in np.split(c[: len(c) // 2 * 2], 2)]
+    n = len(halves[0])
+    w = np.mean([h.var(ddof=1) for h in halves])
+    b = n * np.var([h.mean() for h in halves], ddof=1)
+    return np.sqrt(((n - 1) / n * w + b / n) / w)
+
+rng = np.random.default_rng(2024)
+for step in [0.01, 0.3, 3.0]:
+    chains, accs = [], []
+    for start in [0.05, 0.35, 0.65, 0.95]:
+        draws, acc = metropolis(start, step, 3000, rng)
+        chains.append(draws[500:])
+        accs.append(acc)
+    allc = np.concatenate(chains)
+    print(f"step {step:4}: accept {np.mean(accs):.0%}, mean {allc.mean():.3f}, R-hat {rhat(chains):.3f}, ESS {sum(ess(c) for c in chains):6.0f} of {len(allc)}")
+print("exact: mean 0.250")
+`} />
+
+The same sampler lives in `python/ladder/mcmc.py`, where pytest checks it recovers Beta(5, 15): its mean, sd, three quantiles and P(rate above 0.3), plus a Kolmogorov–Smirnov distance below 0.03.
+
+</Section>
+
+<Section id="production">
+
+- **Use NUTS, not hand-rolled Metropolis.** PyMC, NumPyro and Stan all default to NUTS with automatic gradients. Metropolis is for understanding, and for the odd discrete parameter.
+- **Defaults worth knowing.** PyMC runs 4 chains with 1,000 tuning steps and 1,000 kept draws each, and a `target_accept` of 0.8. Raising `target_accept` to 0.9–0.99 shrinks ε and often removes a handful of divergences, at the cost of speed.
+- **Read the diagnostics every time.** `az.summary` gives `r_hat`, `ess_bulk` and `ess_tail` per parameter; `az.plot_trace` shows whether chains overlap. Any divergence is worth investigating; many divergences mean the summaries are biased.
+- **Fix geometry, not symptoms.** Divergences in hierarchical models: non-centred parameters. Slow sampling with correlated coefficients (collinear media channels): standardize predictors, use informative priors, or a QR reparameterization.
+- **When MCMC is too slow.** Variational inference (ADVI, Pathfinder) gives an approximate posterior in seconds and is often used for quick iterations, with NUTS for the final model. NumPyro on a GPU can sample models that are slow in PyMC.
+- **Diagnostics check the sampler, not the model.** A perfect R-hat on a model with the wrong adstock shape is a precise answer to the wrong question. Posterior predictive checks and backtests are a separate job.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Explain MCMC to a product manager.">
+
+We can score how plausible any particular answer is, but we can't list every possible answer. So we send a walker that tries small moves: it always moves toward more plausible answers and sometimes toward less plausible ones, in proportion to how much less plausible. The fraction of time it spends at each answer ends up matching how plausible that answer is, and its footprints become a bag of answers we can summarize.
+
+</QA>
+
+<QA q="What do R-hat and ESS tell you?">
+
+R-hat compares the spread between independent chains with the spread within each chain; if the chains explored the same distribution it's about 1, and above 1.01 means they disagree (not converged, or stuck in different modes). ESS is how many independent draws the correlated chain is worth; it sets the Monte Carlo error (sd/√ESS). Aim for R-hat below 1.01 and a few hundred effective draws per quantity you report.
+
+</QA>
+
+<QA q="Why does HMC mix better than random-walk Metropolis?">
+
+It uses the gradient of the log posterior to make long, informed moves. A random walk's step size is limited by the narrowest direction of the posterior, so it diffuses slowly along the long directions; HMC simulates a trajectory that follows the posterior's contours and can travel across it in one iteration while keeping the acceptance probability high.
+
+</QA>
+
+<QA q="Your PyMC model reports 37 divergences. What do you do?">
+
+Treat it as a geometry problem. First raise `target_accept` (smaller steps); if they persist, look at where they happen (pair plots of parameters with divergent draws marked). In hierarchical models, switch to a non-centred parameterization. Also check for parameters the data can't identify, which need tighter priors. Don't report results from a model with persistent divergences.
+
+</QA>
+
+<Trap>
+
+**"The acceptance rate is 97%, so the sampler is working well."** A very high acceptance rate usually means steps are too small and the chain is crawling: on this page, 96.5% acceptance gave only 15 effective draws out of 3,500. Judge a sampler by R-hat and ESS, not by how often it says yes.
+
+</Trap>
+
+</Section>

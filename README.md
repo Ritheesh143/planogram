@@ -25,6 +25,12 @@ opens claude.ai. Four Claude Code skills work from a local `claude` session agai
 sources: `/tutor`, `/feynman-grade`, `/mock-interview` and `/project-grill` (which reads your
 gitignored `private/dossier/`).
 
+**M4, batch 1: Bayes rungs 10–13.** *Why We Sample* (a bag of posterior draws instead of a grid),
+*MCMC* (Metropolis by hand, HMC as a rolling ball, R-hat, ESS and divergences, with a pytest check
+that the sampler recovers a known Beta posterior), *Bayesian A/B Testing* (P(B > A) and expected
+loss by counting, and what peeking costs) and *The Bridge to Bayesian MMM* (collinear channels, a
+posterior ridge, and priors plus a lift test that pick the point on it).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also
@@ -101,7 +107,7 @@ Import the repository and keep the defaults.
 
 | Milestone | Scope |
 |---|---|
-| M4+ | Weekly lesson batches in sprint order: MCMC → forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
+| M4+ | Weekly lesson batches in sprint order: forecasting and cannibalization signatures → MMM and search → deep learning, LLMs and agents → ML engineering, plus capstones on M5, Dunnhumby and Amazon ESCI |
 
 The full plan, current status and per-batch checklist are in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 New lessons follow [`.claude/skills/new-lesson/SKILL.md`](.claude/skills/new-lesson/SKILL.md).

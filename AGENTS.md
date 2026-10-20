@@ -8,7 +8,8 @@ browser's localStorage.
 
 M1, M2 and M3 (the no-API-key AI layer: the `tutor`, `feynman-grade`, `mock-interview` and
 `project-grill` skills plus the "Ask Claude" panel) are done and live (Vercel deploys `main`).
-**Next is M4: weekly lesson batches, starting with Bayes rungs 10–13.** Read `docs/ROADMAP.md`
+M4 is weekly lesson batches: batch 1 (Bayes rungs 10–13) is live. **Next is Signature B,
+multi-store forecasting.** Read `docs/ROADMAP.md`
 before starting work. It holds the status, the batch order for M4 onward and the per-batch
 checklist. Update its Status section after each batch.
 
@@ -46,7 +47,9 @@ python3 -m venv python/.venv && python/.venv/bin/pip install -r python/requireme
 - `components/lesson/`: the lesson template; `components/viz/`: interactive visuals (`kit.tsx`
   holds the shared chart helpers); `lib/sim/`: the math behind the visuals, including from-scratch
   models (`linreg`, `tree`, `gbm`, `mlp`) and the Failure Lab scenarios (tested in `tests/`)
-- `python/boltbeam/`: seeded synthetic retailer with planted ground truth, tested in `python/tests/`
+- `python/boltbeam/`: seeded synthetic retailer with planted ground truth, tested in `python/tests/`;
+  `python/ladder/`: the from-scratch Metropolis sampler with R-hat and ESS (pytest checks it
+  recovers a known Beta posterior)
 
 To add or rewrite a lesson, follow `.claude/skills/new-lesson/SKILL.md`; for a Model Lab page
 (`kind: "model"`, rendered at `/models/<slug>`), also follow `.claude/skills/new-model/SKILL.md`.

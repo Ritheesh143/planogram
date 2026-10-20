@@ -28,6 +28,9 @@ import { BackpropStep, MLPTrainer, ReluKinks } from "@/components/viz/MLPLab";
 import { BoxesVsBends } from "@/components/viz/TreeVsMLP";
 import { BaggingDemo, ImpurityCurves, TreeDepthPlayground, TreeSplitByHand } from "@/components/viz/TreePlayground";
 import { LikelihoodDial, LikelihoodSimulation } from "@/components/viz/LikelihoodDial";
+import { BagStudy, ChainDiagnostics, MetropolisWalker, RollingBall, SampleBag, StepSizeStudy } from "@/components/viz/Sampling";
+import { ABTest, PeekingStudy } from "@/components/viz/BayesAB";
+import { MMMBridge, MMMStudy, SpendTogether } from "@/components/viz/MMMBridge";
 
 // Lesson building blocks are available in every MDX file without imports.
 const components: MDXComponents = {
@@ -64,6 +67,17 @@ const components: MDXComponents = {
   Trap,
   QA,
   PyRunner,
+  SampleBag,
+  BagStudy,
+  MetropolisWalker,
+  ChainDiagnostics,
+  StepSizeStudy,
+  RollingBall,
+  ABTest,
+  PeekingStudy,
+  SpendTogether,
+  MMMBridge,
+  MMMStudy,
   CountingWorlds,
   CIRepeat,
   LikelihoodDial,

@@ -42,6 +42,12 @@ export const misconceptions: Misconception[] = [
   { id: "prior-ignored", name: "Ignoring the prior entirely", explain: "Group knowledge is evidence too. With two noisy weeks it should carry most of the weight.", lesson: "shrinkage" },
   { id: "ridge-unrelated", name: "Thinking ridge has nothing to do with Bayes", explain: "Ridge is the posterior mode under a Gaussian prior on coefficients, with λ = σ²/τ².", lesson: "bayes-linreg" },
   { id: "pool-all-or-nothing", name: "Seeing pooling as all or nothing", explain: "A hierarchical model pools each group in proportion to how little data it has, with the amount learned from the data.", lesson: "hierarchical-pooling" },
+  { id: "add-intervals", name: "Adding interval endpoints", explain: "The interval of a total or a difference comes from computing it within each posterior draw, not from adding the ends of separate intervals.", lesson: "why-sample" },
+  { id: "acceptance-is-quality", name: "Judging a sampler by its acceptance rate", explain: "Tiny steps are almost always accepted but barely move, so the draws are nearly copies. Judge a sampler by R-hat and effective sample size.", lesson: "mcmc-walker" },
+  { id: "drop-rejections", name: "Throwing away rejected steps", explain: "When Metropolis rejects a proposal it records the current value again. Those repeats are how it spends more time at likely values.", lesson: "mcmc-walker" },
+  { id: "p-better-is-lift", name: "Reading P(B > A) as the size of the lift", explain: "P(B > A) is the chance B is better at all. How much better is a separate question, answered by the lift's posterior or the expected loss.", lesson: "bayes-ab" },
+  { id: "peeking-is-free", name: "Thinking Bayesian tests can be stopped at any lucky moment", explain: "Stopping the first time P(B > A) crosses 95% ships fake winners far more often than 5% when you look daily. Fix the horizon or use expected loss.", lesson: "bayes-ab" },
+  { id: "coefficient-is-truth", name: "Taking a collinear coefficient at face value", explain: "When channels move together, the data pin down their combined effect but not the split. A negative ROI is usually an identification problem, not a finding.", lesson: "bayes-mmm-bridge" },
   { id: "unsure", name: "Not sure yet", explain: "An honest 'not sure' is useful: it tells you exactly where to start.", lesson: "counting-worlds" },
 ];
 
@@ -293,5 +299,44 @@ export const checkQuestions: CheckQuestion[] = [
     ],
     explain: "Each store's weight on its own data is τ²/(τ² + σ²/n). With one week, σ²/n is largest, so the store is pulled hardest.",
     lesson: "hierarchical-pooling",
+  },
+  {
+    id: "metropolis-step-size",
+    topic: "Bayes",
+    prompt: "A Metropolis sampler accepts 97% of its proposals. What's the most likely situation?",
+    options: [
+      { id: "a", text: "The step size is too small: the chain barely moves and its draws are highly correlated", correct: true },
+      { id: "b", text: "The sampler is working very well: nearly every draw is useful", misconception: "acceptance-is-quality" },
+      { id: "c", text: "Only the 97% accepted steps should be kept, and the rejected ones dropped", misconception: "drop-rejections" },
+      { id: "d", text: "Not sure", misconception: "unsure" },
+    ],
+    explain: "Small steps change the height so little that almost everything is accepted, but the walker crawls. On the endcap posterior, step 0.01 gave 96.5% acceptance and only 15 effective draws from 3,500.",
+    lesson: "mcmc-walker",
+  },
+  {
+    id: "bayes-ab-meaning",
+    topic: "Bayes",
+    prompt: "A Bayesian A/B test of two endcap displays reports P(B > A) = 93%. Which statement is right?",
+    options: [
+      { id: "a", text: "There's a 93% chance B's true conversion rate is higher than A's", correct: true },
+      { id: "b", text: "B converts about 93% better than A", misconception: "p-better-is-lift" },
+      { id: "c", text: "Since it has been checked daily, any day it passed 95% would have been a safe time to stop", misconception: "peeking-is-free" },
+      { id: "d", text: "Not sure", misconception: "unsure" },
+    ],
+    explain: "P(B > A) is the share of posterior draws where B's rate is higher. Here B's lift could still be anywhere from about −4% to +79%.",
+    lesson: "bayes-ab",
+  },
+  {
+    id: "mmm-negative-roi",
+    topic: "Bayes",
+    prompt: "TV and search spend move together all year (correlation 0.95). A regression gives TV ROI −0.31 and search ROI 4.02. What should you conclude?",
+    options: [
+      { id: "a", text: "The data can't separate the two channels; TV's ROI is very uncertain, so use priors and a lift test", correct: true },
+      { id: "b", text: "TV loses money: move its budget to search", misconception: "coefficient-is-truth" },
+      { id: "c", text: "Total media ROI is the sum of the two intervals' upper ends", misconception: "add-intervals" },
+      { id: "d", text: "Not sure", misconception: "unsure" },
+    ],
+    explain: "With collinear spend the posterior is a long ridge: only the combined effect is pinned down. Positive priors and a geo-lift test on TV move the TV ROI to about 1.3 with an interval of 0.84 to 1.74.",
+    lesson: "bayes-mmm-bridge",
   },
 ];

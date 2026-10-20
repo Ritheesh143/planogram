@@ -1,0 +1,299 @@
+<Section id="floor">
+
+Bolt & Beam tested a new paint-roller endcap display (B) against the usual one (A) for two weeks. Each was seen by **1,200 shoppers**. **48 bought at A (4.0%)** and **63 at B (5.25%)**.
+
+The analyst runs a two-sample z-test: p = 0.145, "not significant", and the meeting ends with "inconclusive, keep testing". The merchandiser is frustrated. They have to choose a display for 40 stores next week, and they asked two plain questions: *How likely is it that B is better? And if we switch and we're wrong, how much do we lose?*
+
+<KeyIdea>
+
+**Draw both conversion rates from their posteriors, side by side, many times. P(B > A) is the share of draws where B wins. The expected loss of shipping B is the average amount B falls short in the draws where it loses.** Both are counts in a bag (rung 10), and together they make a decision rule: ship when the expected loss is smaller than the smallest difference you care about.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Posteriors by adding counts** ([Beta–Binomial](/learn/bayes/beta-binomial)). With flat Beta(1, 1) priors:
+
+$$
+\theta_A \sim \text{Beta}(1 + 48,\; 1 + 1152) = \text{Beta}(49, 1153),
+\qquad
+\theta_B \sim \text{Beta}(1 + 63,\; 1 + 1137) = \text{Beta}(64, 1138)
+$$
+
+</Step>
+<Step>
+
+**Draw ten pairs.** Each column is one plausible world: a conversion rate for A and one for B, in %.
+
+| Pair | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A | **5.2** | 2.9 | 4.3 | 4.5 | 4.9 | 4.6 | 4.7 | 4.4 | 3.6 | 3.6 |
+| B | 4.4 | 4.8 | 5.6 | 5.4 | 5.7 | 5.2 | 6.2 | 4.6 | 6.1 | 6.6 |
+
+</Step>
+<Step>
+
+**Count.** B is higher in 9 of the 10 worlds: **P(B > A) ≈ 0.9**.
+
+</Step>
+<Step>
+
+**Expected loss of shipping B.** In the one world where A wins (pair 1), shipping B loses $5.2 - 4.4 = 0.8$ points of conversion; in the other nine it loses nothing. Average: $0.8/10 =$ **0.08 percentage points**.
+
+**Expected loss of keeping A.** In the nine worlds where B wins, keeping A gives up $1.9 + 1.3 + 0.9 + 0.8 + 0.6 + 1.5 + 0.2 + 2.5 + 3.0 = 12.7$ points: average **1.27 percentage points**. Keeping A is the risky choice.
+
+</Step>
+<Step>
+
+**Decide.** The team agrees that a difference below 0.1 points of conversion isn't worth caring about. Shipping B risks 0.08 on average, under the threshold: **ship B**. The z-test's "not significant" answered a different question (how surprising this data would be if A and B were identical), not the one the merchandiser asked.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="With 4,000 pairs of draws, P(B > A) comes out at about 92%. What does that mean?" options={["B converts 92% better than A", "There's a 92% chance B's true rate is higher than A's", "If A and B were identical, data like this would appear 8% of the time"]} answer={1}>
+
+**A 92% chance that B's true rate is higher.** It says nothing about by *how much*: the lift could be tiny. The third option describes a p-value, a statement about data under a hypothesis of no difference, not about which display is better.
+
+</Predict>
+
+<ABTest />
+
+**Try this:**
+
+1. Start at the real test. Counting 4,000 pairs gives **92.4%** (thin bars: **92.7%**). Shipping B risks **0.029** percentage points; keeping A risks **1.26**. The lift's 90% interval runs from **−3.7% to +78.6%**: we're fairly sure B is better, but not by how much.
+2. Set **Bought at B** to **48**, the same as A. P(B > A) drops to **49.5%** and the two expected losses are both about 0.33 points: a coin flip, and either choice costs the same.
+3. Put B back to 63, then set the visitors to **4,800** with **192** and **252** buyers (the same rates on 4× the traffic). P(B > A) is **99.9%** and the lift interval tightens to **12.1% to 53.2%**.
+4. Now try **300 visitors** with **12** and **16** buyers. The same rates give only **77.3%**, and the lift interval spans **−26.3% to +146.1%**. Small tests give honest, wide answers instead of a binary "not significant".
+
+</Section>
+
+<Section id="simulate">
+
+The tempting move is to check P(B > A) every morning and ship B the moment it passes 95%. Here are A/A tests, where both displays truly convert 4%, with 100 shoppers per display per day for 28 days:
+
+<PeekingStudy />
+
+| How often you look | Once, at day 28 | Weekly | Daily |
+|---|---|---|---|
+| A/A tests that shipped a fake winner | **5.3%** | 11.7% | **22.6%** |
+
+- **One look behaves like the 95% it claims**: about 1 test in 20 crosses by chance.
+- **Daily looks quadruple it.** P(B > A) wanders like a random walk; checking 28 times gives it 28 chances to touch the line. Of the 30 tests drawn, 1 crosses at a single look and 7 cross at some daily look.
+- **Bayes doesn't make peeking free.** Each day's posterior is a correct summary of what you know, but a *rule* that stops at the first lucky crossing ships fake winners. Fix the test length in advance, use an expected-loss threshold (shipping an equal display costs nothing), or start from a skeptical prior.
+
+</Section>
+
+<Section id="formula">
+
+**Two posteriors.** With priors Beta(a, b) and $k$ buyers from $n$ shoppers per display:
+
+$$
+\theta_A \mid \text{data} \sim \text{Beta}(a + k_A,\ b + n_A - k_A), \qquad \theta_B \mid \text{data} \sim \text{Beta}(a + k_B,\ b + n_B - k_B)
+$$
+
+**The probability B is better** is Σ of thin bars: the density of B at each rate, times the chance A is below that rate, times the bar width.
+
+$$
+P(\theta_B \gt \theta_A) = \int_0^1 p_B(x)\, P(\theta_A \lt x)\, dx \;\approx\; \frac1N \sum_{s=1}^N \mathbb 1\big[\theta_B^{(s)} \gt \theta_A^{(s)}\big]
+$$
+
+**The expected loss** of shipping B is how much conversion you give up, averaged over your uncertainty:
+
+$$
+\mathcal L(B) = \mathbb E\big[\max(\theta_A - \theta_B,\ 0)\big] \;\approx\; \frac1N \sum_{s=1}^N \max\big(\theta_A^{(s)} - \theta_B^{(s)},\ 0\big)
+$$
+
+Decision rule: ship B when $\mathcal L(B) \lt \varepsilon$, the smallest difference worth caring about. Unlike P(B > A), the loss knows the size of the difference: a 60% chance of being better by 0.01 points is a safe ship; a 90% chance with a 10% chance of being worse by 3 points might not be.
+
+**Relative lift** is computed per draw, $\theta_B^{(s)}/\theta_A^{(s)} - 1$, then summarized by its quantiles.
+
+<Depth min={2}>
+
+**P(B > A) and the p-value.** With flat priors and large samples, each posterior is close to $\mathcal N(\hat\theta, \hat\theta(1 - \hat\theta)/n)$, so
+
+$$
+P(\theta_B \gt \theta_A) \approx \Phi\!\left(\frac{\hat\theta_B - \hat\theta_A}{\sqrt{\hat\theta_A(1 - \hat\theta_A)/n_A + \hat\theta_B(1 - \hat\theta_B)/n_B}}\right) \approx 1 - p_{\text{one-sided}}
+$$
+
+For the endcap test, z = 1.46 gives a one-sided p of 0.072 and $1 - 0.072 = 0.928$, against the exact 0.927. The two-sided p of 0.145 is double the one-sided. So "not significant at 5%" and "a 93% chance B is better" are the same data reported two ways; what differs is the question and the decision rule built on it. This is also the Normal approximation the peeking simulation uses for speed.
+
+**More than two displays.** With displays A, B, C, draw all three per world and count how often each is the highest: P(best). The same draws drive Thompson sampling, a bandit that shows each display with probability equal to its P(best), shifting traffic to the winner while the test runs.
+
+</Depth>
+
+<Depth min={3}>
+
+**Skeptical priors tame wild lifts.** Most endcap changes move conversion by a few percent. If 200 past tests say relative lift is about $\mathcal N(2\%, 5\%^2)$, a new test reading +30% with a standard error of 24% gets weight $25/(25 + 576) = 0.042$ on its own data: a posterior lift of about **3.2%**. Flat priors are what make small tests produce headline lifts like "+31%".
+
+**Peeking and the likelihood principle.** The posterior given today's data doesn't depend on whether you planned to stop today, which is why some argue Bayesian tests can be monitored freely. That's true of the *belief*, provided the prior matches reality. The *frequency* with which a stopping rule ships a no-better variant still rises with looks, as the simulation shows. With a realistic skeptical prior and an expected-loss rule, frequent looks become much safer, because the posterior no longer overreacts to early noise and shipping an equal variant costs almost nothing.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Posterior from counts">
+
+A display converted 30 of 500 shoppers. With a flat prior, what's its posterior and posterior mean?
+
+<Solution>
+
+Beta(1 + 30, 1 + 470) = **Beta(31, 471)**, mean $31/502 \approx$ **0.062**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Count it">
+
+Eight pairs (A, B) of posterior draws in %: (4.1, 4.6), (3.9, 3.7), (4.4, 5.0), (4.0, 4.8), (4.6, 4.2), (3.8, 4.9), (4.2, 4.5), (4.3, 4.4). Estimate P(B > A).
+
+<Solution>
+
+B is higher in 6 of 8 pairs (not pairs 2 and 5): **0.75**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Expected loss">
+
+Using the pairs from exercise 2, estimate the expected loss of shipping B and of keeping A.
+
+<Solution>
+
+Shipping B loses in pairs 2 (0.2) and 5 (0.4): $0.6/8 =$ **0.075 points**. Keeping A loses in the other six: $0.5 + 0.6 + 0.8 + 1.1 + 0.3 + 0.1 = 3.4$, so $3.4/8 =$ **0.425 points**. Ship B.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="From a z-test to P(B > A)">
+
+A: 100 of 2,000 bought. B: 120 of 2,000. Using the large-sample link in *The Formula* (Depth 2), estimate P(B > A).
+
+<Solution>
+
+Pooled rate 0.055, standard error $\sqrt{0.055 \times 0.945 \times 2/2000} \approx 0.0072$, $z = 0.01/0.0072 \approx 1.39$. $\Phi(1.39) \approx$ **0.92**. (Exact with flat priors: 0.917.)
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Why peeking breaks the 5%">
+
+Explain, without a formula, why checking P(B > A) daily and stopping at 95% ships more fake winners than checking once.
+
+<Solution>
+
+In an A/A test, P(B > A) drifts up and down as noise accumulates; at any single moment it's above 95% about 5% of the time. Looking daily asks "did it touch 95% on *any* of 28 days?", which is far more likely than "is it above 95% on day 28?". The simulation measured **22.6%** against **5.3%**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="A skeptical prior">
+
+A test shows a relative lift of +30% with standard error 24%. Past tests suggest lift ~ N(2%, 5%²). What's the posterior mean lift?
+
+<Solution>
+
+Weight on the data $= 25/(25 + 576) = 0.042$. Posterior mean $2 + 0.042 \times (30 - 2) \approx$ **3.2%**. The [shrinkage](/learn/bayes/shrinkage) formula, applied to an experiment: a noisy +30% is mostly noise.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+Bayesian A/B testing by counting, checked against numerical integration, then 2,000 A/A tests with three peeking schedules (vectorized with numpy). Expected: P(B > A) 0.928 by counting and 0.927 exact; expected losses of 0.027 and 1.28 points; fake winners of 4.3%, 10.8% and 21.9% (a different random draw from the visual above, so a little different from its 5.3%, 11.7% and 22.6%).
+
+<PyRunner title="Bayesian A/B test and the cost of peeking" code={`
+import numpy as np
+from scipy import stats, integrate
+
+# The endcap test: 1,200 shoppers saw each display
+n, buys_a, buys_b = 1200, 48, 63
+rng = np.random.default_rng(1)
+a = rng.beta(1 + buys_a, 1 + n - buys_a, 4000)
+b = rng.beta(1 + buys_b, 1 + n - buys_b, 4000)
+
+print(f"P(B > A) by counting:   {np.mean(b > a):.3f}")
+post_a, post_b = stats.beta(1 + buys_a, 1 + n - buys_a), stats.beta(1 + buys_b, 1 + n - buys_b)
+exact, _ = integrate.quad(lambda x: post_b.pdf(x) * post_a.cdf(x), 0, 0.2, points=[0.04, 0.05])
+print(f"P(B > A) exact:         {exact:.3f}")
+print(f"expected loss, ship B:  {100 * np.mean(np.maximum(a - b, 0)):.3f} percentage points")
+print(f"expected loss, keep A:  {100 * np.mean(np.maximum(b - a, 0)):.2f} percentage points")
+lift = b / a - 1
+lo, mid, hi = np.quantile(lift, [0.05, 0.5, 0.95])
+print(f"B's lift: median {mid:.0%}, 90% interval {lo:.1%} to {hi:.1%}")
+
+# Peeking: 2,000 A/A tests (both truly 4%), 100 shoppers per display per day for 28 days.
+# Ship B the first time P(B > A) passes 95%.
+def p_better(ka, kb, m):
+    ma, mb = (1 + ka) / (2 + m), (1 + kb) / (2 + m)
+    v = (ma * (1 - ma) + mb * (1 - mb)) / (3 + m)
+    return stats.norm.cdf((mb - ma) / np.sqrt(v))
+
+tests, days = 2000, 28
+ka = rng.binomial(100, 0.04, (tests, days)).cumsum(axis=1)
+kb = rng.binomial(100, 0.04, (tests, days)).cumsum(axis=1)
+p = p_better(ka, kb, 100 * np.arange(1, days + 1))
+for looks, name in [(1, "once, at day 28"), (4, "weekly"), (28, "daily")]:
+    when = np.round(np.arange(1, looks + 1) * days / looks).astype(int) - 1
+    fooled = (p[:, when] > 0.95).any(axis=1).mean()
+    print(f"look {name:16s} fake winners {fooled:.1%}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Pick the loss threshold before the test.** "Ship when expected loss is below 0.05 points of conversion" (or ₹ of revenue per visitor) is a business decision, made with the merchandiser up front.
+- **Use priors from past tests.** A skeptical prior built from the history of endcap tests stops small tests from reporting +30% lifts and makes monitoring safer.
+- **Revenue, not just conversion.** Revenue per shopper is mostly zeros with a long tail. Model it as conversion × basket value (Beta × a log-normal or gamma), or bootstrap it; a Normal approximation can mislead with heavy tails.
+- **Check the plumbing first.** A sample-ratio mismatch (1,200 vs 1,050 shoppers when the split was 50/50) means the assignment is broken, and no analysis rescues it. Watch guardrail metrics (returns, basket size) alongside the target.
+- **Store tests are clustered.** When whole stores get A or B, the unit is the store, not the shopper: pool store-level lifts with a hierarchical model ([rung 9](/learn/bayes/hierarchical-pooling)), or the intervals will be far too narrow.
+- **Bandits when the test is the product.** Thompson sampling (allocate traffic by P(best)) suits ongoing choices like which of six banners to show; a fixed-horizon test suits one-off decisions you need to explain.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="How does a Bayesian A/B test differ from a frequentist one?">
+
+The frequentist test asks how surprising the data would be if there were no difference (the p-value) and controls the false-positive rate of a procedure. The Bayesian test computes the posterior of each variant's rate and answers decision questions directly: the probability B is better, the distribution of the lift, and the expected loss of each choice. With flat priors and large samples, P(B > A) is about one minus the one-sided p-value; the difference is in the question and the decision rule.
+
+</QA>
+
+<QA q="What is expected loss, and why use it instead of P(B > A) alone?">
+
+The expected loss of choosing B is the average shortfall E[max(θ_A − θ_B, 0)]: it weighs how likely B is to be worse by how much worse. P(B > A) ignores magnitude: 60% with a tiny downside can be a fine ship, while 90% with a large downside may not. Shipping when the expected loss is below a pre-agreed threshold is a coherent rule that also tolerates stopping early when the difference is too small to matter.
+
+</QA>
+
+<QA q="Can you peek at a Bayesian A/B test?">
+
+The posterior is valid whenever you look, but a rule like "stop when P(B > A) passes 95%" ships far more no-better variants with frequent looks: in a simulation, 5% with one look and 23% with daily looks. Safer options: a fixed horizon, an expected-loss stopping rule (shipping an equal variant costs nothing), and a skeptical prior from past tests.
+
+</QA>
+
+<QA q="You have five banner variants. How do you report a winner?">
+
+Draw all five rates from their posteriors in each sample, record which is highest, and report P(best) for each, along with the expected loss of choosing the leader. If no variant has a small enough expected loss, keep collecting data, or use Thompson sampling to shift traffic toward the likely winners while you do.
+
+</QA>
+
+<Trap>
+
+**"P(B > A) is 93%, so B lifts conversion by about 93%," or "so we're 93% sure the lift is meaningful."** It's the probability that B's rate is higher *at all*. The lift's own interval here runs from −3.7% to +78.6%. For "meaningful", ask the posterior directly: P(lift above 5%), or the expected loss.
+
+</Trap>
+
+</Section>

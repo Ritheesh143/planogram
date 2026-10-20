@@ -52,9 +52,10 @@ const raw: LessonInput[] = [
   { slug: "shrinkage", aisle: "bayes", title: "Shrinkage: The New Store Problem", status: "ready", week: 4, minutes: 50, summary: "A new store with two weeks of data gets pulled toward the chain average.", prereqs: ["priors-defend"] },
   { slug: "bayes-linreg", aisle: "bayes", title: "Bayesian Linear Regression", status: "ready", week: 4, minutes: 55, summary: "Fifty plausible lines instead of one, and ridge as MAP.", prereqs: ["shrinkage", "linear-regression"] },
   { slug: "hierarchical-pooling", aisle: "bayes", title: "Hierarchical Models Across 40 Stores", status: "ready", week: 4, minutes: 60, summary: "No pooling, complete pooling and partial pooling, side by side.", prereqs: ["shrinkage"] },
-  { slug: "why-sample", aisle: "bayes", title: "Why We Sample", week: 7, summary: "The grid explodes in high dimensions, so keep a bag of plausible values instead.", prereqs: ["hierarchical-pooling"] },
-  { slug: "mcmc-walker", aisle: "bayes", title: "MCMC: The Walker, the Ball and the Diagnostics", week: 7, summary: "Metropolis by hand, HMC/NUTS as a rolling ball, and R-hat, ESS and divergences.", prereqs: ["why-sample"] },
-  { slug: "bayes-ab", aisle: "bayes", title: "Bayesian A/B Testing", week: 7, summary: "P(B > A) and expected loss by counting posterior samples.", prereqs: ["mcmc-walker", "ci-repeat"] },
+  { slug: "why-sample", aisle: "bayes", title: "Why We Sample", status: "ready", week: 7, minutes: 45, summary: "The grid explodes in high dimensions, so keep a bag of plausible values instead.", prereqs: ["hierarchical-pooling", "integrals-thin-bars"] },
+  { slug: "mcmc-walker", aisle: "bayes", title: "MCMC: The Walker, the Ball and the Diagnostics", status: "ready", week: 7, minutes: 60, summary: "Metropolis by hand, HMC/NUTS as a rolling ball, and R-hat, ESS and divergences.", prereqs: ["why-sample"] },
+  { slug: "bayes-ab", aisle: "bayes", title: "Bayesian A/B Testing", status: "ready", week: 7, minutes: 50, summary: "P(B > A) and expected loss by counting posterior samples.", prereqs: ["mcmc-walker", "ci-repeat"] },
+  { slug: "bayes-mmm-bridge", aisle: "bayes", title: "The Bridge to Bayesian MMM: Two Channels, One Ridge", status: "ready", week: 7, minutes: 55, summary: "Collinear TV and search spend, a posterior ridge, and how priors and a lift test pick the point on it.", prereqs: ["bayes-ab", "bayes-linreg", "priors-defend"] },
 
   // Aisle 2: Model Lab
   { slug: "boosting-by-hand", aisle: "models", title: "Boosting by Hand on 6 Rows", status: "ready", keystone: 4, week: 1, minutes: 50, summary: "Each new tree fits what the previous trees got wrong. Residuals, learning rate and the gradient, all on six stores.", prereqs: [] },
@@ -77,7 +78,7 @@ const raw: LessonInput[] = [
   { slug: "cx-double-ml", aisle: "retail", title: "Double ML for Elasticities", week: 6, summary: "What orthogonalization actually means, visualized.", prereqs: ["cx-cross-elasticity", "linear-regression"] },
   { slug: "cx-stockout-experiments", aisle: "retail", title: "Stockouts as Natural Experiments", week: 6, summary: "Demand transfer reveals substitutes.", prereqs: ["cx-cross-elasticity"] },
   { slug: "mmm-adstock-saturation", aisle: "retail", title: "Adstock and Saturation", week: 7, summary: "The shape of advertising memory and diminishing returns.", prereqs: ["elasticity-derivative"] },
-  { slug: "mmm-bayesian", aisle: "retail", title: "Bayesian MMM From Scratch", week: 8, summary: "Priors, MCMC diagnostics and identifiability for a media mix model.", prereqs: ["mmm-adstock-saturation", "mcmc-walker", "bayes-linreg"] },
+  { slug: "mmm-bayesian", aisle: "retail", title: "Bayesian MMM From Scratch", week: 8, summary: "Priors, MCMC diagnostics and identifiability for a media mix model.", prereqs: ["mmm-adstock-saturation", "bayes-mmm-bridge"] },
   { slug: "mmm-calibration", aisle: "retail", title: "Calibrating MMM With Geo-Lift Tests", week: 8, summary: "Experiments as priors, and how you know the model is right.", prereqs: ["mmm-bayesian", "ab-power-cuped"] },
   { slug: "mmm-budget", aisle: "retail", title: "Budget Optimization: Equalize Marginal ROI", week: 8, summary: "Response curves and the Lagrange solution.", prereqs: ["mmm-bayesian", "lagrange-budget"] },
   { slug: "search-bm25", aisle: "retail", title: "From TF-IDF to BM25", week: 8, summary: "IDF derived as −log p, and lexical search done properly.", prereqs: ["vectors-baskets"] },
@@ -126,7 +127,7 @@ export const lessons = raw.map((l) => ({
 
 export const threads = [
   { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "search-contrastive", "mle-drift"] },
-  { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "mmm-bayesian"] },
+  { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "bayes-mmm-bridge", "mmm-bayesian"] },
   { id: "geometric-decay", name: "Geometric Decay", idea: "Yesterday matters a fraction θ as much as today.", steps: ["mmm-adstock-saturation", "fc-anatomy", "dl-optimizers"] },
   { id: "softmax", name: "Softmax", idea: "Turn scores into probabilities by exponentiating and normalizing.", steps: ["cx-mnl", "search-contrastive", "dl-attention", "dl-transformer"] },
   { id: "projection", name: "Projection", idea: "Find the closest point in an allowed space.", steps: ["matrices-tables", "linear-regression", "fc-mint"] },

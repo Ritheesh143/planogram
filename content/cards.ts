@@ -166,6 +166,35 @@ export const cards: Flashcard[] = [
   { id: "hp-3", lesson: "hierarchical-pooling", front: "Expected squared error of complete pooling when stores differ with sd τ.", back: "About τ²: every store gets the chain mean, which misses each store's true mean by a draw with sd τ." },
   { id: "hp-4", lesson: "hierarchical-pooling", front: "Random effects vs fixed effects for stores.", back: "Random effects = partial pooling (store intercepts drawn from a distribution, shrunk, predictable for new stores). Fixed effects = no pooling." },
   { id: "hp-5", lesson: "hierarchical-pooling", front: "Why does a hierarchical MMM beat separate regional MMMs?", back: "Regions with little data or spend variation borrow strength from the national effect instead of producing unstable ROIs; how much is learned from the data." },
+
+  // Bayes rung 10: why sample
+  { id: "ws-1", lesson: "why-sample", front: "Why can't you put a 42-parameter model on a grid?", back: "100 values per parameter means 100^42 = 10^84 points. Grid cost grows exponentially with the number of unknowns; a bag of draws doesn't." },
+  { id: "ws-2", lesson: "why-sample", front: "You have 4,000 posterior draws. How do you get P(rate > 0.3)?", back: "Count the draws above 0.3 and divide by 4,000. Every probability is a share of the bag." },
+  { id: "ws-3", lesson: "why-sample", front: "Monte Carlo standard error of a posterior mean from N independent draws.", back: "sd / √N. It doesn't depend on the number of parameters. For correlated MCMC draws, use ESS in place of N." },
+  { id: "ws-4", lesson: "why-sample", front: "How do you get the posterior of a derived quantity like ROI or a store total?", back: "Compute it for every draw, then summarize those values. Never plug in posterior means, and never add interval endpoints." },
+  { id: "ws-5", lesson: "why-sample", front: "Share of the cube [−1, 1]^d inside the unit ball for d = 10.", back: "About 0.0025. In high dimensions almost all of a grid sits in the corners, far from where the posterior is." },
+
+  // Bayes rung 11: MCMC
+  { id: "mc-1", lesson: "mcmc-walker", front: "The Metropolis acceptance rule.", back: "Propose θ′ nearby (symmetric jump). Accept with probability min(1, p(θ′)/p(θ)); otherwise record θ again. The normalizing constant cancels in the ratio." },
+  { id: "mc-2", lesson: "mcmc-walker", front: "Why must a rejected proposal record the current value again?", back: "Repeats are how the chain spends more time at likely values. Dropping them would distort the histogram away from the posterior." },
+  { id: "mc-3", lesson: "mcmc-walker", front: "What does R-hat measure, and what's the threshold?", back: "Between-chain spread vs within-chain spread for several chains (split in half). Near 1 means they agree; trust nothing above 1.01." },
+  { id: "mc-4", lesson: "mcmc-walker", front: "Effective sample size formula.", back: "ESS = N / (1 + 2 Σ ρ_k): N correlated draws are worth this many independent ones. Aim for at least 400." },
+  { id: "mc-5", lesson: "mcmc-walker", front: "Step size 0.01 gives 96% acceptance. Good?", back: "No: the chain crawls (ESS about 15 of 3,500 on the endcap). Very high acceptance usually means steps are too small." },
+  { id: "mc-6", lesson: "mcmc-walker", front: "HMC in one sentence, and what a divergence is.", back: "Roll a ball with random momentum over the landscape −log p using leapfrog steps, then accept with min(1, e^(−ΔH)). A divergence is a trajectory whose energy error explodes because the step is too big for the posterior's narrowest direction." },
+
+  // Bayes rung 12: Bayesian A/B testing
+  { id: "ab-1", lesson: "bayes-ab", front: "A: 48 of 1,200 bought; B: 63 of 1,200. Flat priors. Posteriors?", back: "Beta(49, 1153) for A and Beta(64, 1138) for B: add buyers and non-buyers to the Beta(1, 1) prior." },
+  { id: "ab-2", lesson: "bayes-ab", front: "How do you compute P(B > A) from posterior draws?", back: "Draw (θ_A, θ_B) pairs and count the share where θ_B > θ_A. For the endcap test: about 93%." },
+  { id: "ab-3", lesson: "bayes-ab", front: "Expected loss of shipping B.", back: "E[max(θ_A − θ_B, 0)]: the average shortfall in the worlds where A is better. Ship when it's below the smallest difference you care about." },
+  { id: "ab-4", lesson: "bayes-ab", front: "Link between P(B > A) and the p-value, with flat priors and large samples.", back: "P(B > A) ≈ 1 − one-sided p-value. The endcap test: p one-sided 0.072, P(B > A) 0.927." },
+  { id: "ab-5", lesson: "bayes-ab", front: "Does checking P(B > A) daily and stopping at 95% keep false winners at 5%?", back: "No. In A/A simulations, daily looks shipped a fake winner 22.6% of the time vs 5.3% with one look. Fix the horizon, use expected loss, or a skeptical prior." },
+
+  // Bayes rung 13: the bridge to Bayesian MMM
+  { id: "br-1", lesson: "bayes-mmm-bridge", front: "TV and search spend have correlation 0.95. What do the data identify?", back: "Their combined effect, not the split. The posterior is a ridge: high TV with low search fits about as well as the reverse (posterior correlation about −0.95)." },
+  { id: "br-2", lesson: "bayes-mmm-bridge", front: "Variance inflation factor for spend correlation r.", back: "1/(1 − r²). For r = 0.95, about 9.4: each ROI's standard error is about 3× larger than with uncorrelated spend." },
+  { id: "br-3", lesson: "bayes-mmm-bridge", front: "How does a geo-lift test enter a Bayesian MMM?", back: "As a prior (or likelihood term) on that channel's ROI: Normal, centred at the lift estimate, with the test's standard error." },
+  { id: "br-4", lesson: "bayes-mmm-bridge", front: "How do you get P(TV pays back) from an MMM?", back: "Count the posterior draws with TV ROI above 1. In the North region with a lift-test prior: about 85%." },
+  { id: "br-5", lesson: "bayes-mmm-bridge", front: "The cheapest fix for collinear channels.", back: "Change the media plan: vary channels independently (flighting, staggered regions) so future data can separate them, and run lift tests on the biggest channels." },
 ];
 
 export function cardsForLesson(slug: string): Flashcard[] {
