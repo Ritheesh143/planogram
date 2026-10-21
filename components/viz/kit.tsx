@@ -61,7 +61,7 @@ export function Axis({ scale, orient, at, tickValues, format = (v) => fmt(v), la
           </g>
         ))}
         {label && (
-          <text x={(r0 + r1) / 2} y={at + 32} textAnchor="middle" fill="var(--ink-2)">
+          <text x={(r0 + r1) / 2} y={at + 29} textAnchor="middle" fill="var(--ink-2)">
             {label}
           </text>
         )}
@@ -81,11 +81,11 @@ export function Axis({ scale, orient, at, tickValues, format = (v) => fmt(v), la
       ))}
       {label && (
         <text
-          x={at - 38}
+          x={at - 36}
           y={(r0 + r1) / 2}
           textAnchor="middle"
           fill="var(--ink-2)"
-          transform={`rotate(-90 ${at - 38} ${(r0 + r1) / 2})`}
+          transform={`rotate(-90 ${at - 36} ${(r0 + r1) / 2})`}
         >
           {label}
         </text>

@@ -37,6 +37,8 @@ import { CensoredShelf, DrillForecasts, IntermittentStudy, ShelfSpiral } from "@
 import { GlobalBoost, MinTStudy, Reconciler, TweedieShape } from "@/components/viz/GlobalModels";
 import { ConformalCoverage, PinballDial, PromoShape, PromoStudy } from "@/components/viz/Uncertainty";
 import { GlobalLocal, LeadTimeErrors, Newsvendor, PolicyStudy, SamplePathFan } from "@/components/viz/ToProduction";
+import { CrossPromo, CrossStudy, DemandCurves, ElasticityPrecision } from "@/components/viz/Elasticity";
+import { ChoiceShares, EndogeneityScatter, PooledElasticities, RandomUtility } from "@/components/viz/Choice";
 
 // Lesson building blocks are available in every MDX file without imports.
 const components: MDXComponents = {
@@ -111,6 +113,14 @@ const components: MDXComponents = {
   Newsvendor,
   LeadTimeErrors,
   PolicyStudy,
+  DemandCurves,
+  ElasticityPrecision,
+  CrossPromo,
+  CrossStudy,
+  ChoiceShares,
+  RandomUtility,
+  EndogeneityScatter,
+  PooledElasticities,
   CountingWorlds,
   CIRepeat,
   LikelihoodDial,

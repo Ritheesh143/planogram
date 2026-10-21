@@ -40,7 +40,7 @@ const raw: LessonInput[] = [
   { slug: "simpsons-paradox", aisle: "foundations", title: "Simpson's Paradox in Store Formats", week: 5, summary: "A promo that looks bad overall but helps every store format.", prereqs: ["counting-worlds"] },
   { slug: "vectors-baskets", aisle: "foundations", title: "Vectors as Baskets", status: "ready", week: 3, minutes: 40, summary: "A basket is a vector, and the dot product measures overlap.", prereqs: [] },
   { slug: "matrices-tables", aisle: "foundations", title: "Matrices as Store × SKU Tables", status: "ready", week: 3, minutes: 45, summary: "Matrix multiplication is many dot products at once.", prereqs: ["vectors-baskets"] },
-  { slug: "elasticity-derivative", aisle: "foundations", title: "Elasticity Is a Derivative", week: 5, summary: "Price elasticity as the slope of log-demand against log-price.", prereqs: [] },
+  { slug: "elasticity-derivative", aisle: "foundations", title: "Elasticity Is a Derivative", status: "ready", week: 5, minutes: 40, summary: "Price elasticity as the slope of log units against log price, and the markup rule it gives.", prereqs: [] },
   { slug: "lagrange-budget", aisle: "foundations", title: "Lagrange Multipliers for a Budget", week: 7, summary: "Why the optimal media budget equalizes marginal ROI across channels.", prereqs: ["elasticity-derivative"] },
 
   // Aisle 1: Bayesian, Finally
@@ -80,9 +80,10 @@ const raw: LessonInput[] = [
   { slug: "fc-promotions", aisle: "retail", title: "Promotions and the Post-Promo Dip", status: "ready", week: 6, minutes: 45, summary: "Gross lift, the pulled-forward dip and net incremental units, and the lagged promo features a forecast needs.", prereqs: ["fc-baselines", "fc-tweedie-lgbm"] },
   { slug: "fc-deep", aisle: "retail", title: "DeepAR, TFT and Foundation Models", status: "ready", week: 6, minutes: 55, summary: "Global models on scaled series: sample paths, per-horizon quantiles, tokens, and when zero-shot beats a local fit.", prereqs: ["fc-tweedie-lgbm", "fc-pinball", "mlp"] },
   { slug: "fc-safety-stock", aisle: "retail", title: "From Forecast to Order: Newsvendor and Safety Stock", status: "ready", week: 6, minutes: 50, summary: "The critical ratio picks the quantile, σ√L needs independent errors, and a blanket service level loses money.", prereqs: ["fc-pinball"] },
-  { slug: "cx-cross-elasticity", aisle: "retail", title: "Cannibalization vs Halo: Cross-Price Elasticity", week: 5, summary: "The sign of the cross-elasticity tells substitutes from complements.", prereqs: ["elasticity-derivative"] },
-  { slug: "cx-mnl", aisle: "retail", title: "Choice Models: Gumbel Errors Give Softmax", week: 6, summary: "The multinomial logit from random utility, IIA and nested logit.", prereqs: ["cx-cross-elasticity", "mle-peak"] },
-  { slug: "cx-double-ml", aisle: "retail", title: "Double ML for Elasticities", week: 6, summary: "What orthogonalization actually means, visualized.", prereqs: ["cx-cross-elasticity", "linear-regression"] },
+  { slug: "cx-cross-elasticity", aisle: "retail", title: "Cannibalization vs Halo: Cross-Price Elasticity", status: "ready", week: 6, minutes: 45, summary: "Item lift is not category lift: the sign of the cross-elasticity tells substitutes from complements.", prereqs: ["elasticity-derivative", "fc-promotions"] },
+  { slug: "cx-mnl", aisle: "retail", title: "Choice Models: Gumbel Errors Give Softmax", status: "ready", week: 6, minutes: 50, summary: "The multinomial logit from random utility, IIA and nested logit.", prereqs: ["cx-cross-elasticity", "mle-peak"] },
+  { slug: "cx-endogeneity", aisle: "retail", title: "Log-Log Demand: Endogeneity and Pooled Elasticities", status: "ready", week: 6, minutes: 50, summary: "Why sales-on-price regressions fail when prices follow demand, and how instruments and pooling fix them.", prereqs: ["elasticity-derivative", "linear-regression", "hierarchical-pooling"] },
+  { slug: "cx-double-ml", aisle: "retail", title: "Double ML for Elasticities", week: 6, summary: "What orthogonalization actually means, visualized.", prereqs: ["cx-cross-elasticity", "cx-endogeneity"] },
   { slug: "cx-stockout-experiments", aisle: "retail", title: "Stockouts as Natural Experiments", week: 6, summary: "Demand transfer reveals substitutes.", prereqs: ["cx-cross-elasticity"] },
   { slug: "mmm-adstock-saturation", aisle: "retail", title: "Adstock and Saturation", week: 7, summary: "The shape of advertising memory and diminishing returns.", prereqs: ["elasticity-derivative"] },
   { slug: "mmm-bayesian", aisle: "retail", title: "Bayesian MMM From Scratch", week: 8, summary: "Priors, MCMC diagnostics and identifiability for a media mix model.", prereqs: ["mmm-adstock-saturation", "bayes-mmm-bridge"] },
@@ -133,8 +134,8 @@ export const lessons = raw.map((l) => ({
 }));
 
 export const threads = [
-  { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "fc-pinball", "search-contrastive", "mle-drift"] },
-  { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "bayes-mmm-bridge", "mmm-bayesian"] },
+  { id: "likelihood-loss", name: "Likelihood ↔ Loss", idea: "Every loss function is a negative log-likelihood in disguise.", steps: ["likelihood-dial", "mle-peak", "fc-tweedie-lgbm", "fc-pinball", "cx-mnl", "search-contrastive", "mle-drift"] },
+  { id: "priors-shrinkage", name: "Priors = Shrinkage", idea: "A prior pulls noisy estimates toward something sensible.", steps: ["counting-worlds", "posterior-grid", "shrinkage", "bayes-linreg", "hierarchical-pooling", "cx-endogeneity", "bayes-mmm-bridge", "mmm-bayesian"] },
   { id: "geometric-decay", name: "Geometric Decay", idea: "Yesterday matters a fraction θ as much as today.", steps: ["mmm-adstock-saturation", "fc-ets", "dl-optimizers"] },
   { id: "softmax", name: "Softmax", idea: "Turn scores into probabilities by exponentiating and normalizing.", steps: ["cx-mnl", "search-contrastive", "dl-attention", "dl-transformer"] },
   { id: "projection", name: "Projection", idea: "Find the closest point in an allowed space.", steps: ["matrices-tables", "linear-regression", "fc-mint"] },

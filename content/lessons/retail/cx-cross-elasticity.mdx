@@ -1,0 +1,282 @@
+<Section id="floor">
+
+Kestrel, a national paint brand, runs **20% off** its interior emulsion for a week and pays for the discount itself, so Bolt & Beam keeps its ₹350 margin on every tin. The promo report is glowing: Kestrel sold **120** extra tins and earned **₹42,000** more margin. But the other paints in the bay sold less that week, and roller kits sold more.
+
+The category manager has to decide whether to repeat the promo, and against what. The number that answers it is not Kestrel's lift. It is what the **whole bay** gained: that's ₹23,400, barely more than half the report.
+
+<KeyIdea>
+
+**A product's lift is not the category's incremental sales.** When one product gets cheaper, shoppers switch to it from **substitutes** (cannibalization) and buy more of its **complements** (halo). The **cross-price elasticity** measures both: the percent change in B's units for a 1% change in A's price. **Positive means substitutes** (A cheaper, B sells less); **negative means complements** (A cheaper, B sells more).
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+One normal week and the promo week:
+
+| Product | Normal week | Promo week | Change | Margin a tin | Margin change |
+|---|---|---|---|---|---|
+| Kestrel (20% off) | 200 | 320 | +120 | ₹350 | +₹42,000 |
+| Lumen | 300 | 240 | −60 | ₹300 | −₹18,000 |
+| Own label | 150 | 135 | −15 | ₹280 | −₹4,200 |
+| Roller kit | 100 | 130 | +30 | ₹120 | +₹3,600 |
+
+<Steps>
+<Step>
+
+**Item lift:** **+120** tins, +60%. This is the number on the promo report.
+
+</Step>
+<Step>
+
+**Category lift.** Paint went from $200 + 300 + 150 = 650$ tins to $320 + 240 + 135 = 695$: **+45**. Of Kestrel's 120, **75 (62.5%)** came from the other paints: 60 from Lumen and 15 from the own label. Only 45 were new to the bay.
+
+</Step>
+<Step>
+
+**Cross-price elasticities.** Kestrel's price fell 20%: $\ln 0.8 = -0.223$. Lumen: $\ln(240/300)/\ln 0.8 =$ **+1.00**. Own label: $\ln 0.9/\ln 0.8 =$ **+0.47**. Rollers: $\ln 1.3/\ln 0.8 =$ **−1.18**. Kestrel's own: $\ln 1.6 / \ln 0.8 =$ **−2.11**. Both paints are substitutes; rollers are a complement.
+
+</Step>
+<Step>
+
+**Margin.** Kestrel +₹42,000, cannibalization $-18{,}000 - 4{,}200 =$ **−₹22,200**, halo **+₹3,600**. The bay made **+₹23,400**: 56% of what the item report says.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Now Bolt & Beam runs its own label at 20% off. Nobody funds the discount, but the own label has the best margin in the bay. What happens to the bay's margin?" options={["It rises: the own label's margin is the highest", "It falls, even though the own label sells 84 more tins", "It stays about the same"]} answer={1}>
+
+**It falls by ₹17,366.** The own label sells 234 tins instead of 150, but at ₹140 margin instead of ₹280, so its own margin drops ₹9,188. Then it takes 30 tins from Kestrel and Lumen and adds only 12 roller kits.
+
+</Predict>
+
+<CrossPromo />
+
+**Try this:**
+
+1. **Kestrel at 20%** reproduces the hand table: +120 tins for Kestrel, **+45** for paint, **+₹23,400** for the bay.
+2. **Lumen at 20%**: it gains **224** tins and paint gains **148**. Lumen is the bigger seller with a more elastic own price, so more of its lift is new to the bay: the bay makes **+₹45,375**.
+3. **Own label at 10%**: still **−₹7,067** for the bay. Discounts Bolt & Beam pays for need far more lift to break even.
+4. **Kestrel at 30%**: the item report says **+₹78,377**, the bay **+₹51,119**. Deeper discounts cannibalize more tins (113 instead of 75).
+
+</Section>
+
+<Section id="simulate">
+
+To estimate a cross-elasticity from history you need weeks where one brand's price moved and the other's didn't. Simulate two years of weeks: each brand is on 20% off in about a fifth of them, with 30% noise in weekly sales. Regress log Lumen units on both brands' log prices and read off the coefficient on Kestrel's price (truth +1.0). Then make the promos coincide more often, as a "paint event" with every brand on sale does:
+
+<CrossStudy />
+
+| Kestrel promos that overlap Lumen's | Spread of estimates | Off by more than 0.5 | Wrong sign |
+|---|---|---|---|
+| 0% | 0.36 | 16% | 0% |
+| 50% | 0.38 | 16% | 0.4% |
+| 75% | 0.50 | 30% | 2.2% |
+| 90% | 0.84 | 49% | 9.2% |
+
+When the brands are always discounted together, the regression can't tell whose price did what: their effects are the same column of data. At 90% overlap one rerun in eleven says Lumen is a *complement* of Kestrel, and 9 of the 500 reruns have no week with the brands apart at all. Staggered promo calendars are worth more for measurement than more years of history.
+
+</Section>
+
+<Section id="formula">
+
+The cross-price elasticity of product $i$ with respect to product $j$'s price:
+
+$$
+\varepsilon_{ij} = \frac{\partial \ln Q_i}{\partial \ln p_j}
+$$
+
+Collect them in a matrix $E$ with a row per product's units and a column per product's price. Own elasticities sit on the diagonal. Off the diagonal, the sign says the relationship: $\varepsilon_{ij} > 0$ substitutes, $\varepsilon_{ij} \lt 0$ complements. For the bay, Kestrel's column is $(-2.11, +1.00, +0.47, -1.18)$.
+
+With constant elasticities, a discount $d$ on product $j$ moves every product:
+
+$$
+Q_i' = Q_i\,(1 - d)^{\varepsilon_{ij}}
+$$
+
+$200 \times 0.8^{-2.11} = 320$ for Kestrel and $300 \times 0.8^{1.00} = 240$ for Lumen. Then
+
+$$
+\text{category lift} = \sum_{i \in \text{category}} (Q_i' - Q_i), \qquad \Delta\text{margin} = \sum_i m_i\,(Q_i' - Q_i)
+$$
+
+with the promoted item's margin reduced by the discount when the store pays for it.
+
+<Depth min={2}>
+
+**Diversion ratio.** The share of A's extra units that came from B: $D_{AB} = -\Delta Q_B / \Delta Q_A$. Here $60/120 = 0.50$. For a small price change it follows from the elasticities: $D_{AB} \approx -\varepsilon_{BA} Q_B / (\varepsilon_{AA} Q_A) = 300/(2.11 \times 200) = 0.71$. A 1% cut gives 0.70. Over a 20% cut Kestrel's lift curves upward faster than Lumen's loss does, so the diversion falls to 0.50. Diversion ratios are the standard summary in assortment and merger work: they say where a product's buyers go.
+
+**Halo is usually measured in baskets.** Rollers aren't sold on the same shelf, so the halo shows up in basket lift: baskets with Kestrel on promo contain rollers more often. A full picture combines the substitutes' elasticities with basket evidence for complements.
+
+</Depth>
+
+<Depth min={3}>
+
+**Symmetry fills in the matrix.** For income-compensated demand, $\partial Q_i/\partial p_j = \partial Q_j/\partial p_i$ (Slutsky symmetry). In elasticities that becomes
+
+$$
+\varepsilon_{ij}\, R_i \approx \varepsilon_{ji}\, R_j
+$$
+
+with $R$ each product's revenue. Kestrel's price moves the own label by +0.47. Kestrel's revenue is ₹2,00,000 and the own label's ₹1,05,000, so the own label's price should move Kestrel by about $0.47 \times 1.05/2.00 = 0.25$. Big brands pull more from small ones than the reverse. The visual's other columns are filled in this way, and in practice symmetry is a useful constraint when data are thin.
+
+**Sign conventions.** Some teams quote "cannibalization rates" (75/120 = 62.5%) instead of elasticities. The rate depends on the discount depth and the base volumes, while the elasticity is a property of the products. Keep both, and say which.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Category incremental">
+
+A promo lifts an item by 80 units. Two substitutes lose 30 and 10, and a complement gains 12. What did the category gain, and what was the cannibalization rate?
+
+<Solution>
+
+Category: $80 - 30 - 10 =$ **40**. Cannibalization: $40/80 =$ **50%**. The complement's 12 is halo, counted in the store's total, not the category's.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="Which sign?">
+
+Drill prices fall 10% and drill-bit sales rise 6%. Find the log cross-elasticity of bits with respect to drill price. Substitutes or complements?
+
+<Solution>
+
+$\ln 1.06/\ln 0.9 = 0.0583/(-0.1054) =$ **−0.55**. Negative: **complements**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Margin bookkeeping">
+
+A vendor-funded promo adds 100 units of A at ₹200 margin. Substitute B loses 40 units at ₹250 margin; complement C gains 20 at ₹50. What does the store gain?
+
+<Solution>
+
+$20{,}000 - 10{,}000 + 1{,}000 =$ **₹11,000**, against ₹20,000 on the item report.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="A shallower promo">
+
+Use Kestrel's column, (−2.11, +1.00, +0.47, −1.18), for a 10% discount. Predict each product's units.
+
+<Solution>
+
+Kestrel $200 \times 0.9^{-2.11} =$ **250**; Lumen $300 \times 0.9 =$ **270**; own label $150 \times 0.9^{0.47} =$ **143**; rollers $100 \times 0.9^{-1.18} =$ **113**. Item lift 50, paint lift 12, so 37 tins cannibalized: 75% of the lift, more than at 20%.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="The store-funded promo">
+
+The own label (₹700, cost ₹420) goes 20% off with the store paying. With its own elasticity −2, how many tins does it sell, and what happens to its own margin?
+
+<Solution>
+
+$150 \times 0.8^{-2} =$ **234.4** tins at $560 - 420 =$ ₹140, which is ₹32,812 against $150 \times 280 =$ ₹42,000: **−₹9,188** before counting the tins it takes from Kestrel and Lumen. Keeping ₹42,000 at ₹140 a tin needs 300 tins, twice the base; an elasticity of −2 doesn't get there at 20% off.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Using symmetry">
+
+Lumen's units respond to Kestrel's price with elasticity +1.0. Kestrel's weekly revenue is ₹2,00,000 and Lumen's ₹2,70,000. Estimate Kestrel's response to Lumen's price.
+
+<Solution>
+
+$\varepsilon_{AB} \approx \varepsilon_{BA} R_B / R_A = 1.0 \times 2.7/2.0 =$ **+1.35**. Lumen sells more, so its price moves Kestrel more than the reverse.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand table, then the elasticity matrix predicting a promo, then a regression on simulated weeks. Expected: a category lift of 45 against Kestrel's 120, a bay margin of +₹23,400 against the item's +₹42,000, and a cross-elasticity estimate near +1.0 that gets far noisier when the promos always overlap.
+
+<PyRunner title="Cannibalization and halo" code={`
+import numpy as np
+
+names = ["Kestrel", "Lumen", "Own label", "Rollers"]
+base = np.array([200, 300, 150, 100])
+promo = np.array([320, 240, 135, 130])
+margin = np.array([350, 300, 280, 120])
+paint = slice(0, 3)
+print(f"category incremental {promo[paint].sum() - base[paint].sum()} of {promo[0] - base[0]}; "
+      f"margin: item +{(promo[0] - base[0]) * margin[0]}, bay +{((promo - base) * margin).sum()}")
+
+eps = np.log(promo / base) / np.log(0.8)
+print("Kestrel's column:", ", ".join(f"{n} {e:+.2f}" for n, e in zip(names, eps)))
+print("10% off predicts:", np.round(base * 0.9 ** eps).astype(int))
+
+# Two years of weeks: estimate Lumen's response to Kestrel's price
+rng = np.random.default_rng(12)
+def estimate(overlap):
+    a = rng.random(104) < 0.2
+    b = np.where(a, rng.random(104) < overlap, rng.random(104) < 0.2 * (1 - overlap) / 0.8)
+    la, lb = np.log(np.where(a, 0.8, 1.0)), np.log(np.where(b, 0.8, 1.0))
+    y = np.log(300) + 1.0 * la - 2.5 * lb + rng.normal(0, 0.3, 104)
+    X = np.column_stack([np.ones(104), la, lb])
+    return np.linalg.lstsq(X, y, rcond=None)[0][1]
+for overlap in [0.0, 0.9]:
+    est = np.array([estimate(overlap) for _ in range(500)])
+    print(f"overlap {overlap:.0%}: mean {est.mean():+.2f}, spread {est.std():.2f}, wrong sign {np.mean(est <= 0):.1%}")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Report category and store incrementality, not item lift.** A promo evaluation should show the item's lift, the substitutes' losses, the complements' gains and the bay's net margin, over the promo and the [post-promo dip](/learn/retail/fc-promotions).
+- **Define the substitution group.** Cross-effects are strongest within a customer decision tree node (interior emulsion, not "paint"). Teams build these from category managers' knowledge, switching in loyalty data, or product embeddings, and estimate cross-elasticities only within a node, to keep the matrix small.
+- **Feed competitor prices into demand models.** A global forecast model gets features like "the cheapest substitute's discount this week" and "a complement is on promo". Without them, the forecaster blames noise for every cannibalized week.
+- **Constrain the matrix.** With hundreds of products, a free cross-elasticity matrix is mostly noise. Restrict signs (substitutes positive), impose symmetry, pool across stores and categories, or move to a choice model whose structure generates the cross-effects ([Choice Models](/learn/retail/cx-mnl)).
+- **Design promo calendars that can be measured.** Staggered promos and a few control stores make cross-effects identifiable. Bay-wide events make them impossible to separate.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What's the difference between cannibalization and halo?">
+
+Cannibalization: a promoted item takes sales from its substitutes, so the category gains less than the item. Halo: the promotion also lifts complements (rollers with paint, bits with drills) or brings traffic that buys other things. Both are measured by cross-price elasticities, positive for substitutes and negative for complements.
+
+</QA>
+
+<QA q="A promo had 60% item lift. Was it successful?">
+
+I'd want the category view: how much came from substitutes, what happened to complements, the post-promo dip, and who paid for the discount. In the paint example, 120 extra Kestrel tins were only 45 new tins for the bay, and the item's +₹42,000 was +₹23,400 for the store.
+
+</QA>
+
+<QA q="How would you estimate cross-price elasticities across a category?">
+
+A log-log demand model per product with its own and competitors' prices (or discounts) plus controls, fitted within substitution groups. I'd check that the data has weeks with independent price moves, pool across stores, and constrain signs and symmetry. When the matrix gets large, I'd use a choice model or a causal method like double ML.
+
+</QA>
+
+<QA q="Your model gives drill bits a positive cross-elasticity with drills. What's wrong?">
+
+A positive sign says substitutes, which is implausible for a drill and its bits. Likely causes: collinear promos (both discounted in the same events), confounding by season, or noise in a free matrix. I'd check the promo overlap, add controls and constrain the sign.
+
+</QA>
+
+<Trap>
+
+**"The item's lift is the promotion's incremental sales."** Kestrel's 120 extra tins included 75 taken from Lumen and the own label. The category gained 45, and the store's margin rose ₹23,400, not ₹42,000.
+
+</Trap>
+
+</Section>

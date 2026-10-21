@@ -492,6 +492,42 @@
   "title": "Same model, two stores"
  },
  {
+  "slug": "elasticity-derivative",
+  "n": 1,
+  "level": "easy",
+  "title": "Percent ratio and revenue"
+ },
+ {
+  "slug": "elasticity-derivative",
+  "n": 2,
+  "level": "easy",
+  "title": "A log elasticity"
+ },
+ {
+  "slug": "elasticity-derivative",
+  "n": 3,
+  "level": "medium",
+  "title": "The markup rule"
+ },
+ {
+  "slug": "elasticity-derivative",
+  "n": 4,
+  "level": "medium",
+  "title": "Elasticity from a margin"
+ },
+ {
+  "slug": "elasticity-derivative",
+  "n": 5,
+  "level": "hard",
+  "title": "Where revenue peaks on a line"
+ },
+ {
+  "slug": "elasticity-derivative",
+  "n": 6,
+  "level": "hard",
+  "title": "An inelastic estimate"
+ },
+ {
   "slug": "integrals-thin-bars",
   "n": 1,
   "level": "easy",
@@ -706,6 +742,114 @@
   "n": 6,
   "level": "hard",
   "title": "Junk features"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 1,
+  "level": "easy",
+  "title": "Category incremental"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 2,
+  "level": "easy",
+  "title": "Which sign?"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 3,
+  "level": "medium",
+  "title": "Margin bookkeeping"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 4,
+  "level": "medium",
+  "title": "A shallower promo"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 5,
+  "level": "hard",
+  "title": "The store-funded promo"
+ },
+ {
+  "slug": "cx-cross-elasticity",
+  "n": 6,
+  "level": "hard",
+  "title": "Using symmetry"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 1,
+  "level": "easy",
+  "title": "A tempting slope"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 2,
+  "level": "easy",
+  "title": "The bias formula"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 3,
+  "level": "medium",
+  "title": "An instrument by hand"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 4,
+  "level": "medium",
+  "title": "Shrink one SKU"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 5,
+  "level": "hard",
+  "title": "Which way is the bias?"
+ },
+ {
+  "slug": "cx-endogeneity",
+  "n": 6,
+  "level": "hard",
+  "title": "Twelve inelastic SKUs"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 1,
+  "level": "easy",
+  "title": "Shares by hand"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 2,
+  "level": "easy",
+  "title": "IIA after a delisting"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 3,
+  "level": "medium",
+  "title": "Noisier tastes"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 4,
+  "level": "medium",
+  "title": "Logit elasticities"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 5,
+  "level": "hard",
+  "title": "A nest for the twins"
+ },
+ {
+  "slug": "cx-mnl",
+  "n": 6,
+  "level": "hard",
+  "title": "β from two weeks of shares"
  },
  {
   "slug": "fc-anatomy",

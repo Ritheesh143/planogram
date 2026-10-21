@@ -42,6 +42,10 @@ const lessons: [string, string][] = [
   ["/learn/retail/fc-promotions", "gross lift 120, dip 48, net 72, profit change -5240"],
   ["/learn/retail/fc-deep", "tokens: [7, 10, 9, 12, 11, 8, 10, 12] scale 42, worst error 2.0"],
   ["/learn/retail/fc-safety-stock", "critical ratio 0.643; best order 100, expected profit 16880"],
+  ["/learn/foundations/elasticity-derivative", "log elasticity -3.00, best price 225, profit 26337"],
+  ["/learn/retail/cx-cross-elasticity", "category incremental 45 of 120; margin: item +42000, bay +23400"],
+  ["/learn/retail/cx-mnl", "softmax shares: 0.500, 0.250, 0.125, 0.125"],
+  ["/learn/retail/cx-endogeneity", "usual weeks +1.11, all four -0.44, with season -2.00"],
 ];
 
 for (const [path, expected] of lessons) {

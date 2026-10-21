@@ -13,18 +13,19 @@ context, project details and screening results. Never copy anything from it into
 | **M1** Scaffold, Bolt & Beam generator, lesson template, store map, progress, FSRS review, Floor Check, the four Keystones | Done, live |
 | **M2** Model Lab (linear regression, decision tree, gradient boosting, XGBoost vs LightGBM vs CatBoost, MLP), Model Arena + Failure Matrix, Tree vs MLP, Bayes rungs 2–9, Math Toolkit, Plan / Exercises / Concept Graph / Threads pages | Done, live |
 | **M3** The AI layer, without an API key (spec below): `tutor`, `feynman-grade`, `mock-interview`, `project-grill` skills and the Ask Claude panel | Done, live. A manual run of each skill in a local `claude` session is still to do |
-| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13) and Signature B (2a forecasting basics, 2b hard demand and global models, 2c uncertainty to production) done, live. **Next**: Signature D, cannibalization and halo |
+| **M4 onward** Weekly lesson batches in sprint order | Batch 1 (Bayes rungs 10–13), Signature B (2a forecasting basics, 2b hard demand and global models, 2c uncertainty to production) and Signature D batch 3a (elasticities and choice) done, live. **Next**: Signature D batch 3b, the causal core |
 
 The site deploys to Vercel from `main` on GitHub. Every push to `main` redeploys it.
 
 ### Live lessons
 - **Foundations:** counting-worlds, ci-repeat, likelihood-dial, integrals-thin-bars,
-  vectors-baskets, matrices-tables
+  vectors-baskets, matrices-tables, elasticity-derivative
 - **Bayes:** mle-peak (rung 2), posterior-grid (3), beta-binomial (4), gamma-poisson (5),
   priors-defend (6), shrinkage (7), bayes-linreg (8), hierarchical-pooling (9), why-sample (10),
   mcmc-walker (11), bayes-ab (12), bayes-mmm-bridge (13)
 - **Retail (Signature B):** fc-anatomy, fc-baselines, fc-ets, fc-arima, fc-censored-demand,
   fc-intermittent, fc-tweedie-lgbm, fc-mint, fc-pinball, fc-promotions, fc-deep, fc-safety-stock
+- **Retail (Signature D):** cx-cross-elasticity, cx-mnl, cx-endogeneity
 - **Models (lessons):** boosting-by-hand, tree-vs-mlp
 - **Model Lab (`/models/<slug>`):** linear-regression, decision-tree, gradient-boosting,
   xgb-lgbm-catboost, mlp, model-arena
@@ -132,15 +133,17 @@ pushed on its own.
      errors, and per-SKU ordering policies at scale (`fc-safety-stock`). The math is in
      `lib/sim/uncertainty.ts` (vitest: `tests/forecast-batch-2c.test.ts`). Money in these lessons
      is in ₹, like the rest of the site; write it as plain `₹` text, since `$` starts math.
-3. **Signature D (cannibalization and halo), next:**
-   - Definitions, and why item lift ≠ category incrementality.
-   - Cross-price elasticity and the sign of substitutes vs complements.
-   - MNL from random utility (Gumbel → softmax), IIA and nested logit.
-   - Log-log models and price endogeneity; hierarchical Bayesian elasticities.
-   - DiD and synthetic control; double ML, visualized.
-   - Stockouts as natural experiments for demand transfer.
-   - Net promo ROI and assortment delisting.
-   - Plus the causal-inference core lessons.
+3. **Signature D (cannibalization and halo), in two batches:**
+   - **3a, done.** Elasticity as the log-log slope, with the markup rule and how price variation
+     sets precision (`elasticity-derivative`); item lift ≠ category incrementality, cross-price
+     elasticity signs, and overlapping promos that hide them (`cx-cross-elasticity`); MNL from
+     random utility (Gumbel → softmax), IIA and nested logit (`cx-mnl`); log-log models and price
+     endogeneity, instruments, and partially pooled SKU elasticities (`cx-endogeneity`). The math
+     is in `lib/sim/elasticity.ts` (vitest: `tests/signature-d-batch-3a.test.ts`).
+   - **3b, next: the causal core.** DiD and synthetic control (a new `cx-did-synth` bay);
+     double ML, visualized (`cx-double-ml`); stockouts as natural experiments for demand transfer
+     (`cx-stockout-experiments`); net promo ROI and assortment delisting (a new `cx-net-promo-roi`
+     bay). Add the two new bays to `content/curriculum.ts` when the batch starts.
 4. **Signature A (Bayesian MMM):**
    - The question and the trap: incrementality, ROI vs marginal ROI; why naive regression on
      spend lies.

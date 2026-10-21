@@ -1,0 +1,275 @@
+<Section id="floor">
+
+Bolt & Beam's 1 L wood glue sold **500** bottles a week at **₹200**. Then the supplier raised its price and the shelf price went to **₹250**. Now it sells **256**. Revenue fell from ₹1,00,000 to ₹64,000 a week, and the category manager wants to know whether the price rise was a mistake and what the price should be. Each bottle costs Bolt & Beam ₹150.
+
+The answer turns on one number: how many percent of the units go when the price goes up 1%. That number is the **price elasticity**, and the clean way to measure it is the slope on log axes.
+
+<KeyIdea>
+
+**Elasticity is the percent change in units for a 1% change in price: the slope of log units against log price.** For the glue it is **−3**: each 1% on the price costs about 3% of the units. Measured with plain percent changes it comes out as −1.95 or −4.77 depending on which week you start from; logs give −3 both ways. For a constant elasticity ε below −1, the profit-maximizing price is **cost × ε / (1 + ε)**: ₹225 for the glue.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+<Steps>
+<Step>
+
+**Percent changes, starting from ₹200.** Price up $50/200 =$ **25%**. Units down $244/500 =$ **48.8%**. Ratio: $-48.8/25 =$ **−1.95**.
+
+</Step>
+<Step>
+
+**The same two weeks, starting from ₹250.** Price down $50/250 =$ **20%**. Units up $244/256 =$ **95.3%**. Ratio: $95.3/(-20) =$ **−4.77**. Same data, a different answer, because a percent depends on what you divide by.
+
+</Step>
+<Step>
+
+**Use logs instead.** $\ln(256/500) = -0.669$ and $\ln(250/200) = 0.223$. Ratio: **−3.00**. Going the other way flips both signs and gives −3.00 again. A log difference is the percent change that doesn't care about direction.
+
+</Step>
+<Step>
+
+**Revenue and profit.** Revenue: $200 \times 500 = 1{,}00{,}000$ against $250 \times 256 = 64{,}000$. Profit at ₹150 cost: $50 \times 500 = 25{,}000$ against $100 \times 256 =$ **25,600**. Revenue fell 36%, profit *rose* ₹600. The price rise was not a mistake, but it overshot.
+
+</Step>
+<Step>
+
+**The best price.** With elasticity −3, the margin should be a third of the price: $(p - 150)/p = 1/3$, so $p =$ **₹225**. At ₹225 the glue sells $500 \times (225/200)^{-3} =$ **351** a week for a profit of **₹26,337**, more than either week.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="Two demand curves pass through both weeks: one with a constant elasticity of −3, and a straight line. At ₹300, how many bottles does each predict?" options={["About 150 each: they agree", "Constant elasticity about 148, straight line about 12", "Constant elasticity about 12, straight line about 148"]} answer={1}>
+
+**148 against 12.** Both curves fit the two weeks exactly, and both put the best price near ₹225. Beyond the prices you have seen, the curve's shape is an assumption, not a measurement.
+
+</Predict>
+
+<DemandCurves />
+
+**Try this:**
+
+1. Switch to **log axes**. The constant-elasticity curve becomes a straight line with slope −3; the straight line now bends down.
+2. Slide the price to **₹200**: the straight line's elasticity there is **−1.95**. At **₹250** it is **−4.77**. Those are the two percent ratios from the hand steps: each is the elasticity of the straight line at its starting point.
+3. Compare the profit curves: best prices **₹225** and **₹226**. Near the data, the curves agree on the decision.
+4. Slide to **₹300**: 148 against 12. Pricing far from where you've been is a bet on the shape.
+
+</Section>
+
+<Section id="simulate">
+
+The glue's price only moves when the supplier changes it. Suppose the price wobbles a little from week to week, sales have 25% noise, and the true elasticity is −3. Fit the slope of log units on log price over the history, then rerun the world 1,000 times:
+
+<ElasticityPrecision />
+
+| Typical price move | Spread of estimates (52 weeks) | Within 0.5 of −3 | Above −1 |
+|---|---|---|---|
+| ±2% | 1.77 | 23.4% | 13.4% |
+| ±5% | 0.71 | 53.4% | 0.3% |
+| ±10% | 0.35 | 84.2% | 0% |
+| ±20% | 0.18 | 99.6% | 0% |
+
+- **A price that barely moves teaches almost nothing.** At ±2% for a year, one estimate in seven says the glue is *inelastic*, so "raise the price as far as you like".
+- **Doubling the history** to 104 weeks at ±2% only cuts the spread from 1.77 to **1.22** (by √2). Doubling the price movement halves it.
+- That is why retailers run price tests: a few weeks of deliberate ±10% moves beat years of a flat price.
+
+</Section>
+
+<Section id="formula">
+
+Shrink the price change toward zero. The percent ratio becomes a derivative:
+
+$$
+\varepsilon = \frac{\Delta Q / Q}{\Delta p / p} \;\longrightarrow\; \frac{dQ}{dp} \cdot \frac{p}{Q} = \frac{d \ln Q}{d \ln p}
+$$
+
+because $d \ln Q = dQ/Q$. Elasticity is the slope on log-log axes. If that slope is the same everywhere,
+
+$$
+\ln Q = \ln A + \varepsilon \ln p \quad\Longleftrightarrow\quad Q = A\, p^{\varepsilon}
+$$
+
+the **constant-elasticity** (log-log) demand curve. For the glue, $A p^{-3}$ through $(200, 500)$.
+
+**Revenue** $R = pQ$: $\;dR/dp = Q + p\,dQ/dp = Q(1 + \varepsilon)$. A price rise loses revenue when $\varepsilon < -1$ (elastic), as it did here.
+
+**Profit** $\pi = (p - c)\,Q$: $\;d\pi/dp = Q + (p - c)\,dQ/dp = Q\left[1 + \varepsilon\,\frac{p - c}{p}\right]$. Setting it to zero:
+
+$$
+\frac{p - c}{p} = -\frac{1}{\varepsilon} \qquad\Longrightarrow\qquad p^* = c\,\frac{\varepsilon}{1 + \varepsilon}
+$$
+
+The margin share is $1/\lvert\varepsilon\rvert$: a third for the glue, so $p^* = 150 \times 3/2 = 225$.
+
+<Depth min={2}>
+
+**A straight line has no single elasticity.** For $Q = a - bp$, $\varepsilon = -bp/Q$, which runs from 0 at a zero price to $-\infty$ where sales hit zero. Through the two weeks, $b = 4.88$ and $a = 1476$. At ₹200 that gives $-4.88 \times 200/500 = -1.95$, and at ₹250, −4.77: the percent ratios again. Its revenue peaks where $\varepsilon = -1$, at $p = a/2b =$ ₹151.
+
+**The midpoint formula** divides by the averages: $(-244/378)/(50/225) = -2.90$, close to the log answer of −3 and the same in both directions. Logs are the exact version: a log difference is a percent change measured from the (logarithmic) middle.
+
+**Slope is not elasticity.** The glue curve's slope at ₹200 is $dQ/dp = \varepsilon Q/p = -7.5$ bottles per rupee. Change the units (per 100 ml, per ₹100) and the slope changes; the elasticity doesn't. That is why elasticities can be compared across products.
+
+</Depth>
+
+<Depth min={3}>
+
+**Why a retailer never prices on the inelastic part.** With $-1 \lt \varepsilon \lt 0$, profit $(p - c) A p^{\varepsilon}$ grows like $p^{1 + \varepsilon}$ forever: raise the price and you lose fewer percent of units than you gain in price, so there's no finite best price. A store pricing sensibly has already moved past that region. So an estimated elasticity above −1 is usually a measurement problem (too little price movement, as in the simulation, or prices that follow demand, the subject of [Log-Log Demand and Endogeneity](/learn/retail/cx-endogeneity)), or a short-run number that ignores customers drifting to competitors over months.
+
+**The second-order condition.** At $p^*$, $d^2\pi/dp^2 \lt 0$ needs $\varepsilon \lt -1$; it holds for the glue.
+
+**Item vs category.** One brand's elasticity is more negative than the category's, because a price rise sends shoppers to other brands as well as out of the aisle. That substitution is measured by cross-price elasticities: [Cannibalization vs Halo](/learn/retail/cx-cross-elasticity).
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Percent ratio and revenue">
+
+Tile adhesive goes up 10% and its units fall 15%. What is the percent-ratio elasticity, and does revenue rise or fall?
+
+<Solution>
+
+$-15/10 =$ **−1.5**. Revenue scales by $1.10 \times 0.85 = 0.935$: it **falls 6.5%**, as it must when the elasticity is below −1.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="A log elasticity">
+
+A sander goes from ₹400 to ₹440 and its weekly units from 120 to 100. Find the log elasticity.
+
+<Solution>
+
+$\ln(100/120)/\ln(440/400) = -0.182/0.0953 =$ **−1.91**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="The markup rule">
+
+A product with a constant elasticity of −4 costs ₹300. What price maximizes profit, and what share of the price is margin?
+
+<Solution>
+
+$p^* = 300 \times (-4)/(-3) =$ **₹400**. Margin $100/400 =$ **25%** $= 1/\lvert\varepsilon\rvert$.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Elasticity from a margin">
+
+A product is priced to maximize profit and earns a 40% margin. What elasticity does that imply?
+
+<Solution>
+
+$(p - c)/p = -1/\varepsilon = 0.4$, so $\varepsilon =$ **−2.5**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Where revenue peaks on a line">
+
+For the straight line $Q = 1476 - 4.88p$, find the revenue-maximizing price, the elasticity there and the revenue.
+
+<Solution>
+
+$R = p(1476 - 4.88p)$, so $dR/dp = 1476 - 9.76p = 0$ at $p =$ **₹151.2**. There $Q = 738$ and $\varepsilon = -4.88 \times 151.2/738 =$ **−1**. Revenue $\approx$ **₹1,11,607**. Revenue is largest at unit elasticity; profit is largest at a higher price.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="An inelastic estimate">
+
+A regression on a year of history gives a constant elasticity of −0.8 for a product. What does the markup rule recommend, and what should you conclude?
+
+<Solution>
+
+$c \times (-0.8)/0.2$ is negative: no finite optimum. Profit grows like $p^{0.2}$, so the rule says raise the price without limit. A real store would already have done so, so treat **−0.8 as a red flag**: too little price movement (in the simulation, ±2% for a year gave estimates above −1 in 13% of reruns), prices that follow demand, or a short-run effect.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The two weeks by hand, then a year of simulated weeks fitted by least squares on log axes. Expected: percent ratios −1.95 and −4.77, a log elasticity of −3.00 and a best price of ₹225; the regression's estimates spread far more with ±2% price moves than with ±10%.
+
+<PyRunner title="Elasticity on log axes" code={`
+import numpy as np
+
+p0, q0, p1, q1, cost = 200, 500, 250, 256, 150
+up = ((q1 - q0) / q0) / ((p1 - p0) / p0)
+down = ((q0 - q1) / q1) / ((p0 - p1) / p1)
+eps = np.log(q1 / q0) / np.log(p1 / p0)
+best = cost * eps / (1 + eps)
+q_best = q0 * (best / p0) ** eps
+print(f"percent ratios {up:.2f} and {down:.2f}")
+print(f"log elasticity {eps:.2f}, best price {best:.0f}, profit {(best - cost) * q_best:.0f}")
+
+# A year of weeks: the price wobbles, sales have 25% noise, the truth is -3
+rng = np.random.default_rng(8)
+for move in [0.02, 0.10]:
+    est = []
+    for _ in range(1000):
+        lp = np.log(200) + rng.normal(0, move, 52)
+        lq = np.log(500) - 3 * (lp - np.log(200)) + rng.normal(0, 0.25, 52)
+        est.append(np.polyfit(lp, lq, 1)[0])
+    est = np.array(est)
+    print(f"price moves +/-{move:.0%}: spread {est.std():.2f}, above -1 in {np.mean(est > -1):.1%} of reruns")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Where elasticities come from.** Price tests across stores or weeks, cost-driven price changes, competitor moves and promotions. Promo elasticities overstate regular-price ones: shoppers stock up during a discount ([the post-promo dip](/learn/retail/fc-promotions)), and a temporary price cut is noticed more than a permanent one.
+- **Log-log models with controls.** In practice, regress log units on log price plus season, promo, display and competitor features. Fitting in logs makes the coefficient the elasticity and turns multiplied effects into added ones.
+- **Most SKUs don't have enough price variation.** Pool them: estimate one elasticity per category and let each SKU deviate a little ([hierarchical pooling](/learn/bayes/hierarchical-pooling)). Constrain the sign: own-price elasticities should be negative.
+- **Guardrails on the optimizer.** The markup rule is only as good as ε. Cap price moves (say ±10% per change), respect price ladders (own label below the national brand) and psychological price points (₹199), and re-test after each change.
+- **Profit, not revenue.** A revenue-maximizing price ignores cost; it is the right target only for a pure traffic driver.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is price elasticity, and why fit demand in logs?">
+
+The percent change in units for a 1% change in price: $d\ln Q / d\ln p$. In a log-log regression the price coefficient *is* the elasticity, it's unit-free so it compares across products, and multiplicative effects (season × promo × price) become additive.
+
+</QA>
+
+<QA q="How do you set the profit-maximizing price from an elasticity?">
+
+Differentiate $(p - c)Q(p)$: the margin share should be $-1/\varepsilon$, so $p^* = c\,\varepsilon/(1 + \varepsilon)$. With ε = −3 and cost ₹150 that is ₹225. It only exists for ε below −1, and I'd cap the move and test it rather than jump straight there.
+
+</QA>
+
+<QA q="Your model says a product's elasticity is −0.5. Should we raise its price?">
+
+Not on that number alone. A profit-maximizing retailer shouldn't be sitting on inelastic demand, so −0.5 suggests a measurement problem: little price variation, prices that follow demand, or a short-run estimate. I'd check the price history, pool with similar SKUs, and run a price test before acting.
+
+</QA>
+
+<QA q="Why can a price rise cut revenue but raise profit?">
+
+Revenue falls when the elasticity is below −1. But profit depends on the margin per unit, which rises with price. For the glue, ₹200 to ₹250 cut revenue 36% but raised profit from ₹25,000 to ₹25,600, because each remaining bottle earned ₹100 instead of ₹50.
+
+</QA>
+
+<Trap>
+
+**"Elasticity is the slope of the demand curve."** The slope is units per rupee (−7.5 bottles per ₹1 for the glue at ₹200) and changes when you change the units. Elasticity is the slope on *log* axes: percent per percent, the same however you measure the product.
+
+</Trap>
+
+</Section>

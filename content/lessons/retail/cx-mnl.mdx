@@ -1,0 +1,285 @@
+<Section id="floor">
+
+About **800** shoppers a week stop at Bolt & Beam's cordless drill bay. Three drills are on the shelf: the **Kestrel 20V** at ₹4,500, the **own-label 18V** at ₹3,000 and a **budget 12V** at ₹2,000. Some shoppers leave without a drill.
+
+Two decisions are on the table. Kestrel's supplier has missed a delivery, so Kestrel will be out of stock for a month: how many of its buyers switch, and to what? And the supplier wants to add a **red Kestrel**, identical except for color: how much will it really add? A choice model answers both. It also shows where its one big assumption breaks.
+
+<KeyIdea>
+
+**Each shopper picks the option with the highest utility: a value everyone shares plus a random personal taste.** If the random part follows a Gumbel distribution, the choice shares are exactly a **softmax**: $s_j = e^{V_j} / \sum_k e^{V_k}$. The plain logit has one strong assumption, **IIA** (independence of irrelevant alternatives): when an option disappears, its buyers spread over the rest *in proportion to their shares*. A **nested logit** relaxes it by grouping close substitutes.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Utilities (value net of price) for a typical shopper: Kestrel **1.39**, own label **0.69**, budget **0**, and leaving with no drill **0**. Those are $\ln 4$, $\ln 2$, $\ln 1$ and $\ln 1$, chosen to keep the arithmetic easy.
+
+<Steps>
+<Step>
+
+**Exponentiate:** $e^{1.39} = 4$, $e^{0.69} = 2$, $e^0 = 1$, $e^0 = 1$. Sum: **8**.
+
+</Step>
+<Step>
+
+**Divide by the sum:** Kestrel **50%**, own label **25%**, budget **12.5%**, no drill **12.5%**. Of 800 shoppers: 400, 200, 100 and 100.
+
+</Step>
+<Step>
+
+**Kestrel out of stock.** Drop its 4: the sum is $2 + 1 + 1 = 4$. Own label **50%**, budget **25%**, no drill **25%**: 400, 200, 200. Kestrel's 400 buyers split 200 / 100 / 100, in proportion to the remaining shares, so a quarter of them go home without a drill. That is IIA.
+
+</Step>
+<Step>
+
+**A price cut.** The own label drops from ₹3,000 to ₹2,500. Each ₹1,000 costs 0.8 of utility, so its utility rises by 0.4 and $e^{V}$ goes from 2 to $2e^{0.4} = 2.98$. Sum 8.98: Kestrel **44.5%**, own label **33.2%**, budget **11.1%**, no drill **11.1%**. Every other option lost the same 11% of its share.
+
+</Step>
+<Step>
+
+**Add a red Kestrel**, identical to the blue one: $4 + 4 + 2 + 1 + 1 = 12$. The two Kestrels together get **66.7%**, and the own label falls to **16.7%**: a third of its buyers lost to a change of color. That can't be right. The red Kestrel should mostly split the blue one's buyers.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="With a red Kestrel added, the plain logit says the own label falls from 25% to 16.7%. A nested logit that treats the two Kestrels as near-identical (λ close to 0) says what?" options={["Still about 17%", "Close to 25%: the red one splits Kestrel's buyers", "About 33%"]} answer={1}>
+
+**Close to 25%.** With λ = 0.05 the own label keeps **24.6%** and the two Kestrels share 50.9%. The nest makes the twins compete mostly with each other.
+
+</Predict>
+
+<ChoiceShares />
+
+**Try this:**
+
+1. **Kestrel out of stock**: own label 50%, budget 25%, no drill 25%, as by hand.
+2. **Add a red Kestrel** and lower the nest λ: **0.75** gives the Kestrels 62.7%, **0.5** gives **58.6%**, **0.05** gives 50.9%. λ measures how different the nest members are: 1 is as different as any two drills, near 0 identical.
+3. In **Three drills**, set the own label to **₹2,500** (33.2%) and then **₹4,500** (9.1%). At ₹4,500 Kestrel takes 60.6%: the same price, but less value to shoppers.
+4. With Kestrel out of stock and the own label at ₹2,500, the own label takes **59.9%**. A price cut during a stockout catches more of the stranded buyers.
+
+</Section>
+
+<Section id="simulate">
+
+Where does the softmax come from? Simulate it. Give each shopper a random taste for each option (utility = the hand value + noise), and let them pick the biggest. Count the choices:
+
+<RandomUtility />
+
+| Shoppers | Gumbel noise: biggest gap to softmax | Normal noise: biggest gap |
+|---|---|---|
+| 100 | 5.0 points | 2.0 points |
+| 1,000 | 1.2 | 2.2 |
+| 10,000 | 0.8 | 0.7 |
+| 100,000 | 0.2 | 1.0 |
+
+- **With Gumbel noise the counts converge to the softmax** (gap 0.2 points at 100,000 shoppers). That's not an approximation: it's a theorem.
+- **With normal noise of the same spread** (a *probit* model) the shares settle near 51.0%, 25.5%, 11.8% and 11.7%, not exactly 50 / 25 / 12.5 / 12.5. Close, but no formula. Gumbel noise is chosen because it makes the shares come out in closed form.
+
+</Section>
+
+<Section id="formula">
+
+Shopper $n$ gets utility $U_{nj} = V_j + e_{nj}$ from option $j$ and chooses the largest. With the $e$'s independent and Gumbel distributed, $F(e) = \exp(-e^{-e})$:
+
+$$
+P(j) = P\big(V_j + e_j > V_k + e_k \text{ for all } k \ne j\big) = \frac{e^{V_j}}{\sum_k e^{V_k}}
+$$
+
+Only differences in utility matter: adding a constant to every $V$ cancels. Utilities are built from attributes and price, $V_j = \alpha_j - \beta p_j$, with $\beta = 0.8$ per ₹1,000 here.
+
+**IIA in one line.** The ratio of two shares, $s_j / s_k = e^{V_j - V_k}$, doesn't depend on any other option. Remove or add an option and every ratio stays the same, which is what forced the proportional split.
+
+**Elasticities from the logit.** Differentiating the softmax:
+
+$$
+\varepsilon_{jj} = -\beta p_j (1 - s_j), \qquad \varepsilon_{kj} = \beta p_j s_j \quad (k \ne j)
+$$
+
+Kestrel's own elasticity: $-0.8 \times 4.5 \times 0.5 = -1.8$. And *every* other option responds to Kestrel's price with the same $+1.8$; to the own label's price, $0.8 \times 3 \times 0.25 = 0.6$; to the budget drill's, 0.2. A whole column of the cross-elasticity matrix is one number: IIA again.
+
+<Depth min={2}>
+
+**Fitting a logit is minimizing cross-entropy.** The log-likelihood of observed choices is $\sum_n \ln s_{n,\text{chosen}}$: the negative of the cross-entropy between the observed choices and the predicted shares. Its gradient for $\beta$ is (observed − predicted) price, the same shape as logistic regression, which is the two-option logit.
+
+**Backing out β from shares.** Against the "no drill" option, $\ln(s_j / s_0) = V_j$. At ₹3,000 the own label's log-odds are $\ln(0.25/0.125) = 0.69$; at ₹2,500, $\ln(0.332/0.111) = 1.09$. A ₹500 cut raised them by 0.4, so $\beta = 0.8$ per ₹1,000. The same inversion (Berry's) is how market-share data are turned into utilities.
+
+**Nested logit.** Group options into nests with a parameter $\lambda \in (0, 1]$. Inside a nest, shares are a softmax of $V_j/\lambda$. Each nest competes with weight $e^{\lambda I}$, where $I = \ln \sum_{j \in \text{nest}} e^{V_j/\lambda}$ is the **inclusive value**. For the two Kestrels at λ = 0.5: $I = \ln(16 + 16) = \ln 32$, weight $32^{0.5} = 5.66$, against $2 + 1 + 1$ for the rest: the Kestrels get $5.66/9.66 = 58.6\%$.
+
+</Depth>
+
+<Depth min={3}>
+
+**The derivation.** Condition on $e_j$: option $j$ wins if every $e_k \lt V_j - V_k + e_j$. So
+
+$$
+P(j) = \int f(e_j) \prod_{k \ne j} F(V_j - V_k + e_j)\, de_j
+$$
+
+With $F(x) = \exp(-e^{-x})$ the product is $\exp\!\big(-e^{-e_j} \sum_{k \ne j} e^{V_k - V_j}\big)$, and the integral collapses to $e^{V_j} / \sum_k e^{V_k}$.
+
+**The max of Gumbels is Gumbel.** The best utility on offer, $\max_j U_j$, is itself Gumbel with location $\ln \sum_j e^{V_j}$. So the **log-sum-exp is the expected best utility** (up to Euler's constant): the consumer surplus of a line-up, in utility units. Divide by β to get rupees. Dropping Kestrel cuts it from $\ln 8$ to $\ln 4$: $0.69/0.8 = $ ₹866 per shopper. That's the inclusive value again, and why the softmax shows up wherever a "soft max" is needed: contrastive learning and attention.
+
+**Other ways out of IIA.** Mixed logit lets β and the α's vary across shoppers (a distribution over tastes), so price-sensitive shoppers substitute toward cheap drills and brand-loyal ones toward Kestrel. It breaks IIA at the cost of simulation in fitting.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="Shares by hand">
+
+Utilities $\ln 3$, 0 and 0, plus a no-purchase option at 0. Find the shares.
+
+<Solution>
+
+$e^V$: 3, 1, 1, 1; sum 6. Shares **50%, 16.7%, 16.7%, 16.7%**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="IIA after a delisting">
+
+Delist the 50% option from Exercise 1. What does the logit predict, and where did its buyers go?
+
+<Solution>
+
+**33.3%** each. Its buyers split equally across the three remaining options, including walking away, because those had equal shares.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="Noisier tastes">
+
+If the noise doubles in scale, the effect is the same as halving every utility. Recompute the drill shares with utilities $\ln 4/2$, $\ln 2/2$, 0, 0.
+
+<Solution>
+
+$e^V$: 2, 1.41, 1, 1; sum 5.41. Shares **36.9%, 26.1%, 18.5%, 18.5%**. More noise, flatter shares: the scale of utility is the inverse of the noise.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Logit elasticities">
+
+With shares 50 / 25 / 12.5 / 12.5, prices ₹4,500, ₹3,000, ₹2,000 and β = 0.8 per ₹1,000, find the own label's own-price elasticity and Kestrel's elasticity with respect to the own label's price.
+
+<Solution>
+
+Own: $-0.8 \times 3 \times 0.75 =$ **−1.8**. Cross: $0.8 \times 3 \times 0.25 =$ **+0.6**, and the budget drill and no-drill shares respond by +0.6 too.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="A nest for the twins">
+
+Two identical Kestrels ($e^V = 4$ each) in a nest with λ = 0.5, plus the own label (2), budget (1) and no drill (1). Find the Kestrels' combined share and the own label's.
+
+<Solution>
+
+$I = \ln(4^2 + 4^2) = \ln 32$; nest weight $32^{0.5} = 5.66$. Total $5.66 + 4 = 9.66$. Kestrels **58.6%**, own label $2/9.66 =$ **20.7%**. Between the plain logit (66.7%, 16.7%) and identical twins (50%, 25%).
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="β from two weeks of shares">
+
+At ₹3,000 the own label has 25% and no-drill 12.5%; at ₹2,500, 33.2% and 11.1%. Back out β.
+
+<Solution>
+
+$\ln(s/s_0)$ goes from $\ln 2 = 0.693$ to $\ln 2.98 = 1.093$: up **0.4** for a ₹500 cut, so $\beta =$ **0.8** per ₹1,000.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The hand shares, then 100,000 simulated shoppers with Gumbel tastes, then a logit fitted by maximum likelihood to 20,000 simulated choices at varying own-label prices. Expected: shares 0.500, 0.250, 0.125, 0.125; the simulation within a fraction of a point; a fitted β close to 0.8.
+
+<PyRunner title="Softmax from random utility" code={`
+import numpy as np
+from scipy.optimize import minimize
+
+V = np.log([4, 2, 1, 1])  # Kestrel, own label, budget, no drill
+shares = np.exp(V) / np.exp(V).sum()
+print("softmax shares:", ", ".join(f"{s:.3f}" for s in shares))
+
+rng = np.random.default_rng(31)
+taste = rng.gumbel(size=(100_000, 4))
+picks = np.argmax(V + taste, axis=1)
+print("100,000 shoppers:", ", ".join(f"{s:.3f}" for s in np.bincount(picks, minlength=4) / len(picks)))
+
+# Fit beta: 20,000 shoppers, own-label price varies from week to week
+n = 20_000
+prices = np.array([4.5, 3.0, 2.0])               # in thousands of rupees
+alpha = np.log([4, 2, 1]) + 0.8 * prices
+own = rng.choice([2.0, 2.5, 3.0, 3.5, 4.0], size=n)
+P = np.tile(prices, (n, 1)); P[:, 1] = own
+U = np.column_stack([alpha - 0.8 * P, np.zeros(n)]) + rng.gumbel(size=(n, 4))
+chosen = np.argmax(U, axis=1)
+
+def nll(theta):
+    a, b = theta[:3], theta[3]
+    v = np.column_stack([a - b * P, np.zeros(n)])
+    v = v - v.max(axis=1, keepdims=True)
+    logp = v - np.log(np.exp(v).sum(axis=1, keepdims=True))
+    return -logp[np.arange(n), chosen].sum()
+
+fit = minimize(nll, np.zeros(4))
+print(f"fitted beta {fit.x[3]:.2f} per 1,000 rupees (truth 0.80)")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Assortment and delisting.** A choice model predicts where a delisted product's buyers go (demand transfer) and how much of its volume the bay keeps. That's the core of assortment optimization; stockouts, as natural experiments, test whether the model's transfer is right.
+- **The no-purchase option needs traffic.** Transaction data shows only buyers. To learn the outside share you need footfall or bay-visit counts (door counters, app sessions), or the "no drill" share has to be assumed.
+- **Nests come from the customer decision tree.** Do shoppers choose power first (20V vs 18V) or brand first? The nesting order is a modeling choice, testable by which one fits better, and it decides who cannibalizes whom.
+- **Aggregate data and endogenous prices.** With only store-week shares, use the log-share inversion with prices instrumented, because prices respond to demand ([BLP-style models](/learn/retail/cx-endogeneity)).
+- **Where it fails.** The plain logit makes every cross-elasticity in a column equal, so it over-predicts switching to dissimilar products and under-predicts it to close substitutes. Check its predicted transfers against a real stockout before using it to delist.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="Derive the softmax choice probabilities from random utility.">
+
+Utility = deterministic value + i.i.d. Gumbel noise; the shopper picks the max. Conditioning on one noise term and integrating the Gumbel CDFs of the others gives $e^{V_j}/\sum_k e^{V_k}$. Only utility differences matter, and the noise scale sets how sharp the shares are.
+
+</QA>
+
+<QA q="What is IIA and why does it matter for retail?">
+
+The ratio of any two shares doesn't depend on other options. So when a product is delisted, its buyers spread proportionally to the others' shares, and adding a near-duplicate takes share from everyone equally. Real shoppers switch to close substitutes, so a plain logit misjudges cannibalization and delisting. Nested or mixed logit fix this.
+
+</QA>
+
+<QA q="How would you predict demand transfer when an item is delisted?">
+
+Fit a choice model with product attributes and nests from the customer decision tree, then remove the item and recompute shares; the change is the transfer, including the share that walks away. Validate it on past stockouts, where the item was briefly unavailable, before acting.
+
+</QA>
+
+<QA q="How do you estimate a logit model?">
+
+Maximum likelihood: the log-likelihood is the sum of log predicted shares of the chosen options, i.e. minus the cross-entropy. It's convex in the linear utility parameters. With aggregate shares, invert to $\ln(s_j/s_0)$ and regress on attributes and price, instrumenting price.
+
+</QA>
+
+<Trap>
+
+**"The logit tells you where a delisted product's buyers will go."** Only under IIA, which sends them everywhere in proportion to share: a quarter of Kestrel's buyers "walk away" because no-drill has a quarter of the remaining share. Check the transfer against a real stockout, or use a nested model.
+
+</Trap>
+
+</Section>

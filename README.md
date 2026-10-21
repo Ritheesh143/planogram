@@ -51,6 +51,12 @@ Foundation Models* (sample paths, scaled series, and when zero-shot beats a loca
 Forecast to Order* (the newsvendor critical ratio, safety stock under correlated errors, and
 per-SKU policies at scale).
 
+**M4, batch 3a: elasticities and choice (Signature D).** *Elasticity Is a Derivative* (the log-log
+slope, and the markup rule it gives), *Cannibalization vs Halo* (item lift vs category lift, and
+the sign of a cross-price elasticity), *Choice Models: Gumbel Errors Give Softmax* (random utility,
+IIA and nested logit) and *Log-Log Demand: Endogeneity and Pooled Elasticities* (why prices that
+follow demand bias the slope, instruments, and partial pooling across SKUs).
+
 ### M1
 
 - **Four Keystone lessons.** These are the ideas that unlock the rest of the store, and also

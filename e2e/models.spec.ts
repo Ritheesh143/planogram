@@ -520,3 +520,72 @@ test("safety stock: the critical ratio, correlated errors and per-SKU policies",
   await setRange(page, "pol-salvage", 0);
   await expect(page.getByTestId("pol-profit-p95")).toHaveText("−₹11,94,306");
 });
+
+test("elasticity: two curves through two weeks, and how price variation sets precision", async ({ page }) => {
+  await page.goto("/learn/foundations/elasticity-derivative");
+  await expect(page.getByTestId("ed-el-const")).toHaveText("−3.00");
+  await expect(page.getByTestId("ed-el-line")).toHaveText("−1.95");
+  await expect(page.getByTestId("ed-best-const")).toHaveText("₹225");
+  await expect(page.getByTestId("ed-best-line")).toHaveText("₹226");
+  await setRange(page, "ed-price", 300);
+  await expect(page.getByTestId("ed-q-const")).toHaveText("148");
+  await expect(page.getByTestId("ed-q-line")).toHaveText("12");
+  await page.getByRole("radio", { name: "Log axes" }).click();
+  await expect(page.getByRole("radio", { name: "Log axes" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("ep-sd")).toHaveText("1.77");
+  await expect(page.getByTestId("ep-inelastic")).toHaveText("13.4%");
+  await setRange(page, "ep-move", 2);
+  await expect(page.getByTestId("ep-sd")).toHaveText("0.35");
+  await expect(page.getByTestId("ep-close")).toHaveText("84%");
+});
+
+test("cross-elasticity: item lift vs the bay, and overlapping promos", async ({ page }) => {
+  await page.goto("/learn/retail/cx-cross-elasticity");
+  await expect(page.getByTestId("xe-item")).toHaveText("120");
+  await expect(page.getByTestId("xe-cat")).toHaveText("45");
+  await expect(page.getByTestId("xe-can")).toHaveText("75");
+  await expect(page.getByTestId("xe-item-margin")).toHaveText("+₹42,000");
+  await expect(page.getByTestId("xe-total-margin")).toHaveText("+₹23,400");
+  await page.getByRole("radio", { name: "Own label", exact: true }).click();
+  await expect(page.getByTestId("xe-total-margin")).toHaveText("−₹17,366");
+  await setRange(page, "xe-depth", 0.1);
+  await expect(page.getByTestId("xe-total-margin")).toHaveText("−₹7,067");
+  await expect(page.getByTestId("cs-sd")).toHaveText("0.36");
+  await setRange(page, "cs-overlap", 4);
+  await expect(page.getByTestId("cs-sd")).toHaveText("0.84");
+  await expect(page.getByTestId("cs-wrong")).toHaveText("9.2%");
+  await expect(page.getByTestId("cs-unusable")).toHaveText("9");
+});
+
+test("choice models: IIA, the nest, and Gumbel noise", async ({ page }) => {
+  await page.goto("/learn/retail/cx-mnl");
+  await expect(page.getByTestId("ch-kestrel")).toHaveText("50.0%");
+  await page.getByRole("radio", { name: "Kestrel out of stock" }).click();
+  await expect(page.getByTestId("ch-own")).toHaveText("50.0%");
+  await expect(page.getByTestId("ch-none")).toHaveText("25.0%");
+  await page.getByRole("radio", { name: "Add a red Kestrel" }).click();
+  await expect(page.getByTestId("ch-kestrel")).toHaveText("66.7%");
+  await setRange(page, "ch-lambda", 0.5);
+  await expect(page.getByTestId("ch-kestrel")).toHaveText("58.6%");
+  await expect(page.getByTestId("ch-own")).toHaveText("20.7%");
+  await expect(page.getByTestId("ru-gap")).toHaveText("1.2");
+  await setRange(page, "ru-n", 3);
+  await expect(page.getByTestId("ru-gap")).toHaveText("0.2");
+  await page.getByRole("radio", { name: "Normal noise" }).click();
+  await expect(page.getByTestId("ru-gap")).toHaveText("1.0");
+  await expect(page.getByTestId("ru-0")).toHaveText("51.0%");
+});
+
+test("endogeneity: prices that follow demand, and pooled elasticities", async ({ page }) => {
+  await page.goto("/learn/retail/cx-endogeneity");
+  await expect(page.getByTestId("en-naive")).toHaveText("−2.00");
+  await setRange(page, "en-kappa", 3);
+  await expect(page.getByTestId("en-naive")).toHaveText("−0.02");
+  await expect(page.getByTestId("en-iv")).toHaveText("−2.00");
+  await expect(page.getByTestId("he-rmse-raw")).toHaveText("1.02");
+  await expect(page.getByTestId("he-rmse-pooled")).toHaveText("0.47");
+  await expect(page.getByTestId("he-inel-raw")).toHaveText("12");
+  await expect(page.getByTestId("he-inel-pooled")).toHaveText("1");
+  await setRange(page, "he-weeks", 3);
+  await expect(page.getByTestId("he-rmse-raw")).toHaveText("0.31");
+});

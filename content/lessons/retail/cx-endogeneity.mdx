@@ -1,0 +1,304 @@
+<Section id="floor">
+
+Bolt & Beam's 30 m garden hose costs **₹1,000** most of the year and **₹1,250** in the peak watering season. An analyst regresses log weekly sales on log price over two years and gets an elasticity near **zero**, or even positive. The pricing team takes the hint: "Hoses are inelastic. Raise the price."
+
+The regression didn't measure what price does to sales. The price went up *when* demand went up, so the line through the weeks mixes the two. The real elasticity is −2, and a price rise would cost far more volume than the regression says.
+
+<KeyIdea>
+
+**A regression of sales on price measures price's effect only if the price moved for reasons unrelated to demand.** When prices follow demand (higher in busy weeks, clearance in quiet ones), price is **endogenous** and the slope is biased, often toward zero. The fixes: control for what drives both (season), use only price moves with an outside cause (supplier costs: an **instrument**) or run price tests. Then **pool** noisy per-SKU elasticities toward their category, so that short histories don't produce absurd ones.
+
+</KeyIdea>
+
+</Section>
+
+<Section id="hand">
+
+Four weeks of hose sales. The truth, which the analyst doesn't know: elasticity −2, and the peak season doubles demand.
+
+| Week | Season | Price | Sold |
+|---|---|---|---|
+| 1 | Off | ₹1,000 | 100 |
+| 2 | Off (clearance) | ₹800 | 156 |
+| 3 | Peak | ₹1,250 | 128 |
+| 4 | Peak (price match) | ₹1,000 | 200 |
+
+<Steps>
+<Step>
+
+**The usual prices**, weeks 1 and 3: $\ln(128/100)/\ln(1250/1000) = 0.247/0.223 =$ **+1.11**. Higher price, more sales.
+
+</Step>
+<Step>
+
+**One line through all four weeks** (least squares on logs): **−0.44**. Better, but still says the hose is inelastic.
+
+</Step>
+<Step>
+
+**Compare within a season.** Off-season: $\ln(156/100)/\ln(800/1000) =$ **−1.99**. Peak: $\ln(200/128)/\ln(1000/1250) =$ **−2.00**. Inside each season, only the price changed.
+
+</Step>
+<Step>
+
+**Add a season term** to the regression: $\ln Q = a + b \cdot \text{peak} + \varepsilon \ln p$. It finds $\varepsilon =$ **−2.00** and $b = \ln 2 = 0.69$: the season doubled demand.
+
+</Step>
+<Step>
+
+**What went wrong.** The usual-price comparison credited the season's doubling to the 25% price rise. Any demand driver that also moves the price does the same, and the ones you can't see (weather, a local building boom) can't be added as a column.
+
+</Step>
+</Steps>
+
+</Section>
+
+<Section id="see">
+
+<Predict question="In the simulation, the manager passes 30% of each week's (unseen) demand shock into the price. The true elasticity is −2. What does a regression of log units on log price over two years find?" options={["About −2: two years is plenty", "About −1.5", "Close to 0"]} answer={2}>
+
+**−0.02.** Busy weeks have high prices *and* high sales, so the cloud of points tilts up and cancels the true downward slope. More weeks don't help: the bias doesn't shrink with data.
+
+</Predict>
+
+<EndogeneityScatter />
+
+**Try this:**
+
+1. **κ = 0**: prices move only with supplier costs. The regression finds **−2.00**, and so does the instrument.
+2. **κ = 0.1**: already **−0.62**. A little demand in the price goes a long way.
+3. **κ = 0.2 and 0.3**: **−0.04** and **−0.02**. "Price doesn't matter."
+4. **κ = 0.4**: **−0.19**. The bias is worst when demand shocks and cost shocks move the price about equally. Through all of it the instrument stays at **−2.00**, because it uses only the cost-driven part of each price move.
+
+</Section>
+
+<Section id="simulate">
+
+Clean price variation isn't the only problem. A single SKU's history is short. Take **60** paint SKUs whose true elasticities spread around −2 (sd 0.5), with prices moving ±8% a week for reasons unrelated to demand and 25% sales noise. Estimate each SKU's elasticity on its own, then pull each estimate toward the category average by an amount set by its own noise:
+
+<PooledElasticities />
+
+| Weeks per SKU | Error alone | Error pooled | Look inelastic, alone | Look inelastic, pooled | Positive, alone |
+|---|---|---|---|---|---|
+| 13 | 1.02 | 0.47 | 12 | 1 | 2 |
+| 26 | 0.67 | 0.41 | 8 | 0 | 1 |
+| 52 | 0.48 | 0.35 | 4 | 0 | 0 |
+| 104 | 0.31 | 0.27 | 4 | 0 | 0 |
+
+One SKU is truly inelastic. With a quarter of history, the SKU-by-SKU estimates flag **12**, and two have the wrong sign; a price optimizer would raise all their prices. Pooling halves the error (1.02 → 0.47) and flags **1**. As the history grows, each SKU's own data gets more weight and the two estimates converge.
+
+</Section>
+
+<Section id="formula">
+
+Write weekly demand in logs, with $u_t$ every demand driver the model doesn't see:
+
+$$
+\ln Q_t = a + \varepsilon \ln p_t + u_t
+$$
+
+Least squares estimates the slope as $\text{cov}(\ln p, \ln Q)/\text{var}(\ln p)$. Substituting:
+
+$$
+\hat\varepsilon_{\text{OLS}} = \varepsilon + \frac{\text{cov}(\ln p_t,\, u_t)}{\text{var}(\ln p_t)}
+$$
+
+The second term is zero only if price is unrelated to the unseen demand. With the manager's rule $\ln p_t = \bar p + \kappa u_t + c_t$ (demand shock sd 0.3, cost shock sd 0.08):
+
+$$
+\text{bias} = \frac{\kappa\, \sigma_u^2}{\kappa^2 \sigma_u^2 + \sigma_c^2} = \frac{0.3 \times 0.09}{0.0081 + 0.0064} = 1.86 \quad (\kappa = 0.3)
+$$
+
+So the expected estimate is −0.14; the simulated two years gave −0.02.
+
+**An instrument** $z$ moves price but has no other route to sales. Supplier cost is one. Using only the part of price that moves with it:
+
+$$
+\hat\varepsilon_{\text{IV}} = \frac{\text{cov}(z, \ln Q)}{\text{cov}(z, \ln p)}
+$$
+
+The demand shock is uncorrelated with $z$, so it drops out: −2.00 at every κ.
+
+**Pooling.** Treat each SKU's elasticity as a draw from the category, $\varepsilon_i \sim N(\mu, \tau^2)$, and its estimate as noisy, $\hat\varepsilon_i \sim N(\varepsilon_i, \text{se}_i^2)$. The best guess is a weighted average:
+
+$$
+\tilde\varepsilon_i = \mu + w_i(\hat\varepsilon_i - \mu), \qquad w_i = \frac{\tau^2}{\tau^2 + \text{se}_i^2}
+$$
+
+With 13 weeks the weights run from 0.07 (very noisy SKUs, pulled almost to the mean of −1.92) to 0.61.
+
+<Depth min={2}>
+
+**The bias can go either way.** Raising prices in busy weeks, or clearing stock in quiet ones, makes $\text{cov}(\ln p, u) > 0$ and pushes the estimate toward zero or above it. Timing promotions for the busiest weekends does the opposite: price is low when demand is high, $\text{cov} \lt 0$, and the estimate is *too* elastic, which justifies more promotions than pay. Ask how prices were set before trusting any slope.
+
+**The bias peaks** where the two sources of price movement are equal, $\kappa = \sigma_c/\sigma_u = 0.27$, at $\sigma_u/2\sigma_c = 1.88$. As κ grows further, price is mostly demand, and the slope drifts back toward $1/\kappa$ plus the truth.
+
+**Where τ and μ come from.** Empirical Bayes estimates them from all 60 SKUs: μ is the average estimate, and $\tau^2$ is the spread of the estimates minus the average sampling noise. A full hierarchical Bayesian model (PyMC, Stan) does the same with uncertainty on μ and τ, and can add a prior that elasticities are negative. It's the [hierarchical pooling](/learn/bayes/hierarchical-pooling) lesson with elasticities in place of store averages.
+
+</Depth>
+
+<Depth min={3}>
+
+**Two-stage least squares.** With controls and several instruments, regress log price on the instruments and controls (first stage), then log units on the *fitted* price and controls (second stage). The ratio formula above is the one-instrument case.
+
+**What makes a good instrument.** *Relevance*: it must move price (first-stage F above about 10, or the IV estimate is noisy and biased toward OLS). *Exclusion*: it must affect sales only through price. Supplier costs usually pass; a competitor's price usually doesn't, because it responds to the same demand shocks. Hausman instruments use the same product's price in other cities, which fails if a national campaign moves them all.
+
+**Price tests remove the problem by design.** Randomly assigning price changes to stores or weeks makes $\text{cov}(\ln p, u) = 0$. For retail they're usually run across stores (a store-level price test), not across customers. Double ML extends the same idea to many controls at once: it removes what the controls predict from both price and sales, then regresses what's left.
+
+</Depth>
+
+</Section>
+
+<Section id="paper">
+
+<Exercise n={1} level="easy" title="A tempting slope">
+
+A sprinkler sold 80 a week off-season at ₹500 and 96 a week in peak at ₹600. What log elasticity do the two weeks suggest, and why not believe it?
+
+<Solution>
+
+$\ln(96/80)/\ln(600/500) = 0.182/0.182 =$ **+1.00**. The price rise came with the season, so the slope mixes the season's lift with the price's effect.
+
+</Solution>
+</Exercise>
+
+<Exercise n={2} level="easy" title="The bias formula">
+
+The true elasticity is −2.5, $\text{cov}(\ln p, u) = 0.02$ and $\text{var}(\ln p) = 0.04$. What does least squares estimate?
+
+<Solution>
+
+$-2.5 + 0.02/0.04 =$ **−2.0**: biased toward zero by 0.5.
+
+</Solution>
+</Exercise>
+
+<Exercise n={3} level="medium" title="An instrument by hand">
+
+In weeks after a supplier cost increase, the hose price is 10% higher than in other weeks and sales are 18% lower. Assume the cost increases are unrelated to demand. Estimate the elasticity.
+
+<Solution>
+
+$\ln 0.82 / \ln 1.10 = -0.198/0.0953 =$ **−2.08**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={4} level="medium" title="Shrink one SKU">
+
+The category mean is −2 and τ = 0.5. A SKU's own estimate is +0.4 with standard error 1.0. What's its pooled estimate?
+
+<Solution>
+
+$w = 0.25/(0.25 + 1) = 0.2$. Pooled: $-2 + 0.2 \times (0.4 + 2) =$ **−1.52**. Its data moved it a fifth of the way from the category toward +0.4.
+
+</Solution>
+</Exercise>
+
+<Exercise n={5} level="hard" title="Which way is the bias?">
+
+A chain runs its deepest discounts on the busiest bank-holiday weekends. Which way does that bias a regression of log sales on log price, and what decision does it distort?
+
+<Solution>
+
+Price is low exactly when demand is high, so $\text{cov}(\ln p, u) \lt 0$ and the estimate is **too negative**: demand looks more price-sensitive than it is. Promotions look more effective than they are, so the chain runs **too many**.
+
+</Solution>
+</Exercise>
+
+<Exercise n={6} level="hard" title="Twelve inelastic SKUs">
+
+With 13 weeks of history each, 12 of 60 SKUs come out with elasticities above −1. A manager wants to raise all 12 prices. What do you say?
+
+<Solution>
+
+At 13 weeks the standard errors are around 1, so estimates above −1 are mostly noise around a category mean near −2. The pooled estimates flag **1** of the 12, which matches the one truly inelastic SKU. Raise that one price, if any, with a test, and collect cleaner price variation for the rest.
+
+</Solution>
+</Exercise>
+
+</Section>
+
+<Section id="build">
+
+The four hose weeks, then two years of weeks with prices that follow demand, fitted by least squares and with supplier cost as an instrument, then pooling 60 SKUs. Expected: +1.11 for the usual weeks, −0.44 for all four and −2.00 with a season term. The regression stays near zero even with twenty years of weeks (about −0.14, as the bias formula predicts), while the instrument is noisy on two years and settles near −2 on twenty. Pooling cuts the error roughly in half at 13 weeks.
+
+<PyRunner title="Endogeneity and pooling" code={`
+import numpy as np
+
+price = np.array([1000, 800, 1250, 1000]); sold = np.array([100, 156, 128, 200]); peak = np.array([0, 0, 1, 1])
+lp, lq = np.log(price), np.log(sold)
+usual = np.log(128 / 100) / np.log(1250 / 1000)
+pooled = np.polyfit(lp, lq, 1)[0]
+season = np.linalg.lstsq(np.column_stack([np.ones(4), peak, lp]), lq, rcond=None)[0][2]
+print(f"usual weeks {usual:+.2f}, all four {pooled:+.2f}, with season {season:+.2f}")
+
+# The manager passes 30% of each demand shock into the price. Two years, then twenty.
+rng = np.random.default_rng(13)
+for weeks in [104, 1040]:
+    u, c = rng.normal(0, 0.3, weeks), rng.normal(0, 0.08, weeks)
+    lp = np.log(1000) + 0.3 * u + c
+    lq = np.log(100) - 2 * (lp - np.log(1000)) + u + rng.normal(0, 0.1, weeks)
+    naive = np.polyfit(lp, lq, 1)[0]
+    iv = np.cov(c, lq)[0, 1] / np.cov(c, lp)[0, 1]
+    print(f"{weeks} weeks: regression {naive:+.2f}, instrument {iv:+.2f} (truth -2)")
+
+# Sixty SKUs, 13 weeks each: alone vs partially pooled
+truth = rng.normal(-2, 0.5, 60)
+est, se = [], []
+for e in truth:
+    x = rng.normal(0, 0.08, 13); y = e * x + rng.normal(0, 0.25, 13)
+    b, a = np.polyfit(x, y, 1)
+    est.append(b); se.append(np.sqrt(np.sum((y - a - b * x) ** 2) / 11 / np.sum((x - x.mean()) ** 2)))
+est, se = np.array(est), np.array(se)
+mu = est.mean(); tau2 = max(0.0, est.var(ddof=1) - np.mean(se ** 2))
+shrunk = mu + tau2 / (tau2 + se ** 2) * (est - mu)
+rmse = lambda v: np.sqrt(np.mean((v - truth) ** 2))
+print(f"error alone {rmse(est):.2f}, pooled {rmse(shrunk):.2f}; above -1: {np.sum(est > -1)} alone, {np.sum(shrunk > -1)} pooled")
+`} />
+
+</Section>
+
+<Section id="production">
+
+- **Ask how prices were set.** Before any elasticity model, find out who moved prices and why: cost pass-through, competitor matching, seasonal pricing, clearance. Each one is a different kind of variation, and only some of it is usable.
+- **Control what you can see.** Season, holidays, promos, displays, flyers and weather go in as features. They remove the endogeneity you can name. What's left needs instruments or experiments.
+- **Use outside price shocks.** Supplier cost changes, tax changes and rounding to price points move prices for reasons unrelated to that week's demand. Store-level price tests are the cleanest of all, and a few of them can calibrate a model fitted on years of history.
+- **Pool and constrain.** Hierarchical Bayesian elasticities (SKU within subcategory within category) with a negative-sign prior are the production standard. They stop the optimizer from acting on a 13-week estimate of +0.4.
+- **Keep regular-price and promo elasticities apart.** A temporary discount triggers stockpiling and display effects that a permanent price change doesn't. Mixing them in one coefficient overstates how much a base-price cut will sell.
+
+</Section>
+
+<Section id="interview">
+
+<QA q="What is price endogeneity, and why does it bias elasticity estimates?">
+
+Price is endogenous when it's set in response to demand: higher in busy weeks, discounted when sales are slow, matched to a competitor reacting to the same shocks. Then price is correlated with the unobserved demand in the error term, so OLS attributes part of demand's movement to price. Raising prices in high-demand periods biases the estimate toward zero or even positive.
+
+</QA>
+
+<QA q="How would you get an unbiased price elasticity?">
+
+Controls for observable drivers (season, promo, weather), then exogenous variation: instruments such as supplier cost changes (relevant, and affecting sales only through price), or randomized store-level price tests. With many controls I'd use double ML. And I'd check the first-stage strength and whether the estimate makes economic sense (below −1 for a profit-maximizing retailer).
+
+</QA>
+
+<QA q="Why use a hierarchical model for SKU elasticities?">
+
+Most SKUs have short, noisy price histories, so their own estimates scatter widely; some come out positive. A hierarchical model shrinks each toward its category by an amount set by its own noise, which cuts error (1.02 to 0.47 in the 13-week simulation) and stops an optimizer from acting on noise. SKUs with plenty of clean data keep their own estimate.
+
+</QA>
+
+<QA q="Your elasticity for a seasonal product came out positive. What do you check?">
+
+How prices were set (seasonal pricing is the usual culprit), whether season and promos are controlled, whether there is any price variation within a season, and whether a cost-based instrument or a past price test gives a different answer. A positive own-price elasticity almost always means confounding, not a Giffen good.
+
+</QA>
+
+<Trap>
+
+**"With more data the estimate will converge."** It will, to the wrong number. Endogeneity is a bias, not noise: two years of weeks with prices that follow demand gave −0.02 against a truth of −2, and ten years would give the same. Only better variation (controls, instruments, tests) fixes it.
+
+</Trap>
+
+</Section>
